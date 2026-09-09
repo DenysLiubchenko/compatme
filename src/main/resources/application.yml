@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: compatme
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/compatme}
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: ${SERVER_PORT:8080}
+
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  embedding-model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
+  embedding-dimensionality: ${GEMINI_EMBEDDING_DIMENSIONALITY:768}
+  chat-model: ${GEMINI_CHAT_MODEL:gemini-2.5-flash}
+  max-retry-attempts: ${GEMINI_MAX_RETRY_ATTEMPTS:4}
+  retry-initial-backoff-millis: ${GEMINI_RETRY_INITIAL_BACKOFF_MILLIS:1000}
+  retry-backoff-multiplier: ${GEMINI_RETRY_BACKOFF_MULTIPLIER:2.0}
+
+telegram:
+  enabled: ${TELEGRAM_BOT_ENABLED:false}
+  bot-token: ${TELEGRAM_BOT_TOKEN:}
+  bot-username: ${TELEGRAM_BOT_USERNAME:}
+  backend-base-url: ${TELEGRAM_BACKEND_BASE_URL:http://localhost:8080}
+
+app:
+  seed-data:
+    enabled: ${SEED_DATA_ENABLED:false}
+
+logging:
+  level:
+    root: INFO
+    ua.kpi.project.compatme: DEBUG
