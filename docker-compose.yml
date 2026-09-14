@@ -1,0 +1,73 @@
+name: compatme
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: compatme-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: compatme
+    volumes:
+      - compatme-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Optional web UI for inspecting MongoDB during development.
+  # Open http://localhost:8081 (basic auth: admin / ${MONGO_EXPRESS_PASSWORD:-admin})
+  mongo-express:
+    image: mongo-express:1
+    container_name: compatme-mongo-express
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-admin}
+
+  compatme-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: compatme-backend
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      # --- Database ---
+      MONGODB_URI: mongodb://mongodb:27017/compatme
+
+      # --- Gemini API (REQUIRED: set GEMINI_API_KEY in your .env file) ---
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?GEMINI_API_KEY must be set in .env}
+      GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      GEMINI_EMBEDDING_DIMENSIONALITY: ${GEMINI_EMBEDDING_DIMENSIONALITY:-768}
+      GEMINI_CHAT_MODEL: ${GEMINI_CHAT_MODEL:-gemini-2.5-flash}
+      GEMINI_MAX_RETRY_ATTEMPTS: ${GEMINI_MAX_RETRY_ATTEMPTS:-4}
+      GEMINI_RETRY_INITIAL_BACKOFF_MILLIS: ${GEMINI_RETRY_INITIAL_BACKOFF_MILLIS:-1000}
+      GEMINI_RETRY_BACKOFF_MULTIPLIER: ${GEMINI_RETRY_BACKOFF_MULTIPLIER:-2.0}
+
+      # --- Telegram bot (optional) ---
+      TELEGRAM_BOT_ENABLED: ${TELEGRAM_BOT_ENABLED:-false}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_BACKEND_BASE_URL: ${TELEGRAM_BACKEND_BASE_URL:-http://localhost:8080}
+
+      # --- Sample data seeding (optional) ---
+      SEED_DATA_ENABLED: ${SEED_DATA_ENABLED:-false}
+
+      SERVER_PORT: 8080
+
+volumes:
+  compatme-mongo-data:

@@ -97,6 +97,19 @@ on the port interfaces, never on the concrete adapters.
 
 ## Running locally
 
+### Fastest path: Docker Compose
+
+```bash
+cp .env.example .env   # then edit .env and set GEMINI_API_KEY
+docker compose up --build
+```
+
+This starts MongoDB, the backend, and an optional MongoDB web UI (http://localhost:8081) with
+zero local Java/Maven install required. Full instructions, all environment variables, and
+troubleshooting: see **[STARTUP.md](STARTUP.md)**.
+
+### Manual setup
+
 ### Prerequisites
 
 - Java 17+
