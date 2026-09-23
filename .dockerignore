@@ -2,7 +2,6 @@ target/
 .git/
 .idea/
 .vscode/
-.mvn/wrapper/maven-wrapper.jar
 *.iml
 .env
 .env.*

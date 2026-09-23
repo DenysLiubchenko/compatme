@@ -1,71 +1,63 @@
-# Running CompatMe locally (Docker Compose)
+# Running CompatMe locally (Docker Compose + IDE)
 
-This starts the full local environment: MongoDB, an optional MongoDB web UI, and the CompatMe
-backend itself, all wired together — no local Java/Maven install required (Docker builds the jar
-inside a container).
+By default, `docker-compose.yml` only starts the **infrastructure** (MongoDB + an optional MongoDB
+web UI). The Spring Boot backend itself is commented out, so you can run/debug it directly from
+your IDE (IntelliJ, VS Code, etc.) with breakpoints, hot reload, etc.
 
 ## 1. Prerequisites
 
 - Docker + Docker Compose v2 (`docker compose version`)
+- Java 21 (matches `pom.xml`'s `java.version`)
 - A Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey)
 
-## 2. Configure environment variables
-
-Copy the example env file and fill in your Gemini API key:
+## 2. Start infrastructure (MongoDB + Mongo Express)
 
 ```bash
-cp .env.example .env
+docker compose up -d
 ```
 
-Edit `.env` and set at minimum:
-
-```dotenv
-GEMINI_API_KEY=your-real-gemini-api-key
-```
-
-Everything else in `.env.example` is optional and has a working default (see the table below).
-`.env` is gitignored — never commit it.
-
-### Environment variables reference
-
-| Variable | Required? | Default | Notes |
-|---|---|---|---|
-| `GEMINI_API_KEY` | **Yes** | — | Must override. Get it from Google AI Studio. |
-| `GEMINI_EMBEDDING_MODEL` | No | `gemini-embedding-001` | Override only if testing a different embedding model. |
-| `GEMINI_EMBEDDING_DIMENSIONALITY` | No | `768` | Must match what the embedding model supports. |
-| `GEMINI_CHAT_MODEL` | No | `gemini-2.5-flash` | Override if the model name changes/deprecates. |
-| `GEMINI_MAX_RETRY_ATTEMPTS` | No | `4` | Retry attempts on Gemini 429/5xx errors. |
-| `GEMINI_RETRY_INITIAL_BACKOFF_MILLIS` | No | `1000` | Initial backoff delay. |
-| `GEMINI_RETRY_BACKOFF_MULTIPLIER` | No | `2.0` | Exponential backoff multiplier. |
-| `TELEGRAM_BOT_ENABLED` | No | `false` | Set `true` to run the Telegram bot alongside the backend. |
-| `TELEGRAM_BOT_TOKEN` | Only if bot enabled | — | Must override if `TELEGRAM_BOT_ENABLED=true`. |
-| `TELEGRAM_BOT_USERNAME` | Only if bot enabled | — | Must override if `TELEGRAM_BOT_ENABLED=true`. |
-| `SEED_DATA_ENABLED` | No | `false` | Set `true` to seed ~6 sample Ukrainian profiles + embeddings on startup. |
-| `SERVER_PORT` | No | `8080` | Host port the backend is published on. |
-| `MONGO_EXPRESS_PASSWORD` | No | `admin` | Password for the optional Mongo web UI (`admin`/this password). |
-
-`MONGODB_URI` is **not** in `.env` — docker-compose.yml wires it automatically to the `mongodb`
-service (`mongodb://mongodb:27017/compatme`) so containers can reach each other by service name.
-
-## 3. Start everything
-
-```bash
-docker compose up --build
-```
-
-This builds the backend image (multi-stage Maven build, no local JDK needed) and starts:
+This starts:
 
 | Service | URL | Purpose |
 |---|---|---|
-| `compatme-backend` | http://localhost:8080 | The REST API |
-| `mongodb` | localhost:27017 | Database (also reachable from your host machine, e.g. via Compass) |
-| `mongo-express` | http://localhost:8081 | Optional web UI to browse MongoDB data (login: `admin` / `MONGO_EXPRESS_PASSWORD`) |
+| `mongodb` | `localhost:27017` | Database, reachable from your host machine (IDE, Compass, etc.) |
+| `mongo-express` | http://localhost:8081 | Optional web UI to browse MongoDB data (login: `admin` / `MONGO_EXPRESS_PASSWORD`, default password `admin`) |
 
-Run in the background instead:
+## 3. Run the backend from your IDE
 
-```bash
-docker compose up --build -d
+Set these environment variables in your IDE's run configuration (or export them in the shell you
+launch the IDE from):
+
+| Variable | Required? | Value to use | Notes |
+|---|---|---|---|
+| `MONGODB_URI` | **Yes** | `mongodb://localhost:27017/compatme` | Points at the Dockerized MongoDB via its published host port. |
+| `GEMINI_API_KEY` | **Yes** | your real key | From Google AI Studio. |
+| `GEMINI_EMBEDDING_MODEL` | No | `gemini-embedding-001` (default) | Override only if testing a different embedding model. |
+| `GEMINI_EMBEDDING_DIMENSIONALITY` | No | `768` (default) | Must match what the embedding model supports. |
+| `GEMINI_CHAT_MODEL` | No | `gemini-2.5-flash` (default) | Override if the model name changes/deprecates. |
+| `GEMINI_MAX_RETRY_ATTEMPTS` | No | `4` (default) | Retry attempts on Gemini 429/5xx errors. |
+| `GEMINI_RETRY_INITIAL_BACKOFF_MILLIS` | No | `1000` (default) | Initial backoff delay. |
+| `GEMINI_RETRY_BACKOFF_MULTIPLIER` | No | `2.0` (default) | Exponential backoff multiplier. |
+| `TELEGRAM_BOT_ENABLED` | No | `false` (default) | Set `true` to run the Telegram bot in-process alongside the backend. |
+| `TELEGRAM_BOT_TOKEN` | Only if bot enabled | — | Must set if `TELEGRAM_BOT_ENABLED=true`. |
+| `TELEGRAM_BOT_USERNAME` | Only if bot enabled | — | Must set if `TELEGRAM_BOT_ENABLED=true`. |
+| `SEED_DATA_ENABLED` | No | `false` (default) | Set `true` to seed ~6 sample Ukrainian profiles + embeddings on startup. |
+| `SERVER_PORT` | No | `8080` (default) | Local port the backend listens on. |
+
+**IntelliJ IDEA**: Run/Debug Configurations → your `CompatmeApplication` config → Environment
+variables → add the two required ones (at minimum):
 ```
+MONGODB_URI=mongodb://localhost:27017/compatme;GEMINI_API_KEY=your-real-gemini-api-key
+```
+
+**Command line equivalent** (if you'd rather not use the IDE's run button):
+```bash
+export MONGODB_URI=mongodb://localhost:27017/compatme
+export GEMINI_API_KEY=your-real-gemini-api-key
+./mvnw spring-boot:run
+```
+
+Then run/debug `CompatmeApplication` as usual.
 
 ## 4. Verify it's running
 
@@ -77,49 +69,36 @@ Should return `[]` (or your seeded sample profiles, if `SEED_DATA_ENABLED=true`)
 
 ## 5. Seed sample data (optional)
 
-Either set `SEED_DATA_ENABLED=true` in `.env` before the first `docker compose up`, or run it
-as a one-off against an already-running stack:
+Set `SEED_DATA_ENABLED=true` in your IDE run configuration (or export it before `./mvnw
+spring-boot:run`) and restart the app. Seeding is idempotent — it matches existing sample profiles
+by `telegramUserId`, so re-running it won't create duplicates.
 
-```bash
-docker compose stop compatme-backend
-SEED_DATA_ENABLED=true docker compose up -d compatme-backend
-```
-
-Seeding is idempotent — it matches existing sample profiles by `telegramUserId`, so re-running it
-won't create duplicates.
-
-## 6. Stopping / resetting
+## 6. Stopping / resetting infrastructure
 
 ```bash
 docker compose down            # stop containers, keep MongoDB data volume
 docker compose down -v         # stop containers AND delete MongoDB data
 ```
 
-## 7. Rebuilding after code changes
+## Running the backend as a container instead (optional)
+
+`docker-compose.yml` still contains a full `compatme-backend` service definition — it's just
+commented out. Uncomment it if you'd rather run everything in Docker (e.g. to reproduce a
+teammate's environment or test the production Dockerfile build):
 
 ```bash
-docker compose up --build compatme-backend
-```
-
-## Running without Docker (backend only, against a locally running MongoDB)
-
-If you'd rather run just MongoDB in Docker and the Spring Boot app directly on your machine
-(faster iteration while developing):
-
-```bash
-docker compose up -d mongodb
-export GEMINI_API_KEY=your-real-gemini-api-key
-export MONGODB_URI=mongodb://localhost:27017/compatme
-./mvnw spring-boot:run
+cp .env.example .env   # then edit .env and set GEMINI_API_KEY
+docker compose up --build
 ```
 
 ## Troubleshooting
 
-- **`GEMINI_API_KEY must be set in .env`** — you forgot to copy `.env.example` to `.env` and/or
-  fill in `GEMINI_API_KEY`.
-- **Backend can't reach MongoDB** — make sure the `mongodb` service is healthy first
-  (`docker compose ps` should show it as `healthy`); the backend's `depends_on` condition waits
-  for this automatically, but a first-time image pull can take a minute.
+- **Backend can't reach MongoDB from the IDE** — make sure you used
+  `mongodb://localhost:27017/compatme` (not the in-container hostname `mongodb`), and that
+  `docker compose ps` shows `mongodb` as `healthy`.
+- **`GEMINI_API_KEY must be set in .env`** (only applies if you uncommented the backend service in
+  compose) — copy `.env.example` to `.env` and fill in `GEMINI_API_KEY`.
 - **Telegram bot doesn't start** — check `TELEGRAM_BOT_ENABLED=true` and both
-  `TELEGRAM_BOT_TOKEN`/`TELEGRAM_BOT_USERNAME` are set; check `docker compose logs compatme-backend`.
-- **Port already in use** — override `SERVER_PORT` in `.env` (e.g. `SERVER_PORT=8090`).
+  `TELEGRAM_BOT_TOKEN`/`TELEGRAM_BOT_USERNAME` are set.
+- **Port already in use** — change `SERVER_PORT` (IDE env var) or stop whatever else is bound to
+  `8080`/`27017`/`8081`.

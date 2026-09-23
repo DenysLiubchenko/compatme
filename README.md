@@ -78,6 +78,53 @@ on the port interfaces, never on the concrete adapters.
   gender/seeking-gender match) before any NLP scoring runs, then score the remaining candidates
   in-memory in Java using cached embeddings (sufficient at the hundreds-to-thousands-of-profiles
   scale this prototype targets; MongoDB Atlas Vector Search was intentionally not required).
+  `seekingGenders` is a set end to end (domain, persistence, and both the profile-creation/update
+  DTOs and the response DTO), so a profile can seek multiple genders simultaneously; the mutual
+  match check (`Profile.mutuallyMatchesSeekingGender`) is a set-membership check on both sides,
+  not an exact single-value comparison.
+- **`archetypeIds`** (`List<Integer>`, optional): a thesis-evaluation-only tag on `Profile`
+  recording which synthetic personality archetype(s) a profile blends, set by the synthetic
+  dataset generator. It is carried through the domain model, MongoDB document, seed-loader JSON,
+  and both profile DTOs, but is **never read by `CompatibilityScorer`, any
+  `CompatibilityAggregationStrategy`, or the recommendation candidate-filtering logic** — it exists
+  purely so evaluation results can be sliced/inspected by archetype after the fact. Every place it
+  appears in code is commented to make this explicit.
+
+## Evaluating aggregation strategies against a ground-truth dataset
+
+The thesis's results chapter compares how well each aggregation strategy reflects genuine
+reciprocal compatibility, using a hand- or synthetically-labeled ground-truth dataset: pairs of
+profile ids with an expected label (`MUTUAL_MATCH`, `ONE_SIDED`, or `NO_MATCH`).
+
+- **Import**: set `GROUND_TRUTH_IMPORT_ENABLED=true` and place your dataset at
+  `src/main/resources/ground-truth.json` (or replace the placeholder file already there) before
+  starting the app. Format — an array of:
+  ```json
+  [
+    { "profileAId": "<id>", "profileBId": "<id>", "label": "MUTUAL_MATCH" }
+  ]
+  ```
+  `label` accepts `MUTUAL_MATCH`, `ONE_SIDED`, or `NO_MATCH`. Each import **replaces** the
+  previously stored dataset (it's a write-once import target, not an append log). Both referenced
+  profiles must already exist (and, to be scorable, already have embeddings generated) — pairs
+  referencing missing profiles or incomplete embeddings are skipped and logged at DEBUG.
+- **Report**: `GET /api/v1/evaluation/report` scores every stored pair under all three
+  aggregation strategies (reusing the same `CompatibilityScorer` the live recommendation flow
+  uses) and returns the average aggregated score per (label, strategy) combination, plus how many
+  pairs contributed to each label:
+  ```json
+  {
+    "resultsByLabelAndStrategy": {
+      "MUTUAL_MATCH": { "SIMPLE_AVERAGE": 0.81, "SIMPLE_SELF_SIMILARITY": 0.77, "RECIPROCAL_HARMONIC": 0.79 },
+      "ONE_SIDED": { "SIMPLE_AVERAGE": 0.62, "SIMPLE_SELF_SIMILARITY": 0.58, "RECIPROCAL_HARMONIC": 0.31 },
+      "NO_MATCH": { "SIMPLE_AVERAGE": 0.18, "SIMPLE_SELF_SIMILARITY": 0.15, "RECIPROCAL_HARMONIC": 0.09 }
+    },
+    "pairCounts": { "MUTUAL_MATCH": 18, "ONE_SIDED": 17, "NO_MATCH": 10 }
+  }
+  ```
+  (numbers above are illustrative only). The same table is also logged at INFO as a plain-text
+  summary each time the report is generated, so it can be screenshotted for the thesis without a
+  JSON viewer.
 
 ## REST API
 
@@ -92,27 +139,27 @@ on the port interfaces, never on the concrete adapters.
 | `POST` | `/api/v1/profiles/{id}/embeddings` | Generate (cached) embeddings for a profile |
 | `GET` | `/api/v1/profiles/{id}/recommendations?strategy=&topN=` | Top-N recommendations |
 | `POST` | `/api/v1/profiles/{id}/preference-refinements` | Submit a natural-language refinement |
+| `GET` | `/api/v1/evaluation/report` | Ground-truth evaluation report (average score per label x strategy) |
 
 `strategy` accepts `SIMPLE_AVERAGE`, `SIMPLE_SELF_SIMILARITY`, or `RECIPROCAL_HARMONIC` (default).
 
 ## Running locally
 
-### Fastest path: Docker Compose
+### Fastest path: Docker infra + run backend from your IDE
 
 ```bash
-cp .env.example .env   # then edit .env and set GEMINI_API_KEY
-docker compose up --build
+docker compose up -d   # starts MongoDB + optional Mongo Express web UI
 ```
 
-This starts MongoDB, the backend, and an optional MongoDB web UI (http://localhost:8081) with
-zero local Java/Maven install required. Full instructions, all environment variables, and
-troubleshooting: see **[STARTUP.md](STARTUP.md)**.
+Then run/debug `CompatmeApplication` from your IDE with `MONGODB_URI=mongodb://localhost:27017/compatme`
+and `GEMINI_API_KEY=<your key>` set as environment variables. Full instructions (including how to
+run the backend as a container too, if you'd rather): see **[STARTUP.md](STARTUP.md)**.
 
 ### Manual setup
 
 ### Prerequisites
 
-- Java 17+
+- Java 21+ (project builds with `java.version=21`)
 - Maven (or use the bundled `./mvnw`)
 - A MongoDB instance — either local (`docker run -p 27017:27017 mongo:7`) or MongoDB Atlas
 - A Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey)
@@ -134,6 +181,7 @@ troubleshooting: see **[STARTUP.md](STARTUP.md)**.
 | `TELEGRAM_BOT_USERNAME` | only if bot enabled | — | Bot username registered with @BotFather |
 | `TELEGRAM_BACKEND_BASE_URL` | no | `http://localhost:8080` | Base URL the bot uses to call this backend |
 | `SEED_DATA_ENABLED` | no | `false` | Set `true` to seed sample profiles at startup |
+| `GROUND_TRUTH_IMPORT_ENABLED` | no | `false` | Set `true` to (re-)import `ground-truth.json` at startup |
 
 ### Run
 

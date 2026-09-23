@@ -90,12 +90,19 @@ public class ProfileDataLoader implements CommandLineRunner {
             Gender gender,
             List<Gender> seekingGenders,
             String selfDescription,
-            String preferenceDescription) {
+            String preferenceDescription,
+
+            /**
+             * Optional, thesis-evaluation-only metadata: synthetic personality archetype tags.
+             * Purely descriptive — never read by the compatibility scoring/recommendation logic.
+             */
+            List<Integer> archetypeIds) {
 
         CreateOrUpdateProfileCommand toCommand(String existingProfileId) {
             Set<Gender> seeking = seekingGenders == null ? Set.of() : seekingGenders.stream().collect(Collectors.toSet());
             return new CreateOrUpdateProfileCommand(
-                    existingProfileId, telegramUserId, displayName, age, gender, seeking, selfDescription, preferenceDescription);
+                    existingProfileId, telegramUserId, displayName, age, gender, seeking,
+                    selfDescription, preferenceDescription, archetypeIds);
         }
     }
 }

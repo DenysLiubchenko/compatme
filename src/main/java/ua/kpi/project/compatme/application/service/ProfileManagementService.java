@@ -45,7 +45,8 @@ public class ProfileManagementService implements ProfileManagementUseCase {
                     command.preferenceDescription(),
                     ProfileEmbeddings.empty(),
                     now,
-                    now);
+                    now,
+                    command.archetypeIds());
             return profileRepository.save(created);
         }
 
@@ -64,7 +65,8 @@ public class ProfileManagementService implements ProfileManagementUseCase {
                 updated.preferenceDescription(),
                 updated.embeddings(),
                 updated.createdAt(),
-                now);
+                now,
+                command.archetypeIds());
         return profileRepository.save(rebuilt);
     }
 

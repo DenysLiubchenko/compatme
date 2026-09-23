@@ -35,6 +35,7 @@ public class ProfilePersistenceMapper {
         document.setPreferenceEmbedding(toDocument(profile.embeddings().preferenceEmbedding()));
         document.setCreatedAt(profile.createdAt());
         document.setUpdatedAt(profile.updatedAt());
+        document.setArchetypeIds(profile.archetypeIds());
         return document;
     }
 
@@ -55,7 +56,8 @@ public class ProfilePersistenceMapper {
                 document.getPreferenceDescription(),
                 embeddings,
                 document.getCreatedAt(),
-                document.getUpdatedAt());
+                document.getUpdatedAt(),
+                document.getArchetypeIds());
     }
 
     private EmbeddingVectorDocument toDocument(EmbeddingVector vector) {

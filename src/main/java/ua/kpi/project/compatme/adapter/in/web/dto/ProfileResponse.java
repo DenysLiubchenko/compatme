@@ -3,6 +3,7 @@ package ua.kpi.project.compatme.adapter.in.web.dto;
 import ua.kpi.project.compatme.domain.model.Gender;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -21,5 +22,11 @@ public record ProfileResponse(
         boolean hasSelfEmbedding,
         boolean hasPreferenceEmbedding,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+
+        /**
+         * Thesis-evaluation-only metadata: synthetic personality archetype tags. Purely
+         * descriptive — never read by the compatibility scoring/recommendation logic.
+         */
+        List<Integer> archetypeIds) {
 }

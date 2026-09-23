@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -39,6 +40,13 @@ public class ProfileDocument {
 
     private Instant createdAt;
     private Instant updatedAt;
+
+    /**
+     * Thesis-evaluation-only metadata (synthetic archetype tags carried over from the seed
+     * dataset). Purely descriptive — never read by scoring logic. See
+     * {@link ua.kpi.project.compatme.domain.model.Profile#archetypeIds()}.
+     */
+    private List<Integer> archetypeIds;
 
     public ProfileDocument() {
     }
@@ -137,5 +145,13 @@ public class ProfileDocument {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<Integer> getArchetypeIds() {
+        return archetypeIds;
+    }
+
+    public void setArchetypeIds(List<Integer> archetypeIds) {
+        this.archetypeIds = archetypeIds;
     }
 }

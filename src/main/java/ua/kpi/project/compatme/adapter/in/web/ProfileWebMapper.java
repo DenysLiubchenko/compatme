@@ -26,7 +26,8 @@ public class ProfileWebMapper {
                 request.gender(),
                 request.seekingGenders(),
                 request.selfDescription(),
-                request.preferenceDescription());
+                request.preferenceDescription(),
+                request.archetypeIds());
     }
 
     public ProfileResponse toResponse(Profile profile) {
@@ -42,7 +43,8 @@ public class ProfileWebMapper {
                 profile.embeddings().hasSelfEmbedding(),
                 profile.embeddings().hasPreferenceEmbedding(),
                 profile.createdAt(),
-                profile.updatedAt());
+                profile.updatedAt(),
+                profile.archetypeIds());
     }
 
     public RecommendationItem toRecommendationItem(RecommendationResult result) {

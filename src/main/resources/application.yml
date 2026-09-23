@@ -28,6 +28,16 @@ telegram:
 app:
   seed-data:
     enabled: ${SEED_DATA_ENABLED:false}
+  ground-truth:
+    enabled: ${GROUND_TRUTH_IMPORT_ENABLED:false}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
 
 logging:
   level:

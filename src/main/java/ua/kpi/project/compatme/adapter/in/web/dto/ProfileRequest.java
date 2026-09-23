@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import ua.kpi.project.compatme.domain.model.Gender;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -29,5 +30,13 @@ public record ProfileRequest(
         String selfDescription,
 
         @NotBlank(message = "preferenceDescription must not be blank")
-        String preferenceDescription) {
+        String preferenceDescription,
+
+        /**
+         * Optional, thesis-evaluation-only metadata: synthetic personality archetype tags for this
+         * profile. Purely descriptive — never read by the compatibility scoring/recommendation
+         * logic. Provided so evaluation datasets can carry archetype labels through the same API
+         * used for real profiles.
+         */
+        List<Integer> archetypeIds) {
 }

@@ -70,7 +70,7 @@ public class RecommendationService implements RecommendationUseCase {
     }
 
     private boolean mutuallyMatchesGenderPreference(Profile requester, Profile candidate) {
-        return requester.matchesSeekingGender(candidate) && candidate.matchesSeekingGender(requester);
+        return requester.mutuallyMatchesSeekingGender(candidate);
     }
 
     private boolean hasScorableEmbeddings(Profile requester, Profile candidate) {

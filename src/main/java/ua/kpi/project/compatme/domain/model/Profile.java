@@ -4,6 +4,7 @@ import ua.kpi.project.compatme.domain.exception.InvalidProfileDataException;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -32,6 +33,15 @@ public final class Profile {
     private final Instant createdAt;
     private final Instant updatedAt;
 
+    /**
+     * Thesis-evaluation-only metadata: which synthetic personality archetype(s) this profile
+     * blends, tagged in the synthetic dataset generator. Purely descriptive — NEVER read by
+     * {@link ua.kpi.project.compatme.domain.service.CompatibilityScorer}, any
+     * {@link ua.kpi.project.compatme.domain.service.CompatibilityAggregationStrategy}, or the
+     * recommendation candidate-filtering logic. Do not wire this into scoring.
+     */
+    private final List<Integer> archetypeIds;
+
     public Profile(
             ProfileId id,
             String telegramUserId,
@@ -44,6 +54,28 @@ public final class Profile {
             ProfileEmbeddings embeddings,
             Instant createdAt,
             Instant updatedAt) {
+        this(id, telegramUserId, displayName, age, gender, seekingGenders, selfDescription,
+                preferenceDescription, embeddings, createdAt, updatedAt, null);
+    }
+
+    /**
+     * Full constructor, additionally accepting {@code archetypeIds} — thesis-evaluation-only
+     * metadata (see the field Javadoc). The shorter constructor above defaults it to empty and
+     * remains available for all call sites that don't care about archetype tagging.
+     */
+    public Profile(
+            ProfileId id,
+            String telegramUserId,
+            String displayName,
+            Integer age,
+            Gender gender,
+            Set<Gender> seekingGenders,
+            String selfDescription,
+            String preferenceDescription,
+            ProfileEmbeddings embeddings,
+            Instant createdAt,
+            Instant updatedAt,
+            List<Integer> archetypeIds) {
         this.id = Objects.requireNonNull(id, "id must not be null");
         this.telegramUserId = telegramUserId;
         this.displayName = requireNonBlank(displayName, "displayName");
@@ -57,6 +89,9 @@ public final class Profile {
         this.embeddings = embeddings == null ? ProfileEmbeddings.empty() : embeddings;
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
         this.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt must not be null");
+        this.archetypeIds = archetypeIds == null || archetypeIds.isEmpty()
+                ? List.of()
+                : Collections.unmodifiableList(archetypeIds);
     }
 
     private static String requireNonBlank(String value, String fieldName) {
@@ -84,7 +119,7 @@ public final class Profile {
                 ? embeddings.withSelfEmbedding(null)
                 : embeddings;
         return new Profile(id, telegramUserId, displayName, age, gender, seekingGenders,
-                newSelfDescription, preferenceDescription, nextEmbeddings, createdAt, now);
+                newSelfDescription, preferenceDescription, nextEmbeddings, createdAt, now, archetypeIds);
     }
 
     /**
@@ -97,12 +132,12 @@ public final class Profile {
                 ? embeddings.withPreferenceEmbedding(null)
                 : embeddings;
         return new Profile(id, telegramUserId, displayName, age, gender, seekingGenders,
-                selfDescription, newPreferenceDescription, nextEmbeddings, createdAt, now);
+                selfDescription, newPreferenceDescription, nextEmbeddings, createdAt, now, archetypeIds);
     }
 
     public Profile withEmbeddings(ProfileEmbeddings newEmbeddings, Instant now) {
         return new Profile(id, telegramUserId, displayName, age, gender, seekingGenders,
-                selfDescription, preferenceDescription, newEmbeddings, createdAt, now);
+                selfDescription, preferenceDescription, newEmbeddings, createdAt, now, archetypeIds);
     }
 
     /** Hard pre-filter: does this candidate's declared gender fall within what {@code this} is seeking? */
@@ -111,6 +146,16 @@ public final class Profile {
             return true;
         }
         return seekingGenders.contains(candidate.gender);
+    }
+
+    /**
+     * Reciprocal gender-preference check: {@code true} only if each profile's declared gender
+     * falls within the other's {@code seekingGenders} (or the other side has no preference at
+     * all). Handles multi-gender {@code seekingGenders} correctly on either or both sides, since
+     * {@link #matchesSeekingGender(Profile)} is a set-membership check, not an exact-value check.
+     */
+    public boolean mutuallyMatchesSeekingGender(Profile other) {
+        return this.matchesSeekingGender(other) && other.matchesSeekingGender(this);
     }
 
     public ProfileId id() {
@@ -155,5 +200,13 @@ public final class Profile {
 
     public Instant updatedAt() {
         return updatedAt;
+    }
+
+    /**
+     * Thesis-evaluation-only metadata (synthetic archetype tags). Never read by scoring logic —
+     * see the field Javadoc above.
+     */
+    public List<Integer> archetypeIds() {
+        return archetypeIds;
     }
 }
