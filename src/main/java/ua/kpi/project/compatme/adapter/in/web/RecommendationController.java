@@ -10,12 +10,14 @@ import ua.kpi.project.compatme.adapter.in.web.dto.RecommendationsResponse;
 import ua.kpi.project.compatme.application.dto.GetRecommendationsQuery;
 import ua.kpi.project.compatme.application.port.in.RecommendationUseCase;
 import ua.kpi.project.compatme.domain.model.AggregationStrategyType;
+import ua.kpi.project.compatme.domain.model.LocationScope;
 
 /**
  * Inbound REST adapter for retrieving top-N recommendations. The aggregation strategy is
  * selectable via a query parameter (defaulting to the reciprocal harmonic-mean strategy), to
  * support the thesis's A/B comparison between aggregation modes without needing separate
- * endpoints per strategy.
+ * endpoints per strategy. {@code scope} additionally narrows the candidate pool to the
+ * requester's own country/city (defaults to {@code GLOBAL}, i.e. no location filtering).
  */
 @RestController
 @RequestMapping("/api/v1/profiles")
@@ -33,8 +35,9 @@ public class RecommendationController {
     public ResponseEntity<RecommendationsResponse> getRecommendations(
             @PathVariable String profileId,
             @RequestParam(defaultValue = "RECIPROCAL_HARMONIC") AggregationStrategyType strategy,
-            @RequestParam(defaultValue = "10") int topN) {
-        var results = recommendationUseCase.recommend(new GetRecommendationsQuery(profileId, strategy, topN));
+            @RequestParam(defaultValue = "10") int topN,
+            @RequestParam(defaultValue = "GLOBAL") LocationScope scope) {
+        var results = recommendationUseCase.recommend(new GetRecommendationsQuery(profileId, strategy, topN, scope));
         var items = results.stream().map(mapper::toRecommendationItem).toList();
         return ResponseEntity.ok(new RecommendationsResponse(items));
     }

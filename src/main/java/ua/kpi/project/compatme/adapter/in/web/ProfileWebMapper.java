@@ -17,6 +17,13 @@ import ua.kpi.project.compatme.domain.model.Profile;
 @Component
 public class ProfileWebMapper {
 
+    /**
+     * Shown instead of {@code null} in {@link ProfileResponse#telegramUserId()} for profiles that
+     * have no real Telegram account (e.g. imported from sample/evaluation JSON datasets), so API
+     * consumers always see an explicit, readable value rather than an absent/null field.
+     */
+    static final String NO_TELEGRAM_ID_PLACEHOLDER = "N/A (no Telegram account, sample/evaluation profile)";
+
     public CreateOrUpdateProfileCommand toCommand(String profileId, ProfileRequest request) {
         return new CreateOrUpdateProfileCommand(
                 profileId,
@@ -27,13 +34,17 @@ public class ProfileWebMapper {
                 request.seekingGenders(),
                 request.selfDescription(),
                 request.preferenceDescription(),
-                request.archetypeIds());
+                request.archetypeIds(),
+                request.country(),
+                request.city(),
+                request.photoUrl(),
+                request.photoFileIds());
     }
 
     public ProfileResponse toResponse(Profile profile) {
         return new ProfileResponse(
                 profile.id().value(),
-                profile.telegramUserId(),
+                profile.telegramUserId() == null ? NO_TELEGRAM_ID_PLACEHOLDER : profile.telegramUserId(),
                 profile.displayName(),
                 profile.age(),
                 profile.gender(),
@@ -44,7 +55,11 @@ public class ProfileWebMapper {
                 profile.embeddings().hasPreferenceEmbedding(),
                 profile.createdAt(),
                 profile.updatedAt(),
-                profile.archetypeIds());
+                profile.archetypeIds(),
+                profile.country(),
+                profile.city(),
+                profile.photoUrl(),
+                profile.photoFileIds());
     }
 
     public RecommendationItem toRecommendationItem(RecommendationResult result) {
@@ -53,6 +68,12 @@ public class ProfileWebMapper {
                 candidate.id().value(),
                 candidate.displayName(),
                 candidate.age(),
+                candidate.photoUrl(),
+                candidate.photoFileIds(),
+                candidate.country(),
+                candidate.city(),
+                candidate.selfDescription(),
+                candidate.preferenceDescription(),
                 result.match().directionalScores().scoreAtoB(),
                 result.match().directionalScores().scoreBtoA(),
                 result.match().directionalScores().selfSelfSimilarity(),

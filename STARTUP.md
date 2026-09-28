@@ -41,7 +41,8 @@ launch the IDE from):
 | `TELEGRAM_BOT_ENABLED` | No | `false` (default) | Set `true` to run the Telegram bot in-process alongside the backend. |
 | `TELEGRAM_BOT_TOKEN` | Only if bot enabled | — | Must set if `TELEGRAM_BOT_ENABLED=true`. |
 | `TELEGRAM_BOT_USERNAME` | Only if bot enabled | — | Must set if `TELEGRAM_BOT_ENABLED=true`. |
-| `SEED_DATA_ENABLED` | No | `false` (default) | Set `true` to seed ~6 sample Ukrainian profiles + embeddings on startup. |
+| `SEED_DATA_ENABLED` | No | `false` (default) | Set `true` to seed ~6 sample English-language profiles + embeddings on startup. |
+| `GROUND_TRUTH_IMPORT_ENABLED` | No | `false` (default) | Set `true` to (re-)import `ground-truth.json` on startup. |
 | `SERVER_PORT` | No | `8080` (default) | Local port the backend listens on. |
 
 **IntelliJ IDEA**: Run/Debug Configurations → your `CompatmeApplication` config → Environment

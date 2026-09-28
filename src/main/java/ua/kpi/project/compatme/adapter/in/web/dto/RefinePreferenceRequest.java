@@ -3,10 +3,11 @@ package ua.kpi.project.compatme.adapter.in.web.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import ua.kpi.project.compatme.domain.model.AggregationStrategyType;
+import ua.kpi.project.compatme.domain.model.LocationScope;
 
 /**
  * Inbound request DTO for submitting a natural-language preference refinement message (e.g.
- * Ukrainian: "хочу когось спокійнішого"). {@code strategy} and {@code topN} control the
+ * "I want someone calmer"). {@code strategy}, {@code topN}, and {@code scope} control the
  * recommendation re-ranking returned alongside the refinement.
  */
 public record RefinePreferenceRequest(
@@ -16,7 +17,9 @@ public record RefinePreferenceRequest(
         AggregationStrategyType strategy,
 
         @Positive(message = "topN must be positive")
-        Integer topN) {
+        Integer topN,
+
+        LocationScope scope) {
 
     public AggregationStrategyType strategyOrDefault() {
         return strategy != null ? strategy : AggregationStrategyType.RECIPROCAL_HARMONIC;
@@ -24,5 +27,9 @@ public record RefinePreferenceRequest(
 
     public int topNOrDefault() {
         return topN != null ? topN : 10;
+    }
+
+    public LocationScope scopeOrDefault() {
+        return scope != null ? scope : LocationScope.GLOBAL;
     }
 }

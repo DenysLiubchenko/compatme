@@ -6,17 +6,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import ua.kpi.project.compatme.application.dto.CreateOrUpdateProfileCommand;
-import ua.kpi.project.compatme.application.exception.ProfileNotFoundException;
 import ua.kpi.project.compatme.application.port.in.GenerateEmbeddingsUseCase;
 import ua.kpi.project.compatme.application.port.in.ProfileManagementUseCase;
 import ua.kpi.project.compatme.domain.model.Gender;
 import ua.kpi.project.compatme.domain.model.Profile;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -25,15 +27,24 @@ import java.util.stream.Collectors;
  * non-trivial candidate pool to score against immediately.
  *
  * <p>Gated behind {@code app.seed-data.enabled=true} so this never runs unintentionally against a
- * production-like environment. Idempotent by {@code telegramUserId}: re-running against an
- * already-seeded database just updates the existing profiles (and the embedding cache correctly
- * skips recomputation for unchanged text).
+ * production-like environment.
+ *
+ * <p>Sample profiles deliberately have no real {@code telegramUserId} — the dataset generator
+ * cannot practically create a real Telegram account per synthetic profile. Idempotency across
+ * re-runs is instead achieved via each entry's required {@code sampleKey}: a stable, human-chosen
+ * string (e.g. {@code "seed-001"}) deterministically hashed into a {@link ua.kpi.project.compatme.domain.model.ProfileId}
+ * (see {@link #deterministicProfileId}), so re-running this loader against an already-seeded
+ * database updates the same profiles instead of duplicating them — without needing a Telegram
+ * lookup at all.
  */
 @Component
 @ConditionalOnProperty(prefix = "app.seed-data", name = "enabled", havingValue = "true")
 public class ProfileDataLoader implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(ProfileDataLoader.class);
+
+    /** Namespaced so these deterministic ids can never collide with a randomly-generated {@code ProfileId}. */
+    private static final String SAMPLE_ID_NAMESPACE = "compatme-sample-profile:";
 
     private final ProfileManagementUseCase profileManagementUseCase;
     private final GenerateEmbeddingsUseCase generateEmbeddingsUseCase;
@@ -44,7 +55,7 @@ public class ProfileDataLoader implements CommandLineRunner {
             ProfileManagementUseCase profileManagementUseCase,
             GenerateEmbeddingsUseCase generateEmbeddingsUseCase,
             ObjectMapper objectMapper,
-            org.springframework.core.io.ResourceLoader resourceLoader) {
+            ResourceLoader resourceLoader) {
         this.profileManagementUseCase = profileManagementUseCase;
         this.generateEmbeddingsUseCase = generateEmbeddingsUseCase;
         this.objectMapper = objectMapper;
@@ -66,25 +77,38 @@ public class ProfileDataLoader implements CommandLineRunner {
 
         log.info("Seeding {} sample profiles...", sampleProfiles.size());
         for (SampleProfile sample : sampleProfiles) {
-            String existingId = findExistingProfileId(sample.telegramUserId());
-            Profile profile = profileManagementUseCase.createOrUpdateProfile(sample.toCommand(existingId));
+            String deterministicId = deterministicProfileId(sample.sampleKey());
+            Profile profile = profileManagementUseCase.createOrUpdateProfile(sample.toCommand(deterministicId));
             generateEmbeddingsUseCase.generateEmbeddings(profile.id());
         }
         log.info("Sample profile seeding complete.");
     }
 
-    /** Looks up an existing profile by {@code telegramUserId} so re-seeding updates rather than duplicates. */
-    private String findExistingProfileId(String telegramUserId) {
-        try {
-            return profileManagementUseCase.getByTelegramUserId(telegramUserId).id().value();
-        } catch (ProfileNotFoundException e) {
-            return null;
-        }
+    /**
+     * Deterministically derives a stable {@code ProfileId} string from a sample dataset's
+     * {@code sampleKey}, so re-seeding is idempotent without any database lookup. Uses
+     * {@link UUID#nameUUIDFromBytes} (MD5-based, type-3 UUID) — deterministic for a given input,
+     * unlike {@link UUID#randomUUID()}.
+     */
+    static String deterministicProfileId(String sampleKey) {
+        return UUID.nameUUIDFromBytes((SAMPLE_ID_NAMESPACE + sampleKey).getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     /** Deserialization target for entries in {@code sample-profiles.json}. */
     private record SampleProfile(
+            /**
+             * Required, stable key used only to derive this profile's deterministic id (see
+             * {@link #deterministicProfileId}) — never stored or exposed anywhere else.
+             */
+            String sampleKey,
+
+            /**
+             * Optional: sample profiles have no real Telegram account, so this is expected to be
+             * {@code null} here. Left in the schema so the same JSON shape also documents what a
+             * real bot-created profile would carry.
+             */
             String telegramUserId,
+
             String displayName,
             Integer age,
             Gender gender,
@@ -96,13 +120,26 @@ public class ProfileDataLoader implements CommandLineRunner {
              * Optional, thesis-evaluation-only metadata: synthetic personality archetype tags.
              * Purely descriptive — never read by the compatibility scoring/recommendation logic.
              */
-            List<Integer> archetypeIds) {
+            List<Integer> archetypeIds,
 
-        CreateOrUpdateProfileCommand toCommand(String existingProfileId) {
+            /** Optional free-text country, used only by the location-scope recommendation filter. */
+            String country,
+
+            /** Optional free-text city, used only by the location-scope recommendation filter. */
+            String city,
+
+            /**
+             * Optional photo URL — only the URL is stored, never image bytes. Must start with
+             * {@code http://} or {@code https://} when present (enforced by the domain
+             * {@code Profile} constructor).
+             */
+            String photoUrl) {
+
+        CreateOrUpdateProfileCommand toCommand(String deterministicProfileId) {
             Set<Gender> seeking = seekingGenders == null ? Set.of() : seekingGenders.stream().collect(Collectors.toSet());
             return new CreateOrUpdateProfileCommand(
-                    existingProfileId, telegramUserId, displayName, age, gender, seeking,
-                    selfDescription, preferenceDescription, archetypeIds);
+                    deterministicProfileId, telegramUserId, displayName, age, gender, seeking,
+                    selfDescription, preferenceDescription, archetypeIds, country, city, photoUrl, null);
         }
     }
 }

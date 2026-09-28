@@ -4,11 +4,14 @@ spring:
   data:
     mongodb:
       uri: ${MONGODB_URI:mongodb://localhost:27017/compatme}
+      # Without this, Spring Data MongoDB silently ignores @Indexed annotations (e.g. the unique
+      # index on ProfileDocument.telegramUserId) — they'd never actually be created in MongoDB.
+      auto-index-creation: true
   jackson:
     default-property-inclusion: non_null
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8082}
 
 gemini:
   api-key: ${GEMINI_API_KEY:}
@@ -23,7 +26,12 @@ telegram:
   enabled: ${TELEGRAM_BOT_ENABLED:false}
   bot-token: ${TELEGRAM_BOT_TOKEN:}
   bot-username: ${TELEGRAM_BOT_USERNAME:}
-  backend-base-url: ${TELEGRAM_BACKEND_BASE_URL:http://localhost:8080}
+  backend-base-url: ${TELEGRAM_BACKEND_BASE_URL:http://localhost:8082}
+
+nominatim:
+  base-url: ${NOMINATIM_BASE_URL:https://nominatim.openstreetmap.org}
+  user-agent: ${NOMINATIM_USER_AGENT:CompatMe-Thesis-Project/1.0 (university thesis, non-commercial)}
+  min-request-interval-millis: ${NOMINATIM_MIN_REQUEST_INTERVAL_MILLIS:1100}
 
 app:
   seed-data:

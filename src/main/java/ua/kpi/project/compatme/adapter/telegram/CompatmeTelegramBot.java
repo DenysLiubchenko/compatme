@@ -1,16 +1,11 @@
 package ua.kpi.project.compatme.adapter.telegram;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
+import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
 
 /**
  * Thin Telegram bot client. Deliberately contains no domain/business logic — every user action is
@@ -18,26 +13,26 @@ import java.util.stream.Collectors;
  * the requirement that the bot interface be a separate client layer, not embedded in
  * domain/service logic.
  *
- * <p>Minimal conversational flow for this thesis prototype:
- * <ul>
- *   <li>{@code /start <selfDescription> | <preferenceDescription>} — creates/updates the profile</li>
- *   <li>{@code /recommend} — fetches top-5 recommendations under the reciprocal strategy</li>
- *   <li>any other free-text message — treated as a natural-language preference refinement</li>
- * </ul>
+ * <p>This class only unpacks the raw Telegram {@link Update} (text message, location message, or
+ * inline-keyboard callback query) and delegates to {@link ConversationFlowHandler}, which drives
+ * the actual button-based onboarding conversation and settings/deletion sub-flow. Keeping that
+ * logic in a separate, plain class (constructed with primitive-typed handler methods) is what
+ * lets the conversation state machine be unit-tested without a real Telegram connection.
  */
 public class CompatmeTelegramBot extends TelegramLongPollingBot {
 
-    private static final Logger log = LoggerFactory.getLogger(CompatmeTelegramBot.class);
-    private static final int DEFAULT_TOP_N = 5;
-    private static final String DEFAULT_STRATEGY = "RECIPROCAL_HARMONIC";
-
     private final String botUsername;
-    private final BackendApiClient backendApiClient;
+    private final ConversationFlowHandler flowHandler;
 
-    public CompatmeTelegramBot(String botToken, String botUsername, BackendApiClient backendApiClient) {
+    public CompatmeTelegramBot(
+            String botToken,
+            String botUsername,
+            BackendApiClient backendApiClient,
+            ReverseGeocodingPort reverseGeocodingPort,
+            ConversationStateStore stateStore) {
         super(botToken);
         this.botUsername = botUsername;
-        this.backendApiClient = backendApiClient;
+        this.flowHandler = new ConversationFlowHandler(this, backendApiClient, reverseGeocodingPort, stateStore);
     }
 
     @Override
@@ -47,69 +42,54 @@ public class CompatmeTelegramBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (!update.hasMessage() || !update.getMessage().hasText()) {
+        if (update.hasCallbackQuery()) {
+            handleCallbackQuery(update.getCallbackQuery());
             return;
         }
+        if (!update.hasMessage()) {
+            return;
+        }
+
         Message message = update.getMessage();
-        String chatId = String.valueOf(message.getChatId());
-        String text = message.getText().trim();
+        long chatId = message.getChatId();
+        String telegramUserId = String.valueOf(chatId);
 
-        try {
-            if (text.startsWith("/start")) {
-                handleStart(chatId, message, text);
-            } else if (text.startsWith("/recommend")) {
-                handleRecommend(chatId);
-            } else {
-                handleRefinement(chatId, text);
-            }
-        } catch (Exception e) {
-            log.warn("Failed to handle Telegram update for chat {}: {}", chatId, e.getMessage());
-            reply(chatId, "Виникла помилка під час обробки запиту. Спробуйте пізніше.");
-        }
-    }
-
-    private void handleStart(String chatId, Message message, String text) {
-        String[] parts = text.replaceFirst("^/start\\s*", "").split("\\|", 2);
-        if (parts.length < 2 || parts[0].isBlank() || parts[1].isBlank()) {
-            reply(chatId, "Будь ласка, надішліть: /start <опис себе> | <опис бажаного партнера>");
+        if (message.hasLocation()) {
+            flowHandler.onLocationMessage(chatId, telegramUserId, message.getLocation().getLatitude(), message.getLocation().getLongitude());
             return;
         }
-        String displayName = message.getFrom() != null && message.getFrom().getFirstName() != null
-                ? message.getFrom().getFirstName()
-                : "Користувач";
-        backendApiClient.createOrUpdateProfile(chatId, displayName, parts[0].trim(), parts[1].trim());
-        reply(chatId, "Профіль створено/оновлено! Напишіть /recommend, щоб отримати рекомендації.");
-    }
-
-    private void handleRecommend(String chatId) {
-        List<Map<String, Object>> recommendations = backendApiClient.getRecommendations(chatId, DEFAULT_STRATEGY, DEFAULT_TOP_N);
-        reply(chatId, formatRecommendations(recommendations));
-    }
-
-    private void handleRefinement(String chatId, String text) {
-        Map<String, Object> result = backendApiClient.refinePreference(chatId, text, DEFAULT_STRATEGY, DEFAULT_TOP_N);
-        StringBuilder response = new StringBuilder();
-        response.append("Оновлено: ").append(result.getOrDefault("changeSummary", "")).append("\n\n");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> recommendations = (List<Map<String, Object>>) result.getOrDefault("recommendations", List.of());
-        response.append(formatRecommendations(recommendations));
-        reply(chatId, response.toString());
-    }
-
-    private String formatRecommendations(List<Map<String, Object>> recommendations) {
-        if (recommendations.isEmpty()) {
-            return "Наразі немає рекомендацій.";
+        if (message.hasPhoto()) {
+            flowHandler.onPhotoMessage(chatId, telegramUserId, highestResolutionFileId(message));
+            return;
         }
-        return recommendations.stream()
-                .map(r -> "• %s (score: %.2f)".formatted(r.get("displayName"), ((Number) r.get("aggregatedScore")).doubleValue()))
-                .collect(Collectors.joining("\n"));
+        if (!message.hasText()) {
+            return;
+        }
+
+        String text = message.getText().trim();
+        if (text.startsWith("/start")) {
+            flowHandler.onStartCommand(chatId, telegramUserId);
+        } else if (text.startsWith("/settings")) {
+            flowHandler.onSettingsCommand(chatId, telegramUserId);
+        } else if (text.startsWith("/menu")) {
+            flowHandler.onMenuCommand(chatId, telegramUserId);
+        } else {
+            flowHandler.onTextMessage(chatId, telegramUserId, text);
+        }
     }
 
-    private void reply(String chatId, String text) {
-        try {
-            execute(SendMessage.builder().chatId(chatId).text(text).build());
-        } catch (TelegramApiException e) {
-            log.warn("Failed to send Telegram reply to chat {}: {}", chatId, e.getMessage());
-        }
+    /** Telegram sends each photo as several {@code PhotoSize}s; picks the highest-resolution one to store. */
+    private String highestResolutionFileId(Message message) {
+        return message.getPhoto().stream()
+                .max(java.util.Comparator.comparingInt(p -> p.getWidth() * p.getHeight()))
+                .map(org.telegram.telegrambots.meta.api.objects.PhotoSize::getFileId)
+                .orElse(null);
+    }
+
+    private void handleCallbackQuery(CallbackQuery callbackQuery) {
+        long chatId = callbackQuery.getMessage().getChatId();
+        String telegramUserId = String.valueOf(chatId);
+        Integer messageId = callbackQuery.getMessage().getMessageId();
+        flowHandler.onCallbackQuery(chatId, telegramUserId, messageId, callbackQuery.getId(), callbackQuery.getData());
     }
 }

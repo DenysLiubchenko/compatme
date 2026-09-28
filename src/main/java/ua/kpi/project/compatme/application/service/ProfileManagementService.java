@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import ua.kpi.project.compatme.application.dto.CreateOrUpdateProfileCommand;
 import ua.kpi.project.compatme.application.exception.ProfileNotFoundException;
 import ua.kpi.project.compatme.application.port.in.ProfileManagementUseCase;
+import ua.kpi.project.compatme.application.port.out.LikeRepositoryPort;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileEmbeddings;
@@ -20,17 +21,17 @@ import java.util.List;
 public class ProfileManagementService implements ProfileManagementUseCase {
 
     private final ProfileRepositoryPort profileRepository;
+    private final LikeRepositoryPort likeRepository;
 
-    public ProfileManagementService(ProfileRepositoryPort profileRepository) {
+    public ProfileManagementService(ProfileRepositoryPort profileRepository, LikeRepositoryPort likeRepository) {
         this.profileRepository = profileRepository;
+        this.likeRepository = likeRepository;
     }
 
     @Override
     public Profile createOrUpdateProfile(CreateOrUpdateProfileCommand command) {
         Instant now = Instant.now();
-        Profile existing = command.profileId() == null
-                ? null
-                : profileRepository.findById(ProfileId.of(command.profileId())).orElse(null);
+        Profile existing = findExisting(command);
 
         if (existing == null) {
             ProfileId id = command.profileId() != null ? ProfileId.of(command.profileId()) : ProfileId.generate();
@@ -46,7 +47,11 @@ public class ProfileManagementService implements ProfileManagementUseCase {
                     ProfileEmbeddings.empty(),
                     now,
                     now,
-                    command.archetypeIds());
+                    command.archetypeIds(),
+                    command.country(),
+                    command.city(),
+                    command.photoUrl(),
+                    command.photoFileIds());
             return profileRepository.save(created);
         }
 
@@ -66,8 +71,32 @@ public class ProfileManagementService implements ProfileManagementUseCase {
                 updated.embeddings(),
                 updated.createdAt(),
                 now,
-                command.archetypeIds());
+                command.archetypeIds(),
+                command.country(),
+                command.city(),
+                command.photoUrl(),
+                command.photoFileIds());
         return profileRepository.save(rebuilt);
+    }
+
+    /**
+     * Resolves the profile to update, if any. Looks up by {@code command.profileId()} first
+     * (explicit id, e.g. from {@code PUT /api/v1/profiles/{id}} or the seed loader's deterministic
+     * ids); if that's absent but {@code telegramUserId} is present, falls back to looking up by
+     * {@code telegramUserId} instead. This second lookup is what makes repeated
+     * {@code POST /api/v1/profiles} calls for the same Telegram user (e.g. the bot's onboarding
+     * flow re-run via {@code /start}) idempotent updates rather than duplicate documents — which
+     * would otherwise violate {@code telegramUserId}'s unique index and, before that index existed,
+     * silently broke {@code findByTelegramUserId} by creating a non-unique result.
+     */
+    private Profile findExisting(CreateOrUpdateProfileCommand command) {
+        if (command.profileId() != null) {
+            return profileRepository.findById(ProfileId.of(command.profileId())).orElse(null);
+        }
+        if (command.telegramUserId() != null && !command.telegramUserId().isBlank()) {
+            return profileRepository.findByTelegramUserId(command.telegramUserId()).orElse(null);
+        }
+        return null;
     }
 
     @Override
@@ -91,6 +120,9 @@ public class ProfileManagementService implements ProfileManagementUseCase {
         if (!profileRepository.existsById(id)) {
             throw new ProfileNotFoundException(id.value());
         }
+        // Cascades likes on both sides (liker and liked) — orphaned like records referencing a
+        // deleted profile would otherwise linger forever and pollute "Who Liked Me" for others.
+        likeRepository.deleteAllInvolvingProfile(id);
         profileRepository.deleteById(id);
     }
 }

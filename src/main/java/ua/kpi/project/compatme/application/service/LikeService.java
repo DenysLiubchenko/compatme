@@ -1,0 +1,51 @@
+package ua.kpi.project.compatme.application.service;
+
+import org.springframework.stereotype.Service;
+import ua.kpi.project.compatme.application.dto.RecordLikeResult;
+import ua.kpi.project.compatme.application.port.in.GetProfilesWhoLikedMeUseCase;
+import ua.kpi.project.compatme.application.port.in.RecordLikeUseCase;
+import ua.kpi.project.compatme.application.port.out.LikeRepositoryPort;
+import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
+import ua.kpi.project.compatme.domain.model.Like;
+import ua.kpi.project.compatme.domain.model.Profile;
+import ua.kpi.project.compatme.domain.model.ProfileId;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Implements the "like" concept — an explicit user action recorded independently of
+ * {@code CompatibilityScorer}/aggregation strategies (see {@link Like}'s Javadoc). Orchestrates
+ * {@link LikeRepositoryPort} and {@link ProfileRepositoryPort}; contains no MongoDB-specific
+ * logic.
+ */
+@Service
+public class LikeService implements RecordLikeUseCase, GetProfilesWhoLikedMeUseCase {
+
+    private final LikeRepositoryPort likeRepository;
+    private final ProfileRepositoryPort profileRepository;
+
+    public LikeService(LikeRepositoryPort likeRepository, ProfileRepositoryPort profileRepository) {
+        this.likeRepository = likeRepository;
+        this.profileRepository = profileRepository;
+    }
+
+    @Override
+    public RecordLikeResult recordLike(ProfileId likerId, ProfileId likedId) {
+        if (!likeRepository.existsByLikerAndLiked(likerId, likedId)) {
+            likeRepository.save(new Like(likerId, likedId, Instant.now()));
+        }
+        boolean mutualMatch = likeRepository.existsByLikerAndLiked(likedId, likerId);
+        return new RecordLikeResult(mutualMatch);
+    }
+
+    @Override
+    public List<Profile> getProfilesWhoLikedMe(ProfileId profileId) {
+        return likeRepository.findByLikedProfileId(profileId).stream()
+                .map(like -> profileRepository.findById(like.likerProfileId()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
+    }
+}

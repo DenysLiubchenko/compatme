@@ -36,6 +36,10 @@ public class ProfilePersistenceMapper {
         document.setCreatedAt(profile.createdAt());
         document.setUpdatedAt(profile.updatedAt());
         document.setArchetypeIds(profile.archetypeIds());
+        document.setCountry(profile.country());
+        document.setCity(profile.city());
+        document.setPhotoUrl(profile.photoUrl());
+        document.setPhotoFileIds(profile.photoFileIds());
         return document;
     }
 
@@ -57,7 +61,11 @@ public class ProfilePersistenceMapper {
                 embeddings,
                 document.getCreatedAt(),
                 document.getUpdatedAt(),
-                document.getArchetypeIds());
+                document.getArchetypeIds(),
+                document.getCountry(),
+                document.getCity(),
+                document.getPhotoUrl(),
+                document.getPhotoFileIds());
     }
 
     private EmbeddingVectorDocument toDocument(EmbeddingVector vector) {

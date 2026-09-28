@@ -48,6 +48,16 @@ public class ProfileDocument {
      */
     private List<Integer> archetypeIds;
 
+    /** Optional free-text location fields, used only by the location-scope recommendation filter. */
+    private String country;
+    private String city;
+
+    /** Optional photo URL. Only the URL is stored — never image bytes. */
+    private String photoUrl;
+
+    /** Telegram {@code file_id} references for uploaded photos. Presentation-only — see {@code Profile#photoFileIds()}. */
+    private List<String> photoFileIds;
+
     public ProfileDocument() {
     }
 
@@ -153,5 +163,37 @@ public class ProfileDocument {
 
     public void setArchetypeIds(List<Integer> archetypeIds) {
         this.archetypeIds = archetypeIds;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
+
+    public List<String> getPhotoFileIds() {
+        return photoFileIds;
+    }
+
+    public void setPhotoFileIds(List<String> photoFileIds) {
+        this.photoFileIds = photoFileIds;
     }
 }

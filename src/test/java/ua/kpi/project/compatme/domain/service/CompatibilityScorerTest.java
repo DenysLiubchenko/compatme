@@ -29,8 +29,8 @@ class CompatibilityScorerTest {
     void score_computesDirectionalScoresAndAppliesSelectedStrategy() {
         // GIVEN: A's preference vector matches B's self vector well ([1,0]),
         // and B's preference vector matches A's self vector well too ([0,1] vs [0,1])
-        Profile a = profileWith("Марія", embedding(new float[]{0f, 1f}), embedding(new float[]{1f, 0f}));
-        Profile b = profileWith("Олена", embedding(new float[]{1f, 0f}), embedding(new float[]{0f, 1f}));
+        Profile a = profileWith("Maria", embedding(new float[]{0f, 1f}), embedding(new float[]{1f, 0f}));
+        Profile b = profileWith("Olena", embedding(new float[]{1f, 0f}), embedding(new float[]{0f, 1f}));
 
         // WHEN
         CandidateMatch match = scorer.score(a, b, AggregationStrategyType.RECIPROCAL_HARMONIC);
@@ -45,8 +45,8 @@ class CompatibilityScorerTest {
     @Test
     void score_throwsIllegalStateException_whenEmbeddingsAreMissing() {
         // GIVEN
-        Profile withoutEmbeddings = profileWithoutEmbeddings("Тарас");
-        Profile withEmbeddings = profileWith("Олена", embedding(new float[]{1f, 0f}), embedding(new float[]{0f, 1f}));
+        Profile withoutEmbeddings = profileWithoutEmbeddings("Taras");
+        Profile withEmbeddings = profileWith("Olena", embedding(new float[]{1f, 0f}), embedding(new float[]{0f, 1f}));
 
         // WHEN / THEN
         assertThatThrownBy(() -> scorer.score(withoutEmbeddings, withEmbeddings, AggregationStrategyType.SIMPLE_AVERAGE))

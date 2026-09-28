@@ -9,6 +9,7 @@ import ua.kpi.project.compatme.application.exception.ProfileNotFoundException;
 import ua.kpi.project.compatme.application.port.in.RecommendationUseCase;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
 import ua.kpi.project.compatme.domain.model.CandidateMatch;
+import ua.kpi.project.compatme.domain.model.LocationScope;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileId;
 import ua.kpi.project.compatme.domain.service.CompatibilityScorer;
@@ -19,11 +20,12 @@ import java.util.List;
 /**
  * Application service implementing top-N recommendation retrieval.
  *
- * <p>Flow: (1) apply cheap hard filters (age range, mutual gender/seeking-gender match) via the
- * {@link ProfileRepositoryPort}, narrowing the candidate pool before any NLP scoring runs; then
- * (2) for candidates with complete cached embeddings, delegate to the framework-agnostic
- * {@link CompatibilityScorer} for the actual NLP-based directional compatibility scoring; then
- * (3) sort descending by aggregated score and return the top N.
+ * <p>Flow: (1) apply cheap hard filters (age range, mutual gender/seeking-gender match, and
+ * location scope) via the {@link ProfileRepositoryPort}/in-memory filters, narrowing the
+ * candidate pool before any NLP scoring runs; then (2) for candidates with complete cached
+ * embeddings, delegate to the framework-agnostic {@link CompatibilityScorer} for the actual
+ * NLP-based directional compatibility scoring; then (3) sort descending by aggregated score and
+ * return the top N.
  *
  * <p>For the dataset sizes expected in this thesis prototype (hundreds to low thousands of
  * profiles), scoring candidates in-memory in Java is sufficient and avoids the operational
@@ -59,6 +61,7 @@ public class RecommendationService implements RecommendationUseCase {
 
         return candidates.stream()
                 .filter(candidate -> mutuallyMatchesGenderPreference(requester, candidate))
+                .filter(candidate -> matchesLocationScope(requester, candidate, query.locationScope()))
                 .filter(candidate -> hasScorableEmbeddings(requester, candidate))
                 .map(candidate -> {
                     CandidateMatch match = compatibilityScorer.score(requester, candidate, query.strategy());
@@ -71,6 +74,10 @@ public class RecommendationService implements RecommendationUseCase {
 
     private boolean mutuallyMatchesGenderPreference(Profile requester, Profile candidate) {
         return requester.mutuallyMatchesSeekingGender(candidate);
+    }
+
+    private boolean matchesLocationScope(Profile requester, Profile candidate, LocationScope scope) {
+        return requester.matchesLocationScope(candidate, scope);
     }
 
     private boolean hasScorableEmbeddings(Profile requester, Profile candidate) {

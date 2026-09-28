@@ -91,7 +91,7 @@ public class PreferenceRefinementService implements PreferenceRefinementUseCase 
         log.info("Preference refined for profile {}: {}", requesterId, interpretation.changeSummary());
 
         List<RecommendationResult> recommendations = recommendationUseCase.recommend(
-                new GetRecommendationsQuery(command.requesterId(), command.strategy(), command.topN()));
+                new GetRecommendationsQuery(command.requesterId(), command.strategy(), command.topN(), command.locationScope()));
 
         return new RefinePreferenceResult(
                 interpretation.updatedPreferenceDescription(), interpretation.changeSummary(), recommendations);

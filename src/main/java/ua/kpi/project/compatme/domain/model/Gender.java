@@ -7,5 +7,6 @@ package ua.kpi.project.compatme.domain.model;
 public enum Gender {
     MALE,
     FEMALE,
+    NON_BINARY,
     OTHER
 }

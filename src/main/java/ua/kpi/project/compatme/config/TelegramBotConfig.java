@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ua.kpi.project.compatme.adapter.telegram.BackendApiClient;
 import ua.kpi.project.compatme.adapter.telegram.CompatmeTelegramBot;
+import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
+import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -27,9 +29,15 @@ public class TelegramBotConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "telegram", name = "enabled", havingValue = "true")
-    public CompatmeTelegramBot compatmeTelegramBot(TelegramBotProperties properties, BackendApiClient backendApiClient)
+    public CompatmeTelegramBot compatmeTelegramBot(
+            TelegramBotProperties properties,
+            BackendApiClient backendApiClient,
+            ReverseGeocodingPort reverseGeocodingPort,
+            ConversationStateStore conversationStateStore)
             throws TelegramApiException {
-        CompatmeTelegramBot bot = new CompatmeTelegramBot(properties.getBotToken(), properties.getBotUsername(), backendApiClient);
+        CompatmeTelegramBot bot = new CompatmeTelegramBot(
+                properties.getBotToken(), properties.getBotUsername(), backendApiClient,
+                reverseGeocodingPort, conversationStateStore);
         TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
         botsApi.registerBot(bot);
         return bot;

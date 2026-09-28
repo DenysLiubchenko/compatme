@@ -11,6 +11,14 @@ import java.util.Set;
  *
  * @param archetypeIds thesis-evaluation-only metadata (synthetic archetype tags); never read by
  *     scoring logic — see {@link ua.kpi.project.compatme.domain.model.Profile#archetypeIds()}.
+ * @param country optional free-text country, used only by the location-scope recommendation
+ *     filter (see {@link ua.kpi.project.compatme.domain.model.LocationScope}).
+ * @param city optional free-text city, used only by the location-scope recommendation filter.
+ * @param photoUrl optional photo URL; must start with {@code http://} or {@code https://} when
+ *     present (enforced by the domain {@code Profile} constructor).
+ * @param photoFileIds Telegram {@code file_id} references for up to 5 uploaded photos;
+ *     presentation-only, never read by scoring logic — see
+ *     {@link ua.kpi.project.compatme.domain.model.Profile#photoFileIds()}.
  */
 public record CreateOrUpdateProfileCommand(
         String profileId,
@@ -21,5 +29,9 @@ public record CreateOrUpdateProfileCommand(
         Set<Gender> seekingGenders,
         String selfDescription,
         String preferenceDescription,
-        List<Integer> archetypeIds) {
+        List<Integer> archetypeIds,
+        String country,
+        String city,
+        String photoUrl,
+        List<String> photoFileIds) {
 }

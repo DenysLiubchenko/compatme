@@ -1,7 +1,332 @@
 [
   {
-    "profileAId": "REPLACE_WITH_PROFILE_A_ID",
-    "profileBId": "REPLACE_WITH_PROFILE_B_ID",
+    "profileAId": "5137e9b1-378b-341a-bc4e-c4a825e15cdf",
+    "profileBId": "b7df593e-62ee-3090-845e-b55e920f9a8f",
     "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "12f489f4-f5dd-390c-843c-db5ddb766c78",
+    "profileBId": "e445c5f3-2ed5-37ed-8ef4-e4228b0cdf80",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "5137e9b1-378b-341a-bc4e-c4a825e15cdf",
+    "profileBId": "7c337e4d-484d-3584-9ef1-25848901955c",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "81d90a4a-b3ac-366b-bee4-40bbc1bb347b",
+    "profileBId": "12af4611-325c-3aa5-b8c2-75008ea29fed",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "4490b1cb-06f1-3b7a-b0e1-1c2231ab9bec",
+    "profileBId": "8417e52a-b061-3bc1-ab3a-ea6c00e765f8",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "83a32b1d-9424-35c6-a025-55fdf36d63c8",
+    "profileBId": "c2ba7aa4-a413-3e38-928e-c8d16d871c6f",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "6e42eff6-41ad-338a-b118-3fdb4696bc19",
+    "profileBId": "de4c4486-051e-30ba-8215-572d6f826f73",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "eba8f1cc-6edf-31ef-9ca7-a95d06e600f1",
+    "profileBId": "8aaccccd-70a4-3a9e-90ae-f2f1ea29e0fa",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "950f9d0e-53e4-3c1b-b7e9-a3e5947c84e9",
+    "profileBId": "47553429-f115-31f4-8fc8-c52ab963bed2",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "12560d19-b992-330f-b4f3-56623b569cf7",
+    "profileBId": "bd86031d-4714-315f-9f06-7093c9a02199",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "63574431-422a-3551-acb4-df536b58dc76",
+    "profileBId": "0e8be83e-a101-34db-9069-5899e9157068",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "d09f39f0-2f4d-33fc-afab-153bc68f21fc",
+    "profileBId": "8a5cb203-2d24-3497-b4e3-b14fb58393d5",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "d4063e3a-85a7-3901-8e5c-44c5cf4a61bd",
+    "profileBId": "9583e730-70ef-3d95-92c5-85b5cccaeef8",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "55b00933-073a-39c5-a5b1-a3cf0c3bcd39",
+    "profileBId": "106577b9-b5e4-3bdd-b80e-02407bd33470",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "444aeb36-053f-3df2-a027-52b4e42f2468",
+    "profileBId": "cbc46fcb-ac2a-3b01-83b3-7535dc346bb9",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "d6babd30-be3d-3db5-8838-2bf4fe8fd247",
+    "profileBId": "d004fe80-692f-38c6-8828-29ec4ae80f45",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "8f459eac-7597-3598-85e4-58ccb9691453",
+    "profileBId": "dc247930-8689-3953-95de-798beba0a61c",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "a66d889a-c9a9-3dad-b057-9c46012c6b12",
+    "profileBId": "c9b85349-79b5-389e-992c-ba2faab15a77",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "c554873c-7dea-32b5-a9bb-94cf74c8110b",
+    "profileBId": "6a9e98ba-e4aa-325d-af18-1adaeb0ccd6a",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "4d5dc129-5bd8-381b-93bd-2e582f04e55c",
+    "profileBId": "b9aaf276-0bfe-38d8-9605-7d23dc020c2f",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "344936f6-063e-34b4-9446-fbb4c2e6e812",
+    "profileBId": "d59a8880-1db7-3eaf-a6d3-5b5b31512a24",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "0ec10119-c59b-3ccd-8cf5-4c2356b486b4",
+    "profileBId": "2df89b98-03cc-34d3-9daa-6ccdc6d1ba94",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "b57a47be-bdff-3111-b1b7-9310bc7ecd5e",
+    "profileBId": "17e8d257-e298-30b1-b269-142ea652aa12",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "184477de-b1da-301a-9776-3b66855c6eed",
+    "profileBId": "aece0c49-a25b-3ca1-899c-b4e8a4085cc6",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "796eeb0d-d1f7-3953-b993-f90cd7577e66",
+    "profileBId": "e70ed01b-d0a5-3cf4-8ff1-5d6d8b120325",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "64e8df2b-f8d9-337a-9555-7fd3c1fc2e73",
+    "profileBId": "a97a49f2-e433-3081-b447-55e4978ea603",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "c078a7a6-15e6-3733-9926-8c5e4b221c6c",
+    "profileBId": "c10c1bb2-59d9-3cd4-a9a7-27d737c9084e",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "382d0121-9108-3d38-9e58-68f6298ea291",
+    "profileBId": "c6905628-4a6d-337f-97d3-2c7d05d76a06",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "bc07141e-cc4a-33cf-bffc-16fbec7d54df",
+    "profileBId": "d82859f5-d667-329a-bf4a-4152550f0781",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "98f40009-5be0-33a2-a522-82cd87807303",
+    "profileBId": "aa1235f3-c9e4-30d4-abc0-40315bd56ec3",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "992204db-e3b1-3f9f-a588-c2551bc18a6e",
+    "profileBId": "5cacc43e-132b-3d1a-aaea-8fea4290d902",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "e976b2f4-789c-349d-be89-7aa27ab87ef2",
+    "profileBId": "feb1dc86-6d21-3f19-98af-b3e2e76ca4d0",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "e24774e2-2bac-375a-9a13-ea244fd0d133",
+    "profileBId": "1ce928c4-fab3-326e-8674-c339baabfcac",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "e50d3f41-244d-3712-957d-feb5447bc00d",
+    "profileBId": "77da5745-ad1b-36c7-b0e8-b70821497a65",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "4104aec7-efbc-3044-bed8-c2cfac5c9a84",
+    "profileBId": "5f280049-1ef1-3dae-a09b-8dd592161042",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "f56d83af-9357-3567-bece-36cd74502ea8",
+    "profileBId": "16a92391-ac92-3285-b33d-944e5f840ed0",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "0d1faca8-19b3-3763-9d26-c223eb42245b",
+    "profileBId": "0e559ad9-a231-30e2-b3a8-343eb4fd3292",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "69cf27dd-7ce5-37ab-acc3-19353a4d48ee",
+    "profileBId": "e81240ec-a3bc-3bbc-81d0-5e2e88c55ac0",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "ceaa8ef1-c077-334f-8992-e411499fc6cb",
+    "profileBId": "22fa9530-8968-3cf1-ae21-9f46466ee032",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "1ca89db8-a966-3fdc-b0ec-97e8ec7aed69",
+    "profileBId": "8e71da3e-ee30-31e4-9cb8-39626c67624e",
+    "label": "MUTUAL_MATCH"
+  },
+  {
+    "profileAId": "64e8df2b-f8d9-337a-9555-7fd3c1fc2e73",
+    "profileBId": "d004fe80-692f-38c6-8828-29ec4ae80f45",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "ad73d119-fbcc-3ed1-b196-5be1231447f1",
+    "profileBId": "bb7e0e6a-0930-3e94-bcb3-e5fa906a7422",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "8a5cb203-2d24-3497-b4e3-b14fb58393d5",
+    "profileBId": "7c822867-ac5c-3a15-ae11-510f1d6c28b3",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "3a2497bf-5565-33ea-a264-b4e299326eed",
+    "profileBId": "7d5128b7-c7da-30bc-ba55-a34747d5d56b",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "3942b14b-c25b-3a0e-90b0-4b057761db08",
+    "profileBId": "f8bffbd1-c7b7-3ec9-97c1-34afd0a9a50e",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "fce1a5a1-322d-3ea7-892d-396af9549df9",
+    "profileBId": "5ab0d7b8-4d95-39ef-9e6c-16ca3b1db2eb",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "0b566ead-d7e9-3cff-b017-bbb4ffa31809",
+    "profileBId": "bb7e0e6a-0930-3e94-bcb3-e5fa906a7422",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "70bb4c6c-05e8-34d4-98c2-1dd646d84522",
+    "profileBId": "dae6d89b-89f2-3c5d-abfa-3982bc34db3c",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "e81240ec-a3bc-3bbc-81d0-5e2e88c55ac0",
+    "profileBId": "2ad3b064-ec7b-32c1-9cbb-1796a6f22f32",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "89699d0d-3cab-33fa-ab69-ecbe2c4b3608",
+    "profileBId": "8aaccccd-70a4-3a9e-90ae-f2f1ea29e0fa",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "2d4be8e3-7443-3277-a79c-d1cc57a3bcdf",
+    "profileBId": "08999d91-ae56-39d6-a75a-63c6f841b079",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "22885f38-3107-3332-b7d6-ec00dd490b42",
+    "profileBId": "b133a4b4-bd83-3831-bf29-1b66cfdc15ce",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "b3d7268b-0563-3418-a5a2-50daf0b6ed54",
+    "profileBId": "b9c988c6-e96b-38e0-8b5e-8e2708bf2aeb",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "e5b0e452-19d4-3418-81d0-9914f8950ded",
+    "profileBId": "432b3612-3a4b-3839-8956-e044daf3f297",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "4b883237-7bcb-33c7-9c4d-0fa5a318f0f0",
+    "profileBId": "106577b9-b5e4-3bdd-b80e-02407bd33470",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "1065f406-8402-3c8f-836b-97253ace03aa",
+    "profileBId": "17e8d257-e298-30b1-b269-142ea652aa12",
+    "label": "ONE_SIDED"
+  },
+  {
+    "profileAId": "7d5128b7-c7da-30bc-ba55-a34747d5d56b",
+    "profileBId": "64e8df2b-f8d9-337a-9555-7fd3c1fc2e73",
+    "label": "NO_MATCH"
+  },
+  {
+    "profileAId": "186bf53c-9175-3583-8370-bdbbbe2037a5",
+    "profileBId": "f8bffbd1-c7b7-3ec9-97c1-34afd0a9a50e",
+    "label": "NO_MATCH"
+  },
+  {
+    "profileAId": "08227cd1-7efe-3e88-a190-07b1f73f9e4d",
+    "profileBId": "d004fe80-692f-38c6-8828-29ec4ae80f45",
+    "label": "NO_MATCH"
+  },
+  {
+    "profileAId": "34b42b1c-e02d-3971-89aa-ebf01054134e",
+    "profileBId": "a6d32821-045f-3634-939c-33479e8d544b",
+    "label": "NO_MATCH"
+  },
+  {
+    "profileAId": "0b566ead-d7e9-3cff-b017-bbb4ffa31809",
+    "profileBId": "0ca50b9e-dcbf-3aff-a408-e6d86d37d28c",
+    "label": "NO_MATCH"
+  },
+  {
+    "profileAId": "829ba6df-ea76-30fc-adca-b3a02f32ffb5",
+    "profileBId": "544692d9-24b3-3bb7-a713-c04879fe7e57",
+    "label": "NO_MATCH"
+  },
+  {
+    "profileAId": "70bb4c6c-05e8-34d4-98c2-1dd646d84522",
+    "profileBId": "feb1dc86-6d21-3f19-98af-b3e2e76ca4d0",
+    "label": "NO_MATCH"
+  },
+  {
+    "profileAId": "abd03fe2-174a-3977-b78e-6bb82f7d1902",
+    "profileBId": "c0cad65f-bd73-39b5-8d46-7719294e784e",
+    "label": "NO_MATCH"
+  },
+  {
+    "profileAId": "17117916-4ac6-3453-bf7b-932bb395bbf0",
+    "profileBId": "d4063e3a-85a7-3901-8e5c-44c5cf4a61bd",
+    "label": "NO_MATCH"
+  },
+  {
+    "profileAId": "db5d5f08-c18b-3905-87dd-ee9032b627b4",
+    "profileBId": "d82859f5-d667-329a-bf4a-4152550f0781",
+    "label": "NO_MATCH"
   }
 ]
