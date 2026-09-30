@@ -1,6 +1,8 @@
 package ua.kpi.project.compatme.application.dto;
 
 import ua.kpi.project.compatme.domain.model.Gender;
+import ua.kpi.project.compatme.domain.model.Orientation;
+import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
 
 import java.util.List;
 import java.util.Set;
@@ -16,9 +18,6 @@ import java.util.Set;
  * @param city optional free-text city, used only by the location-scope recommendation filter.
  * @param photoUrl optional photo URL; must start with {@code http://} or {@code https://} when
  *     present (enforced by the domain {@code Profile} constructor).
- * @param photoFileIds Telegram {@code file_id} references for up to 5 uploaded photos;
- *     presentation-only, never read by scoring logic — see
- *     {@link ua.kpi.project.compatme.domain.model.Profile#photoFileIds()}.
  */
 public record CreateOrUpdateProfileCommand(
         String profileId,
@@ -26,6 +25,7 @@ public record CreateOrUpdateProfileCommand(
         String displayName,
         Integer age,
         Gender gender,
+        Orientation orientation,
         Set<Gender> seekingGenders,
         String selfDescription,
         String preferenceDescription,
@@ -33,5 +33,6 @@ public record CreateOrUpdateProfileCommand(
         String country,
         String city,
         String photoUrl,
-        List<String> photoFileIds) {
+        OptionalProfileFields optionalFields,
+        List<String> photoUrns) {
 }

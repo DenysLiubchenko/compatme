@@ -49,6 +49,7 @@ public class ConversationStateStore {
         document.setName(state.name());
         document.setAge(state.age());
         document.setGender(state.gender());
+        document.setOrientation(state.orientation());
         document.setSeekingGenders(new ArrayList<>(state.seekingGenders()));
         document.setCountry(state.country());
         document.setCity(state.city());
@@ -56,8 +57,9 @@ public class ConversationStateStore {
         document.setPendingCity(state.pendingCity());
         document.setSelfDescription(state.selfDescription());
         document.setPreferenceDescription(state.preferenceDescription());
+        document.setOptionalFields(state.optionalFields());
         document.setReturnToReview(state.isReturnToReview());
-        document.setPhotoFileIds(new ArrayList<>(state.photoFileIds()));
+        document.setPhotoUrns(new ArrayList<>(state.photoUrns()));
         return document;
     }
 
@@ -67,6 +69,7 @@ public class ConversationStateStore {
         state.setName(document.getName());
         state.setAge(document.getAge());
         state.setGender(document.getGender());
+        state.setOrientation(document.getOrientation());
         if (document.getSeekingGenders() != null) {
             state.seekingGenders().addAll(new LinkedHashSet<>(document.getSeekingGenders()));
         }
@@ -76,9 +79,10 @@ public class ConversationStateStore {
         state.setPendingCity(document.getPendingCity());
         state.setSelfDescription(document.getSelfDescription());
         state.setPreferenceDescription(document.getPreferenceDescription());
+        state.setOptionalFields(document.getOptionalFields());
         state.setReturnToReview(document.isReturnToReview());
-        if (document.getPhotoFileIds() != null) {
-            state.photoFileIds().addAll(document.getPhotoFileIds());
+        if (document.getPhotoUrns() != null) {
+            state.photoUrns().addAll(document.getPhotoUrns());
         }
         return state;
     }

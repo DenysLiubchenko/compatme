@@ -1,9 +1,14 @@
 package ua.kpi.project.compatme.adapter.telegram;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
 import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
 
@@ -18,8 +23,15 @@ import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
  * the actual button-based onboarding conversation and settings/deletion sub-flow. Keeping that
  * logic in a separate, plain class (constructed with primitive-typed handler methods) is what
  * lets the conversation state machine be unit-tested without a real Telegram connection.
+ *
+ * <p>Also performs a minimal identity check — Telegram's own {@code User.isBot()} flag — and
+ * rejects any update whose sender is itself a bot account, before it ever reaches
+ * {@link ConversationFlowHandler}. This is a cheap, always-available signal (no external
+ * verification service needed) against automated/bot accounts creating profiles.
  */
 public class CompatmeTelegramBot extends TelegramLongPollingBot {
+
+    private static final Logger log = LoggerFactory.getLogger(CompatmeTelegramBot.class);
 
     private final String botUsername;
     private final ConversationFlowHandler flowHandler;
@@ -43,7 +55,12 @@ public class CompatmeTelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasCallbackQuery()) {
-            handleCallbackQuery(update.getCallbackQuery());
+            CallbackQuery callbackQuery = update.getCallbackQuery();
+            if (isBotAccount(callbackQuery.getFrom())) {
+                log.warn("Ignoring callback query from bot account {}", callbackQuery.getFrom().getId());
+                return;
+            }
+            handleCallbackQuery(callbackQuery);
             return;
         }
         if (!update.hasMessage()) {
@@ -54,12 +71,14 @@ public class CompatmeTelegramBot extends TelegramLongPollingBot {
         long chatId = message.getChatId();
         String telegramUserId = String.valueOf(chatId);
 
-        if (message.hasLocation()) {
-            flowHandler.onLocationMessage(chatId, telegramUserId, message.getLocation().getLatitude(), message.getLocation().getLongitude());
+        if (isBotAccount(message.getFrom())) {
+            log.warn("Rejecting update from bot account {}", telegramUserId);
+            rejectBotAccount(chatId);
             return;
         }
-        if (message.hasPhoto()) {
-            flowHandler.onPhotoMessage(chatId, telegramUserId, highestResolutionFileId(message));
+
+        if (message.hasLocation()) {
+            flowHandler.onLocationMessage(chatId, telegramUserId, message.getLocation().getLatitude(), message.getLocation().getLongitude());
             return;
         }
         if (!message.hasText()) {
@@ -78,12 +97,20 @@ public class CompatmeTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    /** Telegram sends each photo as several {@code PhotoSize}s; picks the highest-resolution one to store. */
-    private String highestResolutionFileId(Message message) {
-        return message.getPhoto().stream()
-                .max(java.util.Comparator.comparingInt(p -> p.getWidth() * p.getHeight()))
-                .map(org.telegram.telegrambots.meta.api.objects.PhotoSize::getFileId)
-                .orElse(null);
+    /** Telegram's own {@code User.isBot()} flag — {@code null}-safe since {@code from} can theoretically be absent. */
+    private boolean isBotAccount(User from) {
+        return from != null && Boolean.TRUE.equals(from.getIsBot());
+    }
+
+    private void rejectBotAccount(long chatId) {
+        try {
+            execute(SendMessage.builder()
+                    .chatId(chatId)
+                    .text("Sorry, bot accounts can't create CompatMe profiles.")
+                    .build());
+        } catch (TelegramApiException e) {
+            log.warn("Failed to send bot-account rejection message: {}", e.getMessage());
+        }
     }
 
     private void handleCallbackQuery(CallbackQuery callbackQuery) {

@@ -8,6 +8,11 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
+import ua.kpi.project.compatme.domain.model.DrinkingFrequency;
+import ua.kpi.project.compatme.domain.model.DrugUseFrequency;
+import ua.kpi.project.compatme.domain.model.Orientation;
+import ua.kpi.project.compatme.domain.model.RelationshipStatus;
+import ua.kpi.project.compatme.domain.model.SmokingStatus;
 
 /**
  * MongoDB document for the {@code profiles} collection. This class — and the rest of
@@ -28,6 +33,9 @@ public class ProfileDocument {
     private String displayName;
     private Integer age;
     private String gender;
+    private Orientation orientation;
+    private String country;
+    private String city;
 
     @Field("seekingGenders")
     private Set<String> seekingGenders;
@@ -48,15 +56,27 @@ public class ProfileDocument {
      */
     private List<Integer> archetypeIds;
 
-    /** Optional free-text location fields, used only by the location-scope recommendation filter. */
-    private String country;
-    private String city;
-
     /** Optional photo URL. Only the URL is stored — never image bytes. */
     private String photoUrl;
 
-    /** Telegram {@code file_id} references for uploaded photos. Presentation-only — see {@code Profile#photoFileIds()}. */
-    private List<String> photoFileIds;
+    private RelationshipStatus status;
+    private String bodyType;
+    private String diet;
+    private DrinkingFrequency drinks;
+    private DrugUseFrequency drugs;
+    private String education;
+    private List<String> ethnicity;
+    private Double height;
+    private Integer income;
+    private String job;
+    private Instant lastOnline;
+    private String offspring;
+    private String pets;
+    private String religion;
+    private String sign;
+    private SmokingStatus smokes;
+    private List<String> speaks;
+    private List<String> photoUrns;
 
     public ProfileDocument() {
     }
@@ -100,6 +120,13 @@ public class ProfileDocument {
     public void setGender(String gender) {
         this.gender = gender;
     }
+
+    public Orientation getOrientation() { return orientation; }
+    public void setOrientation(Orientation orientation) { this.orientation = orientation; }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
 
     public Set<String> getSeekingGenders() {
         return seekingGenders;
@@ -165,22 +192,6 @@ public class ProfileDocument {
         this.archetypeIds = archetypeIds;
     }
 
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
     public String getPhotoUrl() {
         return photoUrl;
     }
@@ -189,11 +200,40 @@ public class ProfileDocument {
         this.photoUrl = photoUrl;
     }
 
-    public List<String> getPhotoFileIds() {
-        return photoFileIds;
-    }
-
-    public void setPhotoFileIds(List<String> photoFileIds) {
-        this.photoFileIds = photoFileIds;
-    }
+    public RelationshipStatus getStatus() { return status; }
+    public void setStatus(RelationshipStatus status) { this.status = status; }
+    public String getBodyType() { return bodyType; }
+    public void setBodyType(String bodyType) { this.bodyType = bodyType; }
+    public String getDiet() { return diet; }
+    public void setDiet(String diet) { this.diet = diet; }
+    public DrinkingFrequency getDrinks() { return drinks; }
+    public void setDrinks(DrinkingFrequency drinks) { this.drinks = drinks; }
+    public DrugUseFrequency getDrugs() { return drugs; }
+    public void setDrugs(DrugUseFrequency drugs) { this.drugs = drugs; }
+    public String getEducation() { return education; }
+    public void setEducation(String education) { this.education = education; }
+    public List<String> getEthnicity() { return ethnicity; }
+    public void setEthnicity(List<String> ethnicity) { this.ethnicity = ethnicity; }
+    public Double getHeight() { return height; }
+    public void setHeight(Double height) { this.height = height; }
+    public Integer getIncome() { return income; }
+    public void setIncome(Integer income) { this.income = income; }
+    public String getJob() { return job; }
+    public void setJob(String job) { this.job = job; }
+    public Instant getLastOnline() { return lastOnline; }
+    public void setLastOnline(Instant lastOnline) { this.lastOnline = lastOnline; }
+    public String getOffspring() { return offspring; }
+    public void setOffspring(String offspring) { this.offspring = offspring; }
+    public String getPets() { return pets; }
+    public void setPets(String pets) { this.pets = pets; }
+    public String getReligion() { return religion; }
+    public void setReligion(String religion) { this.religion = religion; }
+    public String getSign() { return sign; }
+    public void setSign(String sign) { this.sign = sign; }
+    public SmokingStatus getSmokes() { return smokes; }
+    public void setSmokes(SmokingStatus smokes) { this.smokes = smokes; }
+    public List<String> getSpeaks() { return speaks; }
+    public void setSpeaks(List<String> speaks) { this.speaks = speaks; }
+    public List<String> getPhotoUrns() { return photoUrns; }
+    public void setPhotoUrns(List<String> photoUrns) { this.photoUrns = photoUrns; }
 }

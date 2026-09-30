@@ -6,9 +6,11 @@ import ua.kpi.project.compatme.application.exception.ProfileNotFoundException;
 import ua.kpi.project.compatme.application.port.in.ProfileManagementUseCase;
 import ua.kpi.project.compatme.application.port.out.LikeRepositoryPort;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
+import ua.kpi.project.compatme.application.port.out.ProfileAttributeExtractionPort;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileEmbeddings;
 import ua.kpi.project.compatme.domain.model.ProfileId;
+import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,36 +24,30 @@ public class ProfileManagementService implements ProfileManagementUseCase {
 
     private final ProfileRepositoryPort profileRepository;
     private final LikeRepositoryPort likeRepository;
+    private final ProfileAttributeExtractionPort attributeExtraction;
 
-    public ProfileManagementService(ProfileRepositoryPort profileRepository, LikeRepositoryPort likeRepository) {
+    public ProfileManagementService(ProfileRepositoryPort profileRepository, LikeRepositoryPort likeRepository,
+                                    ProfileAttributeExtractionPort attributeExtraction) {
         this.profileRepository = profileRepository;
         this.likeRepository = likeRepository;
+        this.attributeExtraction = attributeExtraction;
     }
 
     @Override
     public Profile createOrUpdateProfile(CreateOrUpdateProfileCommand command) {
         Instant now = Instant.now();
+        var optionalFields = command.optionalFields() == null
+                ? attributeExtraction.extract(command.selfDescription(), command.preferenceDescription())
+                : command.optionalFields();
+        command = new CreateOrUpdateProfileCommand(command.profileId(), command.telegramUserId(), command.displayName(),
+                command.age(), command.gender(), command.orientation(), command.seekingGenders(), command.selfDescription(),
+                command.preferenceDescription(), command.archetypeIds(), command.country(), command.city(), command.photoUrl(),
+                optionalFields, command.photoUrns());
         Profile existing = findExisting(command);
 
         if (existing == null) {
             ProfileId id = command.profileId() != null ? ProfileId.of(command.profileId()) : ProfileId.generate();
-            Profile created = new Profile(
-                    id,
-                    command.telegramUserId(),
-                    command.displayName(),
-                    command.age(),
-                    command.gender(),
-                    command.seekingGenders(),
-                    command.selfDescription(),
-                    command.preferenceDescription(),
-                    ProfileEmbeddings.empty(),
-                    now,
-                    now,
-                    command.archetypeIds(),
-                    command.country(),
-                    command.city(),
-                    command.photoUrl(),
-                    command.photoFileIds());
+            Profile created = toProfileBuilder(command, id, now, now, ProfileEmbeddings.empty()).build();
             return profileRepository.save(created);
         }
 
@@ -59,24 +55,31 @@ public class ProfileManagementService implements ProfileManagementUseCase {
         Profile updated = existing
                 .withSelfDescription(command.selfDescription(), now)
                 .withPreferenceDescription(command.preferenceDescription(), now);
-        Profile rebuilt = new Profile(
-                updated.id(),
-                command.telegramUserId(),
-                command.displayName(),
-                command.age(),
-                command.gender(),
-                command.seekingGenders(),
-                updated.selfDescription(),
-                updated.preferenceDescription(),
-                updated.embeddings(),
-                updated.createdAt(),
-                now,
-                command.archetypeIds(),
-                command.country(),
-                command.city(),
-                command.photoUrl(),
-                command.photoFileIds());
+        Profile rebuilt = toProfileBuilder(command, updated.id(), updated.createdAt(), now, updated.embeddings())
+                .selfDescription(updated.selfDescription())
+                .preferenceDescription(updated.preferenceDescription())
+                .build();
         return profileRepository.save(rebuilt);
+    }
+
+    private Profile.Builder toProfileBuilder(
+            CreateOrUpdateProfileCommand command, ProfileId id, Instant createdAt, Instant updatedAt,
+            ProfileEmbeddings embeddings) {
+        OptionalProfileFields fields = command.optionalFields() == null
+                ? OptionalProfileFields.empty() : command.optionalFields();
+        return Profile.builder()
+                .id(id).telegramUserId(command.telegramUserId()).displayName(command.displayName())
+                .age(command.age()).gender(command.gender()).orientation(command.orientation())
+                .country(command.country()).city(command.city()).seekingGenders(command.seekingGenders())
+                .selfDescription(command.selfDescription()).preferenceDescription(command.preferenceDescription())
+                .embeddings(embeddings).createdAt(createdAt).updatedAt(updatedAt)
+                .archetypeIds(command.archetypeIds()).photoUrl(command.photoUrl())
+                .status(fields.status()).bodyType(fields.bodyType())
+                .diet(fields.diet()).drinks(fields.drinks()).drugs(fields.drugs()).education(fields.education())
+                .ethnicity(fields.ethnicity()).height(fields.height()).income(fields.income()).job(fields.job())
+                .lastOnline(fields.lastOnline()).offspring(fields.offspring()).pets(fields.pets())
+                .religion(fields.religion()).sign(fields.sign()).smokes(fields.smokes()).speaks(fields.speaks())
+                .photoUrns(command.photoUrns());
     }
 
     /**

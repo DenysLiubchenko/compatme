@@ -79,18 +79,26 @@ class RecommendationServiceTest {
 
     private static Profile profileWith(String name, int age, EmbeddingVector selfEmbedding, EmbeddingVector prefEmbedding) {
         Instant now = Instant.now();
-        return new Profile(
-                ProfileId.generate(), null, name, age, Gender.OTHER, Set.of(),
-                "self description", "preference description",
-                new ProfileEmbeddings(selfEmbedding, prefEmbedding), now, now);
+        boolean requester = name.equals("requester");
+        Gender gender = requester ? Gender.MALE : Gender.FEMALE;
+        Set<Gender> seeking = requester ? Set.of(Gender.FEMALE) : Set.of(Gender.MALE);
+        return Profile.builder().id(ProfileId.generate()).displayName(name).age(age).gender(gender)
+                .orientation(ua.kpi.project.compatme.domain.model.Orientation.STRAIGHT)
+                .country("United States").city("New York").seekingGenders(seeking)
+                .selfDescription("self description").preferenceDescription("preference description")
+                .embeddings(new ProfileEmbeddings(selfEmbedding, prefEmbedding)).createdAt(now).updatedAt(now).build();
     }
 
     private static Profile profileWithoutEmbeddings(String name, int age) {
         Instant now = Instant.now();
-        return new Profile(
-                ProfileId.generate(), null, name, age, Gender.OTHER, Set.of(),
-                "self description", "preference description",
-                ProfileEmbeddings.empty(), now, now);
+        boolean requester = name.equals("requester");
+        Gender gender = requester ? Gender.MALE : Gender.FEMALE;
+        Set<Gender> seeking = requester ? Set.of(Gender.FEMALE) : Set.of(Gender.MALE);
+        return Profile.builder().id(ProfileId.generate()).displayName(name).age(age).gender(gender)
+                .orientation(ua.kpi.project.compatme.domain.model.Orientation.STRAIGHT)
+                .country("United States").city("New York").seekingGenders(seeking)
+                .selfDescription("self description").preferenceDescription("preference description")
+                .embeddings(ProfileEmbeddings.empty()).createdAt(now).updatedAt(now).build();
     }
 
     private static EmbeddingVector embedding(float[] values) {

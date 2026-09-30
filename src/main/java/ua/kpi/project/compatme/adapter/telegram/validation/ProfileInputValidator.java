@@ -15,6 +15,7 @@ public final class ProfileInputValidator {
     private static final int MAX_LOCATION_LENGTH = 100;
     private static final int MIN_DESCRIPTION_LENGTH = 10;
     private static final int MAX_DESCRIPTION_LENGTH = 2000;
+    private static final int MAX_PHOTO_URL_LENGTH = 2048;
 
     private ProfileInputValidator() {
     }
@@ -60,5 +61,11 @@ public final class ProfileInputValidator {
     public static boolean isValidDescription(String text) {
         String trimmed = text == null ? "" : text.trim();
         return trimmed.length() >= MIN_DESCRIPTION_LENGTH && trimmed.length() <= MAX_DESCRIPTION_LENGTH;
+    }
+
+    /** Validates a photo reference as a bounded HTTP(S) URL; the URL is stored but never fetched. */
+    public static boolean isValidPhotoUrl(String text) {
+        String value = text == null ? "" : text.trim();
+        return value.length() <= MAX_PHOTO_URL_LENGTH && value.matches("(?i)^https?://\\S+$");
     }
 }

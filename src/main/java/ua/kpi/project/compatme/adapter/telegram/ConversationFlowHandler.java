@@ -4,13 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
-import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
@@ -26,6 +22,7 @@ import ua.kpi.project.compatme.adapter.telegram.validation.ProfileInputValidator
 import ua.kpi.project.compatme.application.exception.ReverseGeocodingException;
 import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
 import ua.kpi.project.compatme.domain.model.LocationResult;
+import ua.kpi.project.compatme.domain.model.Orientation;
 
 import java.io.Serializable;
 import java.util.ArrayDeque;
@@ -156,6 +153,7 @@ public class ConversationFlowHandler {
             case LOCATION_MANUAL_CITY -> handleManualCityInput(chatId, state, text);
             case SELF_DESCRIPTION -> handleSelfDescriptionInput(chatId, state, text);
             case PREFERENCE_DESCRIPTION -> handlePreferenceDescriptionInput(chatId, state, text);
+            case PHOTOS -> handlePhotoUrlInput(chatId, state, text);
             case DONE -> handlePostOnboardingFreeText(chatId, telegramUserId, text);
             default -> send(SendMessage.builder().chatId(chatId)
                     .text("Please use the buttons above, or send /start to begin.")
@@ -204,6 +202,7 @@ public class ConversationFlowHandler {
                 case "review:edit_name" -> { ackSilently(callbackQueryId); jumpToEdit(chatId, messageId, state, ConversationStep.NAME); }
                 case "review:edit_age" -> { ackSilently(callbackQueryId); jumpToEdit(chatId, messageId, state, ConversationStep.AGE); }
                 case "review:edit_gender" -> { ackSilently(callbackQueryId); jumpToEditGender(chatId, messageId, state); }
+                case "review:edit_orientation" -> { ackSilently(callbackQueryId); jumpToEditOrientation(chatId, messageId, state); }
                 case "review:edit_location" -> { ackSilently(callbackQueryId); jumpToEditLocation(chatId, messageId, state); }
                 case "review:edit_desc" -> { ackSilently(callbackQueryId); jumpToEdit(chatId, messageId, state, ConversationStep.SELF_DESCRIPTION); }
                 case "review:edit_photos" -> { ackSilently(callbackQueryId); jumpToEditPhotos(chatId, messageId, state); }
@@ -272,10 +271,10 @@ public class ConversationFlowHandler {
         send(SendMessage.builder().chatId(chatId).text("How old are you? (18-99)").build());
     }
 
-    // ─────────────────────────────── step 3: gender ───────────────────────────────
+    // ─────────────────────────────── step 3: sex and orientation ───────────────────────────────
 
     private void promptGender(long chatId) {
-        sendNew(chatId, "What's your gender?", genderKeyboard());
+        sendNew(chatId, "What is your sex?", genderKeyboard());
     }
 
     private InlineKeyboardMarkup genderKeyboard() {
@@ -284,6 +283,18 @@ public class ConversationFlowHandler {
                         button("Male", "gender:MALE"),
                         button("Female", "gender:FEMALE"),
                         button("Non-binary", "gender:NON_BINARY")))
+                .keyboardRow(List.of(button("⬅️ Back", "back")))
+                .build();
+    }
+
+    private void promptOrientation(long chatId) {
+        sendNew(chatId, "What is your orientation?", orientationKeyboard());
+    }
+
+    private InlineKeyboardMarkup orientationKeyboard() {
+        return InlineKeyboardMarkup.builder()
+                .keyboardRow(List.of(button("Straight", "orientation:STRAIGHT"), button("Gay", "orientation:GAY")))
+                .keyboardRow(List.of(button("Bisexual", "orientation:BISEXUAL"), button("Other", "orientation:OTHER")))
                 .keyboardRow(List.of(button("⬅️ Back", "back")))
                 .build();
     }
@@ -309,7 +320,10 @@ public class ConversationFlowHandler {
 
     private void handleDynamicOrGenderOrSeekingCallback(
             long chatId, Integer messageId, String callbackQueryId, ConversationState state, String callbackData) {
-        if (callbackData.startsWith("gender:")) {
+        if (callbackData.startsWith("orientation:")) {
+            ackSilently(callbackQueryId);
+            handleOrientationChoice(chatId, messageId, state, callbackData.substring("orientation:".length()));
+        } else if (callbackData.startsWith("gender:")) {
             ackSilently(callbackQueryId);
             handleGenderChoice(chatId, messageId, state, callbackData.substring("gender:".length()));
         } else if (callbackData.startsWith("seek:")) {
@@ -352,6 +366,15 @@ public class ConversationFlowHandler {
                 .text("Looking for: " + joinHumanized(state.seekingGenders()) + " ✅")
                 .build());
         advanceAfter(chatId, state, ConversationStep.SEEKING_GENDERS);
+    }
+
+    private void handleOrientationChoice(long chatId, Integer messageId, ConversationState state, String value) {
+        state.setOrientation(value);
+        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
+                .text("Orientation: " + humanize(value) + " ✅").build());
+        state.setStep(ConversationStep.SEEKING_GENDERS);
+        stateStore.save(state);
+        promptSeekingGenders(chatId, state);
     }
 
     // ─────────────────────────────── step 5: location ───────────────────────────────
@@ -417,6 +440,11 @@ public class ConversationFlowHandler {
         }
         state.setPendingCity(text.trim());
         state.confirmPendingLocation();
+        if (state.isReturnToReview()) {
+            state.setReturnToReview(false);
+            showReview(chatId, state);
+            return;
+        }
         advanceAfter(chatId, state, ConversationStep.LOCATION_MANUAL_CITY);
     }
 
@@ -430,6 +458,14 @@ public class ConversationFlowHandler {
 
     private void handleLocationConfirmYes(long chatId, Integer messageId, ConversationState state) {
         state.confirmPendingLocation();
+        if (state.city() == null || state.city().isBlank() || state.country() == null || state.country().isBlank()) {
+            state.setStep(ConversationStep.LOCATION_MANUAL_COUNTRY);
+            stateStore.save(state);
+            send(SendMessage.builder().chatId(chatId)
+                    .text("We couldn't identify both city and country. Please enter them manually.").build());
+            promptManualCountry(chatId);
+            return;
+        }
         send(EditMessageText.builder().chatId(chatId).messageId(messageId)
                 .text("📍 Location confirmed: " + state.city() + ", " + state.country())
                 .build());
@@ -445,17 +481,24 @@ public class ConversationFlowHandler {
         promptManualCountry(chatId);
     }
 
-    // ─────────────────────────────── steps 6-7: descriptions ───────────────────────────────
+    // ─────────────────────────────── descriptions ───────────────────────────────
 
     private void promptSelfDescription(long chatId) {
         send(SendMessage.builder().chatId(chatId)
-                .text("Tell us about yourself (a few sentences).")
+                .text("About me: tell us about your personality, lifestyle, interests, and what matters to you. "
+                        + "You can mention things like your education, work, diet, smoking/drinking, pets, religion, "
+                        + "children, languages, or anything else you want a potential partner to know. "
+                        + "Only details you explicitly write may be used to fill optional profile fields; "
+                        + "unstated details will be left blank. Please write at least 10 characters.")
                 .build());
     }
 
     private void promptPreferenceDescription(long chatId) {
         send(SendMessage.builder().chatId(chatId)
-                .text("Now, describe who you're looking for.")
+                .text("About you: describe the person you are looking for, including any important "
+                        + "preferences or deal-breakers. You can mention lifestyle or demographic "
+                        + "preferences if relevant. We will not guess or infer anything you don't state. "
+                        + "Please write at least 10 characters.")
                 .build());
     }
 
@@ -487,30 +530,34 @@ public class ConversationFlowHandler {
         state.setStep(ConversationStep.PHOTOS);
         stateStore.save(state);
         InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(button("📷 Add a Photo", "photo:add")))
+                .keyboardRow(List.of(button("🔗 Add Photo URL", "photo:add")))
                 .keyboardRow(List.of(button("⏭ Skip for now", "photo:skip")))
                 .build();
-        sendNew(chatId, "Would you like to add some photos? (up to " + MAX_PHOTOS + ")", keyboard);
+        sendNew(chatId, "Would you like to add a photo URL? (optional, up to " + MAX_PHOTOS
+                + "). The reference is stored only; it is never fetched or analyzed.", keyboard);
     }
 
     private void handlePhotoAddPrompt(long chatId, ConversationState state) {
         state.setStep(ConversationStep.PHOTOS);
         stateStore.save(state);
-        send(SendMessage.builder().chatId(chatId).text("Send me a photo!").build());
+        send(SendMessage.builder().chatId(chatId)
+                .text("Send a photo URL (https://...). I will store the reference only; I will not fetch or analyze it.")
+                .build());
     }
 
-    /** Routes an incoming photo message; only acts while the user is in the PHOTOS step. */
-    public void onPhotoMessage(long chatId, String telegramUserId, String fileId) {
-        ConversationState state = stateStore.loadOrCreate(telegramUserId);
-        if (state.step() != ConversationStep.PHOTOS) {
+    private void handlePhotoUrlInput(long chatId, ConversationState state, String url) {
+        if (!ProfileInputValidator.isValidPhotoUrl(url)) {
+            send(SendMessage.builder().chatId(chatId)
+                    .text("Please send a valid http:// or https:// photo URL, or choose Done/Skip.")
+                    .build());
             return;
         }
-        boolean added = state.addPhotoFileId(fileId);
+        boolean added = state.addPhotoUrn(url.trim());
         stateStore.save(state);
-        int count = state.photoFileIds().size();
+        int count = state.photoUrns().size();
         if (!added) {
             send(SendMessage.builder().chatId(chatId)
-                    .text("You've reached the " + MAX_PHOTOS + "-photo limit.")
+                    .text("You've reached the " + MAX_PHOTOS + "-URL limit.")
                     .replyMarkup(InlineKeyboardMarkup.builder()
                             .keyboardRow(List.of(button("✅ Done Adding Photos", "photo:done")))
                             .build())
@@ -524,7 +571,7 @@ public class ConversationFlowHandler {
         }
         buttons.add(button("✅ Done Adding Photos", "photo:done"));
         send(SendMessage.builder().chatId(chatId)
-                .text("✅ Photo added (" + count + "/" + MAX_PHOTOS + ").")
+                .text("✅ Photo URL added (" + count + "/" + MAX_PHOTOS + ").")
                 .replyMarkup(InlineKeyboardMarkup.builder().keyboardRow(buttons).build())
                 .build());
     }
@@ -543,25 +590,23 @@ public class ConversationFlowHandler {
     }
 
     private void renderPhotoManageView(long chatId, ConversationState state) {
-        List<String> photos = state.photoFileIds();
-        if (!photos.isEmpty()) {
-            sendPhotos(chatId, photos, null);
-        }
+        List<String> photos = state.photoUrns();
 
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         for (int i = 0; i < photos.size(); i++) {
-            rows.add(List.of(button("🗑 Remove Photo " + (i + 1), "photo_manage:remove:" + i)));
+            rows.add(List.of(button("🗑 Remove URL " + (i + 1), "photo_manage:remove:" + i)));
         }
         List<InlineKeyboardButton> lastRow = new ArrayList<>();
         if (photos.size() < MAX_PHOTOS) {
-            lastRow.add(button("➕ Add More", "photo_manage:add"));
+            lastRow.add(button("➕ Add URL", "photo_manage:add"));
         }
         lastRow.add(button("✅ Done", "photo_manage:done"));
         rows.add(lastRow);
 
         InlineKeyboardMarkup.InlineKeyboardMarkupBuilder keyboardBuilder = InlineKeyboardMarkup.builder();
         rows.forEach(keyboardBuilder::keyboardRow);
-        String text = photos.isEmpty() ? "You haven't added any photos yet." : "Manage your photos:";
+        String text = photos.isEmpty() ? "You haven't added any photo URLs yet."
+                : "Manage photo URL references (stored only; not fetched or analyzed):\n" + numbered(photos);
         sendNew(chatId, text, keyboardBuilder.build());
     }
 
@@ -569,11 +614,11 @@ public class ConversationFlowHandler {
         state.setReturnToReview(true);
         state.setStep(ConversationStep.PHOTOS);
         stateStore.save(state);
-        send(SendMessage.builder().chatId(chatId).text("Send me a photo!").build());
+        send(SendMessage.builder().chatId(chatId).text("Send a photo URL (https://...).").build());
     }
 
     private void handlePhotoManageRemove(long chatId, ConversationState state, int index) {
-        state.removePhotoFileIdAt(index);
+        state.removePhotoUrnAt(index);
         stateStore.save(state);
         renderPhotoManageView(chatId, state);
     }
@@ -587,14 +632,14 @@ public class ConversationFlowHandler {
     }
 
     private String formatReview(ConversationState state) {
-        String photoLine = state.photoFileIds().isEmpty()
-                ? "📷 Photos: none added"
-                : "📷 Photos: " + state.photoFileIds().size() + "/" + MAX_PHOTOS + " attached";
+        String photoLine = state.photoUrns().isEmpty()
+                ? "📷 Photo URLs: none added"
+                : "📷 Photo URLs: " + state.photoUrns().size() + "/" + MAX_PHOTOS + " added";
         return """
                 Here's your profile — take a look:
 
                 ━━━━━━━━━━━━━━━
-                👤 %s, %d, %s
+                👤 %s, %d, %s (%s)
                 📍 %s, %s
                 🔍 Looking for: %s
                 %s
@@ -603,7 +648,7 @@ public class ConversationFlowHandler {
 
                 Looking for: "%s"
                 ━━━━━━━━━━━━━━━""".formatted(
-                state.name(), state.age(), humanize(state.gender()),
+                state.name(), state.age(), humanize(state.gender()), humanize(state.orientation()),
                 state.city(), state.country(),
                 joinHumanized(state.seekingGenders()),
                 photoLine,
@@ -615,7 +660,7 @@ public class ConversationFlowHandler {
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(List.of(button("✅ Looks good, save it!", "review:save")))
                 .keyboardRow(List.of(button("✏️ Edit Name", "review:edit_name"), button("✏️ Edit Age", "review:edit_age")))
-                .keyboardRow(List.of(button("✏️ Edit Gender/Preference", "review:edit_gender")))
+                .keyboardRow(List.of(button("✏️ Edit Sex", "review:edit_gender"), button("✏️ Edit Orientation", "review:edit_orientation")))
                 .keyboardRow(List.of(button("✏️ Edit Location", "review:edit_location"), button("✏️ Edit Descriptions", "review:edit_desc")))
                 .keyboardRow(List.of(button("✏️ Edit Photos", "review:edit_photos")))
                 .keyboardRow(List.of(button("⬅️ Back", "back")))
@@ -643,6 +688,14 @@ public class ConversationFlowHandler {
         promptGender(chatId);
     }
 
+    private void jumpToEditOrientation(long chatId, Integer messageId, ConversationState state) {
+        state.setReturnToReview(true);
+        state.setStep(ConversationStep.ORIENTATION);
+        stateStore.save(state);
+        removeKeyboard(chatId, messageId);
+        promptOrientation(chatId);
+    }
+
     private void jumpToEditLocation(long chatId, Integer messageId, ConversationState state) {
         state.setReturnToReview(true);
         state.setStep(ConversationStep.LOCATION_CHOICE);
@@ -657,12 +710,13 @@ public class ConversationFlowHandler {
                 state.name(),
                 state.age(),
                 state.gender(),
+                state.orientation(),
                 state.seekingGenders(),
                 state.country(),
                 state.city(),
                 state.selfDescription(),
                 state.preferenceDescription(),
-                state.photoFileIds());
+                state.photoUrns());
         String profileId = String.valueOf(saved.get("id"));
         backendApiClient.generateEmbeddings(profileId);
         stateStore.clear(telegramUserId);
@@ -719,6 +773,15 @@ public class ConversationFlowHandler {
             sb.append("• %s (score: %.2f)\n".formatted(r.get("displayName"), ((Number) r.get("aggregatedScore")).doubleValue()));
         }
         return sb.toString().stripTrailing();
+    }
+
+    private String numbered(List<String> values) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < values.size(); i++) {
+            result.append(i + 1).append(". ").append(values.get(i));
+            if (i + 1 < values.size()) result.append('\n');
+        }
+        return result.toString();
     }
 
     // ─────────────────────────────── main menu ───────────────────────────────
@@ -877,34 +940,12 @@ public class ConversationFlowHandler {
         return sb.toString();
     }
 
-    @SuppressWarnings("unchecked")
     private void sendCandidateCard(long chatId, Map<String, Object> profile, String caption, InlineKeyboardMarkup keyboard) {
-        List<String> photoFileIds = (List<String>) profile.get("photoFileIds");
-        if (photoFileIds != null && !photoFileIds.isEmpty()) {
-            sendPhotos(chatId, photoFileIds, null);
+        Object photoUrns = profile.get("photoUrns");
+        if (photoUrns instanceof List<?> urns && !urns.isEmpty()) {
+            caption += "\n📷 Photo references: " + urns.size();
         }
         send(SendMessage.builder().chatId(chatId).text(caption).replyMarkup(keyboard).build());
-    }
-
-    /** Sends one or more photos by Telegram {@code file_id} — {@code sendPhoto} for one, {@code sendMediaGroup} for several. */
-    private void sendPhotos(long chatId, List<String> photoFileIds, String captionOnFirst) {
-        if (photoFileIds.size() == 1) {
-            SendPhoto.SendPhotoBuilder builder = SendPhoto.builder().chatId(chatId).photo(new InputFile(photoFileIds.get(0)));
-            if (captionOnFirst != null) {
-                builder.caption(captionOnFirst);
-            }
-            send(builder.build());
-            return;
-        }
-        List<org.telegram.telegrambots.meta.api.objects.media.InputMedia> medias = new ArrayList<>();
-        for (int i = 0; i < photoFileIds.size(); i++) {
-            InputMediaPhoto.InputMediaPhotoBuilder photoBuilder = InputMediaPhoto.builder().media(photoFileIds.get(i));
-            if (i == 0 && captionOnFirst != null) {
-                photoBuilder.caption(captionOnFirst);
-            }
-            medias.add(photoBuilder.build());
-        }
-        send(SendMediaGroup.builder().chatId(chatId).medias(medias).build());
     }
 
     // ─────────────────────────────── settings / deletion ───────────────────────────────
@@ -998,12 +1039,18 @@ public class ConversationFlowHandler {
                 removeKeyboard(chatId, messageId);
                 promptAge(chatId);
             }
-            case SEEKING_GENDERS -> {
+            case ORIENTATION -> {
                 state.setStep(ConversationStep.GENDER);
                 stateStore.save(state);
                 send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                        .text("What's your gender?")
-                        .replyMarkup(genderKeyboard())
+                        .text("What is your sex?").replyMarkup(genderKeyboard()).build());
+            }
+            case SEEKING_GENDERS -> {
+                state.setStep(ConversationStep.ORIENTATION);
+                stateStore.save(state);
+                send(EditMessageText.builder().chatId(chatId).messageId(messageId)
+                        .text("What is your orientation?")
+                        .replyMarkup(orientationKeyboard())
                         .build());
             }
             case LOCATION_CHOICE -> {
@@ -1060,7 +1107,8 @@ public class ConversationFlowHandler {
         switch (justCompleted) {
             case NAME -> { state.setStep(ConversationStep.AGE); stateStore.save(state); promptAge(chatId); }
             case AGE -> { state.setStep(ConversationStep.GENDER); stateStore.save(state); promptGender(chatId); }
-            case GENDER -> { state.setStep(ConversationStep.SEEKING_GENDERS); stateStore.save(state); promptSeekingGenders(chatId, state); }
+            case GENDER -> { state.setStep(ConversationStep.ORIENTATION); stateStore.save(state); promptOrientation(chatId); }
+            case ORIENTATION -> { state.setStep(ConversationStep.SEEKING_GENDERS); stateStore.save(state); promptSeekingGenders(chatId, state); }
             case SEEKING_GENDERS -> { state.setStep(ConversationStep.LOCATION_CHOICE); stateStore.save(state); promptLocationChoice(chatId); }
             case LOCATION_MANUAL_CITY, LOCATION_CONFIRM -> {
                 state.setStep(ConversationStep.SELF_DESCRIPTION);
@@ -1112,24 +1160,6 @@ public class ConversationFlowHandler {
             sender.execute(method);
         } catch (TelegramApiException e) {
             log.warn("Failed to execute Telegram method {}: {}", method.getClass().getSimpleName(), e.getMessage());
-        }
-    }
-
-    /** {@link SendPhoto} doesn't extend {@link BotApiMethod}, so it needs its own overload. */
-    private void send(SendPhoto method) {
-        try {
-            sender.execute(method);
-        } catch (TelegramApiException e) {
-            log.warn("Failed to execute SendPhoto: {}", e.getMessage());
-        }
-    }
-
-    /** {@link SendMediaGroup} doesn't extend {@link BotApiMethod} either — same reason as {@link #send(SendPhoto)}. */
-    private void send(SendMediaGroup method) {
-        try {
-            sender.execute(method);
-        } catch (TelegramApiException e) {
-            log.warn("Failed to execute SendMediaGroup: {}", e.getMessage());
         }
     }
 

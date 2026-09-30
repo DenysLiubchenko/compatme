@@ -34,10 +34,8 @@ nominatim:
   min-request-interval-millis: ${NOMINATIM_MIN_REQUEST_INTERVAL_MILLIS:1100}
 
 app:
-  seed-data:
-    enabled: ${SEED_DATA_ENABLED:false}
-  ground-truth:
-    enabled: ${GROUND_TRUTH_IMPORT_ENABLED:false}
+  okcupid:
+    enabled: ${OKCUPID_IMPORT_ENABLED:false}
 
 springdoc:
   api-docs:

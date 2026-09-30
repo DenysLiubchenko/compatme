@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import ua.kpi.project.compatme.domain.model.Gender;
+import ua.kpi.project.compatme.domain.model.Orientation;
+import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
 
 import java.util.List;
 import java.util.Set;
@@ -27,7 +29,17 @@ public record ProfileRequest(
         @Max(value = 120, message = "age must be at most 120")
         Integer age,
 
+        @jakarta.validation.constraints.NotNull(message = "sex is required")
         Gender gender,
+
+        @jakarta.validation.constraints.NotNull(message = "orientation is required")
+        Orientation orientation,
+
+        @NotBlank(message = "country must not be blank")
+        String country,
+
+        @NotBlank(message = "city must not be blank")
+        String city,
 
         Set<Gender> seekingGenders,
 
@@ -45,24 +57,9 @@ public record ProfileRequest(
          */
         List<Integer> archetypeIds,
 
-        /** Optional free-text country, used only by the location-scope recommendation filter. */
-        String country,
+        /** Optional structured attributes; unspecified fields remain empty. */
+        OptionalProfileFields optionalFields,
 
-        /** Optional free-text city, used only by the location-scope recommendation filter. */
-        String city,
-
-        /**
-         * Optional photo URL — only the URL is stored, never image bytes. Must start with
-         * {@code http://} or {@code https://} when present (also enforced, authoritatively, by
-         * the domain {@code Profile} constructor).
-         */
-        @Pattern(regexp = "^https?://.+", message = "photoUrl must start with http:// or https://")
-        String photoUrl,
-
-        /**
-         * Telegram {@code file_id} references for up to 5 photos uploaded via the bot.
-         * Presentation-only — never read by the compatibility scoring/recommendation logic. Only
-         * the Telegram adapter ever populates this (Telegram hosts the actual image files).
-         */
-        List<String> photoFileIds) {
+        /** Explicit URN/key references only; never fetched, analyzed, or processed. */
+        List<String> photoUrns) {
 }

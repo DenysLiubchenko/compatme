@@ -50,18 +50,20 @@ class CompatibilityScorerTest {
 
     private static Profile profileWith(String name, EmbeddingVector selfEmbedding, EmbeddingVector prefEmbedding) {
         Instant now = Instant.now();
-        return new Profile(
-                ProfileId.generate(), null, name, 25, Gender.OTHER, Set.of(),
-                "self description", "preference description",
-                new ProfileEmbeddings(selfEmbedding, prefEmbedding), now, now);
+        return Profile.builder().id(ProfileId.generate()).displayName(name).age(25).gender(Gender.OTHER)
+                .orientation(ua.kpi.project.compatme.domain.model.Orientation.OTHER)
+                .country("United States").city("New York").seekingGenders(Set.of())
+                .selfDescription("self description").preferenceDescription("preference description")
+                .embeddings(new ProfileEmbeddings(selfEmbedding, prefEmbedding)).createdAt(now).updatedAt(now).build();
     }
 
     private static Profile profileWithoutEmbeddings(String name) {
         Instant now = Instant.now();
-        return new Profile(
-                ProfileId.generate(), null, name, 25, Gender.OTHER, Set.of(),
-                "self description", "preference description",
-                ProfileEmbeddings.empty(), now, now);
+        return Profile.builder().id(ProfileId.generate()).displayName(name).age(25).gender(Gender.OTHER)
+                .orientation(ua.kpi.project.compatme.domain.model.Orientation.OTHER)
+                .country("United States").city("New York").seekingGenders(Set.of())
+                .selfDescription("self description").preferenceDescription("preference description")
+                .embeddings(ProfileEmbeddings.empty()).createdAt(now).updatedAt(now).build();
     }
 
     private static EmbeddingVector embedding(float[] values) {

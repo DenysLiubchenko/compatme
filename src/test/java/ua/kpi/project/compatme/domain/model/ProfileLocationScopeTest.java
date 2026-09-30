@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Covers {@link Profile#matchesLocationScope(Profile, LocationScope)}: GLOBAL is always
@@ -57,19 +58,16 @@ class ProfileLocationScopeTest {
     }
 
     @Test
-    void isPermissive_whenRequesterHasNoLocationSet() {
-        Profile requesterWithoutLocation = profile(null, null);
-        Profile candidate = profile("Poland", "Warsaw");
-
-        assertThat(requesterWithoutLocation.matchesLocationScope(candidate, LocationScope.COUNTRY)).isTrue();
-        assertThat(requesterWithoutLocation.matchesLocationScope(candidate, LocationScope.CITY)).isTrue();
+    void rejectsProfile_whenMandatoryCountryOrCityIsMissing() {
+        assertThatThrownBy(() -> profile(null, null))
+                .isInstanceOf(ua.kpi.project.compatme.domain.exception.InvalidProfileDataException.class);
     }
 
     private static Profile profile(String country, String city) {
         Instant now = Instant.now();
-        return new Profile(
-                ProfileId.generate(), null, "name", 25, Gender.OTHER, Set.of(),
-                "self description", "preference description", ProfileEmbeddings.empty(),
-                now, now, null, country, city);
+        return Profile.builder().id(ProfileId.generate()).displayName("name").age(25).gender(Gender.OTHER)
+                .orientation(Orientation.OTHER).country(country).city(city).seekingGenders(Set.of())
+                .selfDescription("self description").preferenceDescription("preference description")
+                .embeddings(ProfileEmbeddings.empty()).createdAt(now).updatedAt(now).build();
     }
 }

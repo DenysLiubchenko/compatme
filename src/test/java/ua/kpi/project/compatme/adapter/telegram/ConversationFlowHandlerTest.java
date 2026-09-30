@@ -18,6 +18,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -137,6 +138,7 @@ class ConversationFlowHandlerTest {
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "Maria");
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "27");
         flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 2, "cb2", "gender:FEMALE");
+        flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 3, "cb-orientation", "orientation:STRAIGHT");
         assertThat(currentState().step()).isEqualTo(ConversationStep.SEEKING_GENDERS);
 
         // WHEN "Continue" is tapped with nothing selected
@@ -168,6 +170,8 @@ class ConversationFlowHandlerTest {
         state.setName("Maria");
         state.setAge(27);
         state.setGender("FEMALE");
+        state.setOrientation("STRAIGHT");
+        state.setOrientation("STRAIGHT");
         state.toggleSeekingGender("MALE");
         state.setCountry("Ukraine");
         state.setCity("Kyiv");
@@ -243,7 +247,7 @@ class ConversationFlowHandlerTest {
         statesByUser.put(TELEGRAM_USER_ID, state);
 
         when(backendApiClient.createProfile(
-                anyString(), anyString(), any(), anyString(), any(), anyString(), anyString(), anyString(), anyString(), any()))
+                anyString(), anyString(), any(), anyString(), nullable(String.class), any(), anyString(), anyString(), anyString(), anyString(), any()))
                 .thenReturn(Map.of("id", "profile-123"));
 
         // WHEN the user confirms save
@@ -251,13 +255,13 @@ class ConversationFlowHandlerTest {
 
         // THEN the existing create + embeddings endpoints were called (no duplicated save logic here)
         verify(backendApiClient).createProfile(
-                anyString(), anyString(), any(), anyString(), any(), anyString(), anyString(), anyString(), anyString(), any());
+                anyString(), anyString(), any(), anyString(), nullable(String.class), any(), anyString(), anyString(), anyString(), anyString(), any());
         verify(backendApiClient).generateEmbeddings("profile-123");
         verify(stateStore).clear(TELEGRAM_USER_ID);
     }
 
     @Test
-    void photoUpload_entersPhotosStepAfterPreferenceDescription_andEnforcesMaxFive() {
+    void photoUrlEntry_entersPhotosStepAndEnforcesFiveReferences() {
         flowHandler.onStartCommand(CHAT_ID, TELEGRAM_USER_ID);
         flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 1, "cb1", "start_create");
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "Maria");
@@ -272,30 +276,30 @@ class ConversationFlowHandlerTest {
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "Someone calm who enjoys deep conversations.");
         assertThat(currentState().step()).isEqualTo(ConversationStep.PHOTOS);
 
-        // WHEN 6 photos are sent (only 5 should be accepted)
+        // WHEN six valid URLs are entered, only five are retained.
         for (int i = 1; i <= 6; i++) {
-            flowHandler.onPhotoMessage(CHAT_ID, TELEGRAM_USER_ID, "file-" + i);
+            flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "https://example.com/photo-" + i + ".jpg");
         }
 
-        // THEN exactly 5 were kept
-        assertThat(currentState().photoFileIds()).hasSize(5).containsExactly(
-                "file-1", "file-2", "file-3", "file-4", "file-5");
+        assertThat(currentState().photoUrns()).hasSize(5).containsExactly(
+                "https://example.com/photo-1.jpg", "https://example.com/photo-2.jpg", "https://example.com/photo-3.jpg",
+                "https://example.com/photo-4.jpg", "https://example.com/photo-5.jpg");
 
         // WHEN done is tapped
         flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 6, "cb7", "photo:done");
 
         // THEN it proceeds to Review with all 5 photos intact
         assertThat(currentState().step()).isEqualTo(ConversationStep.REVIEW);
-        assertThat(currentState().photoFileIds()).hasSize(5);
+        assertThat(currentState().photoUrns()).hasSize(5);
     }
 
     @Test
-    void photoMessage_isIgnored_whenNotInPhotosStep() {
+    void photoUrlFreeText_isNotStored_whenNotInPhotosStep() {
         flowHandler.onStartCommand(CHAT_ID, TELEGRAM_USER_ID);
 
-        flowHandler.onPhotoMessage(CHAT_ID, TELEGRAM_USER_ID, "stray-file-id");
+        flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "https://example.com/photo.jpg");
 
-        assertThat(currentState().photoFileIds()).isEmpty();
+        assertThat(currentState().photoUrns()).isEmpty();
     }
 
     @Test
@@ -311,8 +315,8 @@ class ConversationFlowHandlerTest {
         state.setCity("Kyiv");
         state.setSelfDescription("Original self description text.");
         state.setPreferenceDescription("Original preference description text.");
-        state.addPhotoFileId("old-1");
-        state.addPhotoFileId("old-2");
+        state.addPhotoUrn("https://example.com/old-1.jpg");
+        state.addPhotoUrn("https://example.com/old-2.jpg");
         statesByUser.put(TELEGRAM_USER_ID, state);
 
         // WHEN entering photo management and removing the first photo
@@ -320,18 +324,18 @@ class ConversationFlowHandlerTest {
         assertThat(currentState().step()).isEqualTo(ConversationStep.PHOTO_MANAGE);
         flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 11, "cb2", "photo_manage:remove:0");
 
-        assertThat(currentState().photoFileIds()).containsExactly("old-2");
+        assertThat(currentState().photoUrns()).containsExactly("https://example.com/old-2.jpg");
 
         // WHEN adding another photo and finishing
         flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 12, "cb3", "photo_manage:add");
         assertThat(currentState().step()).isEqualTo(ConversationStep.PHOTOS);
-        flowHandler.onPhotoMessage(CHAT_ID, TELEGRAM_USER_ID, "new-1");
+        flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "https://example.com/new-1.jpg");
         flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 13, "cb4", "photo:done");
 
         // THEN it returns directly to Review with the updated photo set, other fields untouched
         ConversationState after = currentState();
         assertThat(after.step()).isEqualTo(ConversationStep.REVIEW);
-        assertThat(after.photoFileIds()).containsExactly("old-2", "new-1");
+        assertThat(after.photoUrns()).containsExactly("https://example.com/old-2.jpg", "https://example.com/new-1.jpg");
         assertThat(after.name()).isEqualTo("Maria");
         assertThat(after.selfDescription()).isEqualTo("Original self description text.");
     }

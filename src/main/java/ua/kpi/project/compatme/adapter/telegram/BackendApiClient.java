@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map;
 
 /**
  * Thin HTTP client the Telegram bot uses to talk to this backend's own REST API. Deliberately
@@ -40,23 +41,25 @@ public class BackendApiClient {
             String displayName,
             Integer age,
             String gender,
+            String orientation,
             Set<String> seekingGenders,
             String country,
             String city,
             String selfDescription,
             String preferenceDescription,
-            List<String> photoFileIds) {
+            List<String> photoUrns) {
         Map<String, Object> body = new HashMap<>();
         body.put("telegramUserId", telegramUserId);
         body.put("displayName", displayName);
         body.put("age", age);
         body.put("gender", gender);
+        body.put("orientation", orientation);
         body.put("seekingGenders", seekingGenders);
         body.put("country", country);
         body.put("city", city);
         body.put("selfDescription", selfDescription);
         body.put("preferenceDescription", preferenceDescription);
-        body.put("photoFileIds", photoFileIds);
+        body.put("photoUrns", photoUrns);
         return postJson("/api/v1/profiles", body);
     }
 

@@ -7,6 +7,7 @@ import ua.kpi.project.compatme.adapter.in.web.dto.RecommendationItem;
 import ua.kpi.project.compatme.application.dto.CreateOrUpdateProfileCommand;
 import ua.kpi.project.compatme.application.dto.RecommendationResult;
 import ua.kpi.project.compatme.domain.model.Profile;
+import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
 
 /**
  * Translates between {@code adapter.in.web} request/response DTOs and the framework-agnostic
@@ -31,6 +32,7 @@ public class ProfileWebMapper {
                 request.displayName(),
                 request.age(),
                 request.gender(),
+                request.orientation(),
                 request.seekingGenders(),
                 request.selfDescription(),
                 request.preferenceDescription(),
@@ -38,7 +40,8 @@ public class ProfileWebMapper {
                 request.country(),
                 request.city(),
                 request.photoUrl(),
-                request.photoFileIds());
+                request.optionalFields(),
+                request.photoUrns());
     }
 
     public ProfileResponse toResponse(Profile profile) {
@@ -48,6 +51,9 @@ public class ProfileWebMapper {
                 profile.displayName(),
                 profile.age(),
                 profile.gender(),
+                profile.orientation(),
+                profile.country(),
+                profile.city(),
                 profile.seekingGenders(),
                 profile.selfDescription(),
                 profile.preferenceDescription(),
@@ -56,10 +62,12 @@ public class ProfileWebMapper {
                 profile.createdAt(),
                 profile.updatedAt(),
                 profile.archetypeIds(),
-                profile.country(),
-                profile.city(),
                 profile.photoUrl(),
-                profile.photoFileIds());
+                new OptionalProfileFields(profile.status(), profile.bodyType(), profile.diet(), profile.drinks(),
+                        profile.drugs(), profile.education(), profile.ethnicity(), profile.height(), profile.income(),
+                        profile.job(), profile.lastOnline(), profile.offspring(), profile.pets(), profile.religion(),
+                        profile.sign(), profile.smokes(), profile.speaks()),
+                profile.photoUrns());
     }
 
     public RecommendationItem toRecommendationItem(RecommendationResult result) {
@@ -69,7 +77,6 @@ public class ProfileWebMapper {
                 candidate.displayName(),
                 candidate.age(),
                 candidate.photoUrl(),
-                candidate.photoFileIds(),
                 candidate.country(),
                 candidate.city(),
                 candidate.selfDescription(),

@@ -77,8 +77,10 @@ class ProfileGenderMatchingTest {
 
     private static Profile profile(Gender gender, Set<Gender> seekingGenders) {
         Instant now = Instant.now();
-        return new Profile(
-                ProfileId.generate(), null, "name", 25, gender, seekingGenders,
-                "self description", "preference description", ProfileEmbeddings.empty(), now, now);
+        return Profile.builder().id(ProfileId.generate()).displayName("name").age(25).gender(gender)
+                .orientation(Orientation.OTHER).country("United States").city("New York")
+                .seekingGenders(seekingGenders).selfDescription("self description")
+                .preferenceDescription("preference description").embeddings(ProfileEmbeddings.empty())
+                .createdAt(now).updatedAt(now).build();
     }
 }

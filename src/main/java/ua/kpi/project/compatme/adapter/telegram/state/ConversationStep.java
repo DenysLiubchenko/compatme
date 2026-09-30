@@ -11,6 +11,7 @@ public enum ConversationStep {
     NAME,
     AGE,
     GENDER,
+    ORIENTATION,
     SEEKING_GENDERS,
     LOCATION_CHOICE,
     LOCATION_SHARE_PENDING,

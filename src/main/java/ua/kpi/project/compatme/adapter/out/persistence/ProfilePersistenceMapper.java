@@ -12,12 +12,7 @@ import ua.kpi.project.compatme.domain.model.ProfileId;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Maps between the framework-agnostic domain {@link Profile} aggregate and the MongoDB-specific
- * {@link ProfileDocument}. This class is the single translation boundary between the two
- * representations — the domain layer never sees {@link ProfileDocument}, and this adapter never
- * exposes {@link ProfileDocument} outside {@code adapter.out.persistence}.
- */
+/** Persistence boundary between the framework-free Profile aggregate and MongoDB documents. */
 @Component
 public class ProfilePersistenceMapper {
 
@@ -27,7 +22,10 @@ public class ProfilePersistenceMapper {
         document.setTelegramUserId(profile.telegramUserId());
         document.setDisplayName(profile.displayName());
         document.setAge(profile.age());
-        document.setGender(profile.gender() == null ? null : profile.gender().name());
+        document.setGender(profile.gender().name());
+        document.setOrientation(profile.orientation());
+        document.setCountry(profile.country());
+        document.setCity(profile.city());
         document.setSeekingGenders(profile.seekingGenders().stream().map(Enum::name).collect(Collectors.toSet()));
         document.setSelfDescription(profile.selfDescription());
         document.setPreferenceDescription(profile.preferenceDescription());
@@ -36,10 +34,25 @@ public class ProfilePersistenceMapper {
         document.setCreatedAt(profile.createdAt());
         document.setUpdatedAt(profile.updatedAt());
         document.setArchetypeIds(profile.archetypeIds());
-        document.setCountry(profile.country());
-        document.setCity(profile.city());
         document.setPhotoUrl(profile.photoUrl());
-        document.setPhotoFileIds(profile.photoFileIds());
+        document.setStatus(profile.status());
+        document.setBodyType(profile.bodyType());
+        document.setDiet(profile.diet());
+        document.setDrinks(profile.drinks());
+        document.setDrugs(profile.drugs());
+        document.setEducation(profile.education());
+        document.setEthnicity(profile.ethnicity());
+        document.setHeight(profile.height());
+        document.setIncome(profile.income());
+        document.setJob(profile.job());
+        document.setLastOnline(profile.lastOnline());
+        document.setOffspring(profile.offspring());
+        document.setPets(profile.pets());
+        document.setReligion(profile.religion());
+        document.setSign(profile.sign());
+        document.setSmokes(profile.smokes());
+        document.setSpeaks(profile.speaks());
+        document.setPhotoUrns(profile.photoUrns());
         return document;
     }
 
@@ -49,39 +62,53 @@ public class ProfilePersistenceMapper {
                 : document.getSeekingGenders().stream().map(Gender::valueOf).collect(Collectors.toSet());
         ProfileEmbeddings embeddings = new ProfileEmbeddings(
                 toDomain(document.getSelfEmbedding()), toDomain(document.getPreferenceEmbedding()));
-        return new Profile(
-                ProfileId.of(document.getId()),
-                document.getTelegramUserId(),
-                document.getDisplayName(),
-                document.getAge(),
-                document.getGender() == null ? null : Gender.valueOf(document.getGender()),
-                seekingGenders,
-                document.getSelfDescription(),
-                document.getPreferenceDescription(),
-                embeddings,
-                document.getCreatedAt(),
-                document.getUpdatedAt(),
-                document.getArchetypeIds(),
-                document.getCountry(),
-                document.getCity(),
-                document.getPhotoUrl(),
-                document.getPhotoFileIds());
+        return Profile.builder()
+                .id(ProfileId.of(document.getId()))
+                .telegramUserId(document.getTelegramUserId())
+                .displayName(document.getDisplayName())
+                .age(document.getAge())
+                .gender(Gender.valueOf(document.getGender()))
+                .orientation(document.getOrientation())
+                .country(document.getCountry())
+                .city(document.getCity())
+                .seekingGenders(seekingGenders)
+                .selfDescription(document.getSelfDescription())
+                .preferenceDescription(document.getPreferenceDescription())
+                .embeddings(embeddings)
+                .createdAt(document.getCreatedAt())
+                .updatedAt(document.getUpdatedAt())
+                .archetypeIds(document.getArchetypeIds())
+                .photoUrl(document.getPhotoUrl())
+                .status(document.getStatus())
+                .bodyType(document.getBodyType())
+                .diet(document.getDiet())
+                .drinks(document.getDrinks())
+                .drugs(document.getDrugs())
+                .education(document.getEducation())
+                .ethnicity(document.getEthnicity())
+                .height(document.getHeight())
+                .income(document.getIncome())
+                .job(document.getJob())
+                .lastOnline(document.getLastOnline())
+                .offspring(document.getOffspring())
+                .pets(document.getPets())
+                .religion(document.getReligion())
+                .sign(document.getSign())
+                .smokes(document.getSmokes())
+                .speaks(document.getSpeaks())
+                .photoUrns(document.getPhotoUrns())
+                .build();
     }
 
     private EmbeddingVectorDocument toDocument(EmbeddingVector vector) {
-        if (vector == null) {
-            return null;
-        }
-        return new EmbeddingVectorDocument(
-                vector.values(), vector.modelName(), vector.dimensionality(), vector.sourceTextHash(), vector.computedAt());
+        if (vector == null) return null;
+        return new EmbeddingVectorDocument(vector.values(), vector.modelName(), vector.dimensionality(),
+                vector.sourceTextHash(), vector.computedAt());
     }
 
     private EmbeddingVector toDomain(EmbeddingVectorDocument document) {
-        if (document == null) {
-            return null;
-        }
-        return new EmbeddingVector(
-                document.getValues(), document.getModelName(), document.getDimensionality(),
+        if (document == null) return null;
+        return new EmbeddingVector(document.getValues(), document.getModelName(), document.getDimensionality(),
                 document.getSourceTextHash(), document.getComputedAt());
     }
 }

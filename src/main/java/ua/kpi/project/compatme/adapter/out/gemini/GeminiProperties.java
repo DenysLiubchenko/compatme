@@ -1,5 +1,6 @@
 package ua.kpi.project.compatme.adapter.out.gemini;
 
+
 /**
  * Externalized configuration for the Gemini API adapter. Bound from {@code application.yml}
  * under the {@code gemini} prefix (binding declared on the {@code geminiProperties} @Bean factory

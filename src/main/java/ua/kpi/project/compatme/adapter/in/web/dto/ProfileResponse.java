@@ -1,6 +1,8 @@
 package ua.kpi.project.compatme.adapter.in.web.dto;
 
 import ua.kpi.project.compatme.domain.model.Gender;
+import ua.kpi.project.compatme.domain.model.Orientation;
+import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
 
 import java.time.Instant;
 import java.util.List;
@@ -21,6 +23,9 @@ public record ProfileResponse(
         String displayName,
         Integer age,
         Gender gender,
+        Orientation orientation,
+        String country,
+        String city,
         Set<Gender> seekingGenders,
         String selfDescription,
         String preferenceDescription,
@@ -35,15 +40,11 @@ public record ProfileResponse(
          */
         List<Integer> archetypeIds,
 
-        /** Optional free-text country, used only by the location-scope recommendation filter. */
-        String country,
-
-        /** Optional free-text city, used only by the location-scope recommendation filter. */
-        String city,
-
         /** Optional photo URL — only the URL is stored/returned, never image bytes. */
         String photoUrl,
 
-        /** Telegram {@code file_id} references for uploaded photos. Presentation-only. */
-        List<String> photoFileIds) {
+        OptionalProfileFields optionalFields,
+
+        /** Photo URNs are stored as references only; no fetch, analysis, or processing. */
+        List<String> photoUrns) {
 }

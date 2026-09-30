@@ -59,9 +59,9 @@ class ProfilePhotoUrlTest {
 
     private static Profile profileWithPhotoUrl(String photoUrl) {
         Instant now = Instant.now();
-        return new Profile(
-                ProfileId.generate(), null, "name", 25, Gender.OTHER, Set.of(),
-                "self description", "preference description", ProfileEmbeddings.empty(),
-                now, now, null, null, null, photoUrl);
+        return Profile.builder().id(ProfileId.generate()).displayName("name").age(25).gender(Gender.OTHER)
+                .orientation(Orientation.OTHER).country("United States").city("New York").seekingGenders(Set.of())
+                .selfDescription("self description").preferenceDescription("preference description")
+                .embeddings(ProfileEmbeddings.empty()).createdAt(now).updatedAt(now).photoUrl(photoUrl).build();
     }
 }

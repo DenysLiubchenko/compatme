@@ -115,63 +115,52 @@ on the port interfaces, never on the concrete adapters.
   `CompatibilityAggregationStrategy`** — it exists purely so evaluation results can be
   sliced/inspected by archetype after the fact. Every place it appears in code is commented to
   make this explicit.
-- **`photoUrl`** (optional): a URL to the profile's photo — **only the URL is stored**, never
-  image bytes (no file upload endpoint exists or is planned). Must start with `http://` or
-  `https://` when present; any other scheme (e.g. `javascript:`, `data:`) is rejected both at the
-  HTTP boundary (`@Pattern` on `ProfileRequest`) and, authoritatively, by the domain `Profile`
-  constructor. Returned in `ProfileResponse` and in each `RecommendationItem` (so recommendation
-  results can render a candidate's photo without a follow-up profile lookup).
+- **`photoUrns`** (optional, max 5): user-entered URL/URN/key references stored as strings only.
+  No image bytes are stored and the backend never fetches, renders, moderates, analyzes, or sends
+  them to a vision API. Legacy `photoUrl` is retained for existing records/API clients but is also
+  a stored-only reference and is not fetched or analyzed.
 
-## Evaluating compatibility scoring against a ground-truth dataset
+## OkCupid CSV import
 
-The thesis's results chapter measures how well reciprocal harmonic aggregation reflects genuine
-reciprocal compatibility, using a hand- or synthetically-labeled ground-truth dataset: pairs of
-profile ids with an expected label (`MUTUAL_MATCH`, `ONE_SIDED`, or `NO_MATCH`).
+`src/main/resources/okcupid_profiles.csv` is the active test-data source. It contains 10,000
+eligible profiles. Preprocessing skipped 3,038 source rows with a blank `essay0` or `essay9` before
+retaining 10,000 valid rows. `essay0` maps to `selfDescription`, `essay9` maps to
+`preferenceDescription`, and `essay1` through `essay8` were discarded completely.
 
-- **Import**: set `GROUND_TRUTH_IMPORT_ENABLED=true` and place your dataset at
-  `src/main/resources/ground-truth.json` (the bundled file already references the bundled
-  `sample-profiles.json` entries — see below) before starting the app. Format — an array of:
-  ```json
-  [
-    { "profileAId": "<id>", "profileBId": "<id>", "label": "MUTUAL_MATCH" }
-  ]
-  ```
-  `label` accepts `MUTUAL_MATCH`, `ONE_SIDED`, or `NO_MATCH`. Each import **replaces** the
-  previously stored dataset (it's a write-once import target, not an append log). Both referenced
-  profiles must already exist (and, to be scorable, already have embeddings generated) — pairs
-  referencing missing profiles or incomplete embeddings are skipped and logged at DEBUG.
-- **Report**: `GET /api/v1/evaluation/report` scores every stored pair via the app's single
-  `CompatibilityScorer` (reusing the same reciprocal-harmonic scoring logic the live
-  recommendation flow uses) and returns the average aggregated score per label, plus how many
-  pairs contributed to each label:
-  ```json
-  {
-    "averageScoreByLabel": { "MUTUAL_MATCH": 0.79, "ONE_SIDED": 0.31, "NO_MATCH": 0.09 },
-    "pairCounts": { "MUTUAL_MATCH": 18, "ONE_SIDED": 17, "NO_MATCH": 10 }
-  }
-  ```
-  (numbers above are illustrative only). A meaningfully higher average for `MUTUAL_MATCH` than for
-  `ONE_SIDED`/`NO_MATCH` is the empirical validation for choosing reciprocal harmonic aggregation
-  as the project's scoring method. The same table is also logged at INFO as a plain-text summary
-  each time the report is generated, so it can be screenshotted for the thesis without a JSON
-  viewer.
+The source `location` column was replaced by `country` and `city`. Source values use a US
+`city, state` format; generated rows use `country: "United States"` and the city portion as
+`city` (for example, `san francisco, california` becomes `San Francisco`, `United States`). State
+is not misrepresented as a country. The CSV has no photo data, so imported `photoUrns` is empty.
 
-## Sample/test data (`sample-profiles.json` + `ground-truth.json`)
+Import is disabled by default. To seed the data and generate embeddings:
 
-Both files live in `src/main/resources/` and are designed to be used together:
-`ground-truth.json` references profiles bundled in `sample-profiles.json` by id, so
-seeding both (`SEED_DATA_ENABLED=true` + `GROUND_TRUTH_IMPORT_ENABLED=true`) gives you a working
-evaluation report with zero manual id lookup. The bundled dataset currently has 476 synthetic
-profiles (deduplicated from a generator run) and 66 labeled ground-truth pairs across all three
-labels.
+```bash
+export OKCUPID_IMPORT_ENABLED=true
+export GEMINI_API_KEY=your-key
+export MONGODB_URI=mongodb://localhost:27017/compatme
+./mvnw spring-boot:run
+```
 
-- **`telegramUserId` is optional** and expected to be `null` for every entry in
-  `sample-profiles.json` — you don't need to create a real Telegram account per synthetic test
-  profile. It's only ever non-null for profiles created through the actual Telegram bot (which
-  supplies the real chat id). When `null`, `GET /api/v1/profiles/{id}` and friends return a
-  readable placeholder string (`"N/A (no Telegram account, sample/evaluation profile)"`) instead
-  of an absent/null field.
-- **`telegramUserId` is unique when present** (`@Indexed(unique = true, sparse = true)` on
+The importer logs imported and skipped counts. Two embedding calls are made per profile, up to
+20,000 Gemini calls for this dataset; check quota, runtime, and MongoDB capacity before enabling.
+Profile ids are deterministic per retained CSV row, making reruns idempotent.
+
+## Profile schema and extraction
+
+Required profile fields are name, age, sex, orientation, country, city, self-description, and
+partner preference. Orientation is `STRAIGHT`, `GAY`, `BISEXUAL`, or `OTHER`; unknown dataset
+values map to `OTHER`. Optional attributes map directly from corresponding CSV columns when
+present. For profiles created through the API or Telegram, Gemini may extract optional attributes
+from the two descriptions only when directly and unambiguously stated. It must not infer sensitive
+traits or guess; missing/ambiguous values stay null or empty, and extraction failure does not
+block profile creation. Only `selfDescription` and `preferenceDescription` are embedded or scored.
+
+`photoUrns` is an optional list of plain URN/key references. The backend never fetches, analyzes,
+moderates, or processes referenced photos and makes no vision API calls.
+
+## Telegram user ids
+
+`telegramUserId` is optional and unique when present (`@Indexed(unique = true, sparse = true)` on
   `ProfileDocument`, `sparse` so any number of profiles can still have it `null`). This index is
   only actually created by MongoDB because `spring.data.mongodb.auto-index-creation: true` is set
   in `application.yml` — Spring Data MongoDB does **not** create `@Indexed` indexes by default,
@@ -186,21 +175,6 @@ labels.
     { $match: { _id: { $ne: null }, count: { $gt: 1 } } }
   ])
   ```
-- **`sampleKey`** (required in `sample-profiles.json` only, e.g. `"seed-001"`) is a stable string
-  the seed loader (`bootstrap/ProfileDataLoader`) hashes into a deterministic profile id
-  (`UUID.nameUUIDFromBytes`, namespaced with `"compatme-sample-profile:"`), so re-running the
-  loader against an already-seeded database updates the same profiles instead of duplicating them
-  — without needing a `telegramUserId`-based lookup at all. It is never stored or exposed
-  anywhere else. If you add your own sample profiles, compute their ids the same way (or just run
-  the seed loader once and read the resulting ids back via `GET /api/v1/profiles`) before writing
-  matching entries into `ground-truth.json`.
-- The bundled profiles have no real display names (the source generator didn't provide any), so
-  `displayName` is set to each profile's `sampleKey` (e.g. `"p0001"`) as a readable placeholder.
-- `Gender` includes `NON_BINARY` (in addition to `MALE`/`FEMALE`/`OTHER`) because the bundled
-  dataset's `seekingGenders` uses it.
-- Seeding all bundled profiles calls the Gemini embedding API twice per profile (self +
-  preference descriptions) — budget for hundreds of API calls and real wall-clock time on first
-  run; re-runs skip recomputation for any profile whose text hasn't changed.
 
 ## Telegram bot: button-driven onboarding
 
@@ -216,27 +190,30 @@ and free text only where buttons don't make sense.
 2. **Name** — free text
 3. **Age** — free text, validated as an integer in `[18, 99]`; invalid input re-prompts without
    advancing
-4. **Gender** — inline keyboard, single choice (Male / Female / Non-binary)
-5. **Seeking genders** — inline keyboard, multi-select (tapping toggles a ✅ marker by editing the
+4. **Sex** — inline keyboard, single choice (Male / Female / Non-binary)
+5. **Orientation** — inline keyboard, single choice (Straight / Gay / Bisexual / Other)
+6. **Seeking genders** — inline keyboard, multi-select (tapping toggles a ✅ marker by editing the
    same message, not sending a new one); "Continue" requires at least one selection
-6. **Location** — inline choice "📍 Share My Location" or "✍️ Enter Manually":
+7. **Location** — inline choice "📍 Share My Location" or "✍️ Enter Manually":
    - *Share*: switches to a reply keyboard with Telegram's native location-request button; the
      resulting coordinates are reverse-geocoded (see below) into a country/city, shown as an
      inline "is this correct?" confirmation before anything is written as final; on failure, falls
      back to manual entry with an explanation
    - *Manual*: free-text country, then free-text city
-7. **Self description** / **8. Preference description** — free text, minimum 10 characters
-8. **Photos (optional, up to 5)** — inline choice "📷 Add a Photo" or "⏭ Skip for now". Adding a
-   photo appends it (only Telegram's `file_id` is stored — see below) and edits the same
-   confirmation into "✅ Photo added (N/5)." with "➕ Add Another" (hidden once 5 is reached) and
-   "✅ Done Adding Photos".
-9. **Review & confirm** — formatted summary with a "✅ Looks good, save it!" button plus separate
-   "✏️ Edit ..." buttons per field group (Name, Age, Gender/Preference, Location, Descriptions,
+8. **About me** / **About you** — free text, minimum 10 characters. Prompts suggest useful topics
+   (lifestyle, education/work, pets, languages, family plans, habits/preferences). Optional
+   attributes are only extracted when directly stated; Gemini is instructed not to infer and
+   leaves unstated/ambiguous values empty.
+9. **Photo URL (optional, up to 5)** — inline choice "🔗 Add Photo URL" or "⏭ Skip for now". The
+   user enters an HTTP(S) URL; only the reference string is stored. The backend never requests or
+   analyzes the URL or image.
+10. **Review & confirm** — formatted summary with a "✅ Looks good, save it!" button plus separate
+   "✏️ Edit ..." buttons per field group (Name, Age, Sex, Orientation, Location, Descriptions,
    Photos). Editing a field group jumps back to its first step and, on completion, returns directly
    to Review — every other already-collected field is left untouched. "✏️ Edit Photos" opens a
-   small management view: current photos as a media group, "🗑 Remove Photo N" per photo, "➕ Add
-   More" (re-enters the same add-photo flow), "✅ Done" back to Review.
-10. **Save** — maps the collected fields onto the existing `POST /api/v1/profiles` +
+   small management view showing the current URL references, "🗑 Remove URL N" per reference,
+   "➕ Add URL" (re-enters the same free-text URL step), and "✅ Done" back to Review.
+11. **Save** — maps the collected fields onto the existing `POST /api/v1/profiles` +
     `POST /api/v1/profiles/{id}/embeddings` calls (no persistence logic duplicated in the bot
     adapter), shows "🎉 Your profile is live!", then opens the persistent main menu (see below).
 
@@ -251,11 +228,11 @@ entirely), or any "⬅️ Back to Menu" button, all through one reusable method
 Four sections:
 
 - **👤 My Profile** — fetches your own profile via the existing profile-query use case and renders
-  it: photos via `sendPhoto`/`sendMediaGroup` if any are attached (else plain text), with name,
+  it as text, with name,
   age, location, self-description, and preference-description. "✏️ Edit My Profile" re-enters
   Review, prefilled from the saved profile; "⬅️ Back to Menu" returns here.
 - **💘 My Matches** — fetches top candidates via the existing recommendation use case (no scoring
-  logic duplicated) and presents them one at a time, Tinder-style: photo(s) if present, name/age/
+  logic duplicated) and presents them one at a time, Tinder-style: name/age/
   location, self-description, with "👍 Like" / "👎 Skip" / "⬅️ Back to Menu". The browsing queue is
   intentionally **session-scoped, in-memory only** (not persisted) — restarting the bot simply
   means the user re-opens My Matches to get a fresh batch, which is an acceptable simplicity
@@ -294,13 +271,10 @@ no notion of "conversation steps," only of the final, complete profile once Revi
 (The My Matches/Who Liked Me browsing queue is deliberately NOT part of this persisted state —
 see above.)
 
-**`photoFileIds`** (`List<String>`, optional, max 5): Telegram's own `file_id` references for
-uploaded photos — **only these opaque ids are stored, never image bytes**. Telegram hosts the
-actual files indefinitely and a `file_id` can be resent via `sendPhoto`/`sendMediaGroup` at any
-time, which keeps MongoDB storage minimal (relevant on a free-tier 512MB cluster) and avoids
-building a separate media storage/CDN layer. Treated exactly like `archetypeIds` architecturally:
-present through the domain model, MongoDB document, and profile DTOs, but **never read by
-`CompatibilityScorer` or any `CompatibilityAggregationStrategy`** — purely presentation data.
+**`photoUrns`** (`List<String>`, optional, max 5): plain URL/URN/key references entered by the
+user. The backend only stores and returns these strings. It does not dereference URLs, download
+bytes, render remote images, moderate or analyze photos, or call any vision API. Telegram shows a
+count of references on text cards; it does not send media.
 
 **Reverse geocoding** (`adapter/out/geocoding/`) implements a new outbound port,
 `ReverseGeocodingPort`, via the free [Nominatim](https://nominatim.openstreetmap.org)
@@ -331,7 +305,31 @@ never blocks onboarding.
 | `POST` | `/api/v1/profiles/{id}/preference-refinements` | Submit a natural-language refinement |
 | `POST` | `/api/v1/profiles/{likerId}/likes` | Record a like; returns `{"mutualMatch": bool}` |
 | `GET` | `/api/v1/profiles/{id}/liked-by` | Profiles who have liked this one, most recent first |
-| `GET` | `/api/v1/evaluation/report` | Ground-truth evaluation report (average score per label) |
+
+`POST /api/v1/profiles` and `PUT /api/v1/profiles/{id}` require `displayName`, `age`, `gender`,
+`orientation`, `country`, `city`, `selfDescription`, and `preferenceDescription`. Optional
+attributes may be supplied in `optionalFields`; otherwise Gemini extracts only explicitly stated
+details from the two descriptions. Example:
+
+```json
+{
+  "displayName": "Alex",
+  "age": 28,
+  "gender": "MALE",
+  "orientation": "STRAIGHT",
+  "country": "United States",
+  "city": "San Francisco",
+  "seekingGenders": ["FEMALE"],
+  "selfDescription": "About me: I work as a teacher, speak English and Spanish, and have a dog.",
+  "preferenceDescription": "About you: I am looking for a kind woman who enjoys the outdoors.",
+  "optionalFields": {
+    "job": "teacher",
+    "speaks": ["English", "Spanish"],
+    "pets": "has a dog"
+  },
+  "photoUrns": []
+}
+```
 
 All recommendations/refinements are scored via the app's single compatibility-scoring method
 (reciprocal harmonic mean) — there is no `strategy` parameter to select between alternatives.
@@ -377,8 +375,7 @@ run the backend as a container too, if you'd rather): see **[STARTUP.md](STARTUP
 | `NOMINATIM_BASE_URL` | no | `https://nominatim.openstreetmap.org` | Reverse-geocoding endpoint base URL |
 | `NOMINATIM_USER_AGENT` | no | see `application.yml` | **Must** identify your app per Nominatim's usage policy |
 | `NOMINATIM_MIN_REQUEST_INTERVAL_MILLIS` | no | `1100` | Client-side guard for Nominatim's 1 req/sec limit |
-| `SEED_DATA_ENABLED` | no | `false` | Set `true` to seed sample profiles at startup |
-| `GROUND_TRUTH_IMPORT_ENABLED` | no | `false` | Set `true` to (re-)import `ground-truth.json` at startup |
+| `OKCUPID_IMPORT_ENABLED` | no | `false` | Set `true` to import up to 10,000 valid OkCupid profiles and generate embeddings |
 
 ### Run
 
@@ -388,8 +385,8 @@ export MONGODB_URI=mongodb://localhost:27017/compatme   # or an Atlas SRV URI
 ./mvnw spring-boot:run
 ```
 
-To seed a handful of sample English-language profiles (and generate their embeddings) at
-startup, add `-DSEED_DATA_ENABLED=true` or export `SEED_DATA_ENABLED=true` before running.
+To import the bundled OkCupid profiles at startup, export `OKCUPID_IMPORT_ENABLED=true` before
+running. The import triggers up to 20,000 Gemini embedding calls, so allow for quota and runtime.
 
 ### Pointing at MongoDB Atlas
 
@@ -409,8 +406,8 @@ local and Atlas.
 ```
 
 Domain-layer tests (`src/test/java/.../domain/service/`) run with **zero Spring context** and
-verify the aggregation strategies directly, per the hexagonal architecture requirement that this
-logic be testable in complete isolation.
+verify reciprocal harmonic aggregation directly, per the hexagonal architecture requirement
+that this logic be testable in complete isolation.
 
 ## Notes on scope
 

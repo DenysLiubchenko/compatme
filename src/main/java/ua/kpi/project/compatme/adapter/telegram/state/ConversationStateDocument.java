@@ -26,6 +26,7 @@ public class ConversationStateDocument {
     private String name;
     private Integer age;
     private String gender;
+    private String orientation;
     private List<String> seekingGenders;
     private String country;
     private String city;
@@ -33,8 +34,9 @@ public class ConversationStateDocument {
     private String pendingCity;
     private String selfDescription;
     private String preferenceDescription;
+    private ua.kpi.project.compatme.domain.model.OptionalProfileFields optionalFields;
     private boolean returnToReview;
-    private List<String> photoFileIds;
+    private List<String> photoUrns;
 
     public ConversationStateDocument() {
     }
@@ -78,6 +80,9 @@ public class ConversationStateDocument {
     public void setGender(String gender) {
         this.gender = gender;
     }
+
+    public String getOrientation() { return orientation; }
+    public void setOrientation(String orientation) { this.orientation = orientation; }
 
     public List<String> getSeekingGenders() {
         return seekingGenders;
@@ -135,6 +140,9 @@ public class ConversationStateDocument {
         this.preferenceDescription = preferenceDescription;
     }
 
+    public ua.kpi.project.compatme.domain.model.OptionalProfileFields getOptionalFields() { return optionalFields; }
+    public void setOptionalFields(ua.kpi.project.compatme.domain.model.OptionalProfileFields optionalFields) { this.optionalFields = optionalFields; }
+
     public boolean isReturnToReview() {
         return returnToReview;
     }
@@ -143,11 +151,11 @@ public class ConversationStateDocument {
         this.returnToReview = returnToReview;
     }
 
-    public List<String> getPhotoFileIds() {
-        return photoFileIds;
+    public List<String> getPhotoUrns() {
+        return photoUrns;
     }
 
-    public void setPhotoFileIds(List<String> photoFileIds) {
-        this.photoFileIds = photoFileIds;
+    public void setPhotoUrns(List<String> photoUrns) {
+        this.photoUrns = photoUrns;
     }
 }

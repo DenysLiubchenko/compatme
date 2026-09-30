@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
 
 /**
  * In-progress conversation state for one Telegram user: the current onboarding step plus every
@@ -23,6 +24,7 @@ public class ConversationState {
     private String name;
     private Integer age;
     private String gender;
+    private String orientation;
     private final Set<String> seekingGenders = new LinkedHashSet<>();
     private String country;
     private String city;
@@ -33,9 +35,10 @@ public class ConversationState {
 
     private String selfDescription;
     private String preferenceDescription;
+    private OptionalProfileFields optionalFields = OptionalProfileFields.empty();
 
-    /** Telegram {@code file_id}s collected so far during onboarding/editing (max 5, enforced by {@code ConversationFlowHandler}). */
-    private final List<String> photoFileIds = new ArrayList<>();
+    /** User-provided photo URL/URN references (max five); never fetched or analyzed. */
+    private final List<String> photoUrns = new ArrayList<>();
 
     /**
      * When {@code true}, the current sub-flow was entered via a Review "Edit ..." button: on
@@ -85,6 +88,9 @@ public class ConversationState {
     public void setGender(String gender) {
         this.gender = gender;
     }
+
+    public String orientation() { return orientation; }
+    public void setOrientation(String orientation) { this.orientation = orientation; }
 
     public Set<String> seekingGenders() {
         return seekingGenders;
@@ -152,6 +158,11 @@ public class ConversationState {
         this.preferenceDescription = preferenceDescription;
     }
 
+    public OptionalProfileFields optionalFields() { return optionalFields; }
+    public void setOptionalFields(OptionalProfileFields optionalFields) {
+        this.optionalFields = optionalFields == null ? OptionalProfileFields.empty() : optionalFields;
+    }
+
     public boolean isReturnToReview() {
         return returnToReview;
     }
@@ -160,23 +171,23 @@ public class ConversationState {
         this.returnToReview = returnToReview;
     }
 
-    public List<String> photoFileIds() {
-        return photoFileIds;
+    public List<String> photoUrns() {
+        return photoUrns;
     }
 
-    public boolean addPhotoFileId(String fileId) {
-        if (photoFileIds.size() >= 5) {
+    public boolean addPhotoUrn(String photoUrn) {
+        if (photoUrns.size() >= 5) {
             return false;
         }
-        photoFileIds.add(fileId);
+        photoUrns.add(photoUrn);
         return true;
     }
 
-    public boolean removePhotoFileIdAt(int index) {
-        if (index < 0 || index >= photoFileIds.size()) {
+    public boolean removePhotoUrnAt(int index) {
+        if (index < 0 || index >= photoUrns.size()) {
             return false;
         }
-        photoFileIds.remove(index);
+        photoUrns.remove(index);
         return true;
     }
 }

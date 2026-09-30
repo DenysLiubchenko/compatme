@@ -7,12 +7,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ua.kpi.project.compatme.application.dto.CreateOrUpdateProfileCommand;
 import ua.kpi.project.compatme.application.port.out.LikeRepositoryPort;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
+import ua.kpi.project.compatme.application.port.out.ProfileAttributeExtractionPort;
 import ua.kpi.project.compatme.domain.model.Gender;
+import ua.kpi.project.compatme.domain.model.Orientation;
+import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileEmbeddings;
 import ua.kpi.project.compatme.domain.model.ProfileId;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -42,16 +46,17 @@ class ProfileManagementServiceTest {
     @Mock
     private LikeRepositoryPort likeRepository;
 
+    @Mock
+    private ProfileAttributeExtractionPort attributeExtraction;
+
     @Test
     void createOrUpdateProfile_reusesExistingProfile_whenTelegramUserIdAlreadyRegistered_andNoProfileIdGiven() {
-        ProfileManagementService service = new ProfileManagementService(profileRepository, likeRepository);
+        ProfileManagementService service = service();
         Profile existing = profileWith(ProfileId.generate(), "existing-telegram-id");
         when(profileRepository.findByTelegramUserId("existing-telegram-id")).thenReturn(Optional.of(existing));
         when(profileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        CreateOrUpdateProfileCommand command = new CreateOrUpdateProfileCommand(
-                null, "existing-telegram-id", "New Display Name", 30, Gender.FEMALE, Set.of(),
-                "updated self description text", "updated preference description text", null, null, null, null, null);
+        CreateOrUpdateProfileCommand command = command(null, "existing-telegram-id", "New Display Name", Gender.FEMALE);
 
         Profile result = service.createOrUpdateProfile(command);
 
@@ -64,13 +69,11 @@ class ProfileManagementServiceTest {
 
     @Test
     void createOrUpdateProfile_createsNewProfile_whenTelegramUserIdNotYetRegistered() {
-        ProfileManagementService service = new ProfileManagementService(profileRepository, likeRepository);
+        ProfileManagementService service = service();
         when(profileRepository.findByTelegramUserId("brand-new-telegram-id")).thenReturn(Optional.empty());
         when(profileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        CreateOrUpdateProfileCommand command = new CreateOrUpdateProfileCommand(
-                null, "brand-new-telegram-id", "Fresh User", 25, Gender.MALE, Set.of(),
-                "self description text here", "preference description text here", null, null, null, null, null);
+        CreateOrUpdateProfileCommand command = command(null, "brand-new-telegram-id", "Fresh User", Gender.MALE);
 
         Profile result = service.createOrUpdateProfile(command);
 
@@ -80,15 +83,13 @@ class ProfileManagementServiceTest {
 
     @Test
     void createOrUpdateProfile_prefersExplicitProfileId_overTelegramUserIdLookup() {
-        ProfileManagementService service = new ProfileManagementService(profileRepository, likeRepository);
+        ProfileManagementService service = service();
         ProfileId explicitId = ProfileId.generate();
         Profile existing = profileWith(explicitId, "some-telegram-id");
         when(profileRepository.findById(explicitId)).thenReturn(Optional.of(existing));
         when(profileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        CreateOrUpdateProfileCommand command = new CreateOrUpdateProfileCommand(
-                explicitId.value(), "some-telegram-id", "Renamed", 25, Gender.MALE, Set.of(),
-                "self description text here", "preference description text here", null, null, null, null, null);
+        CreateOrUpdateProfileCommand command = command(explicitId.value(), "some-telegram-id", "Renamed", Gender.MALE);
 
         Profile result = service.createOrUpdateProfile(command);
 
@@ -98,7 +99,7 @@ class ProfileManagementServiceTest {
 
     @Test
     void deleteProfile_cascadesToLikeRepository() {
-        ProfileManagementService service = new ProfileManagementService(profileRepository, likeRepository);
+        ProfileManagementService service = service();
         ProfileId id = ProfileId.generate();
         when(profileRepository.existsById(id)).thenReturn(true);
 
@@ -110,9 +111,20 @@ class ProfileManagementServiceTest {
 
     private static Profile profileWith(ProfileId id, String telegramUserId) {
         Instant now = Instant.now();
-        return new Profile(
-                id, telegramUserId, "Old Name", 28, Gender.FEMALE, Set.of(),
-                "original self description text", "original preference description text",
-                ProfileEmbeddings.empty(), now, now);
+        return Profile.builder().id(id).telegramUserId(telegramUserId).displayName("Old Name").age(28)
+                .gender(Gender.FEMALE).orientation(Orientation.STRAIGHT).country("United States").city("New York")
+                .seekingGenders(Set.of(Gender.MALE)).selfDescription("original self description text")
+                .preferenceDescription("original preference description text").embeddings(ProfileEmbeddings.empty())
+                .createdAt(now).updatedAt(now).build();
+    }
+
+    private ProfileManagementService service() {
+        return new ProfileManagementService(profileRepository, likeRepository, attributeExtraction);
+    }
+
+    private static CreateOrUpdateProfileCommand command(String id, String telegramId, String name, Gender gender) {
+        return new CreateOrUpdateProfileCommand(id, telegramId, name, 25, gender, Orientation.STRAIGHT,
+                Set.of(Gender.FEMALE), "self description text", "preference description text", null,
+                "United States", "New York", null, OptionalProfileFields.empty(), List.of());
     }
 }

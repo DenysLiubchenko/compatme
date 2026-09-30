@@ -13,9 +13,6 @@ public record RecommendationItem(
         /** Optional photo URL of the candidate — only the URL, never image bytes. */
         String photoUrl,
 
-        /** Telegram {@code file_id} references for the candidate's uploaded photos, if any. */
-        List<String> photoFileIds,
-
         /** Optional free-text country/city, for rendering a candidate's location on a card. */
         String country,
         String city,
