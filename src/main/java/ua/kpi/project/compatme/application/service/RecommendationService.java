@@ -64,7 +64,7 @@ public class RecommendationService implements RecommendationUseCase {
                 .filter(candidate -> matchesLocationScope(requester, candidate, query.locationScope()))
                 .filter(candidate -> hasScorableEmbeddings(requester, candidate))
                 .map(candidate -> {
-                    CandidateMatch match = compatibilityScorer.score(requester, candidate, query.strategy());
+                    CandidateMatch match = compatibilityScorer.score(requester, candidate);
                     return new RecommendationResult(candidate, match);
                 })
                 .sorted(Comparator.comparingDouble((RecommendationResult r) -> r.match().aggregatedScore()).reversed())

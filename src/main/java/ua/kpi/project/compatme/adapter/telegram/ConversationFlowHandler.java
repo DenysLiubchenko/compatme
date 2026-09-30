@@ -58,7 +58,6 @@ public class ConversationFlowHandler {
     private static final Logger log = LoggerFactory.getLogger(ConversationFlowHandler.class);
 
     private static final List<String> GENDER_OPTIONS = List.of("MALE", "FEMALE", "NON_BINARY");
-    private static final String DEFAULT_STRATEGY = "RECIPROCAL_HARMONIC";
     private static final int DEFAULT_TOP_N = 5;
     private static final int BROWSE_FETCH_SIZE = 20;
     private static final int MAX_PHOTOS = 5;
@@ -679,7 +678,7 @@ public class ConversationFlowHandler {
             Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(telegramUserId);
             String profileId = String.valueOf(profile.get("id"));
             List<Map<String, Object>> recommendations =
-                    backendApiClient.getRecommendations(profileId, DEFAULT_STRATEGY, DEFAULT_TOP_N);
+                    backendApiClient.getRecommendations(profileId, DEFAULT_TOP_N);
             send(SendMessage.builder().chatId(chatId).text(formatRecommendations(recommendations)).build());
         } catch (Exception e) {
             log.warn("Failed to fetch matches for chat {}: {}", chatId, e.getMessage());
@@ -697,7 +696,7 @@ public class ConversationFlowHandler {
         try {
             Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(telegramUserId);
             String profileId = String.valueOf(profile.get("id"));
-            Map<String, Object> result = backendApiClient.refinePreference(profileId, text, DEFAULT_STRATEGY, DEFAULT_TOP_N);
+            Map<String, Object> result = backendApiClient.refinePreference(profileId, text, DEFAULT_TOP_N);
             StringBuilder response = new StringBuilder();
             response.append("Updated: ").append(result.getOrDefault("changeSummary", "")).append("\n\n");
             @SuppressWarnings("unchecked")
@@ -773,7 +772,7 @@ public class ConversationFlowHandler {
             Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(telegramUserId);
             String profileId = String.valueOf(profile.get("id"));
             List<Map<String, Object>> recommendations =
-                    backendApiClient.getRecommendations(profileId, DEFAULT_STRATEGY, BROWSE_FETCH_SIZE);
+                    backendApiClient.getRecommendations(profileId, BROWSE_FETCH_SIZE);
             recommendations.forEach(candidate -> candidate.putIfAbsent("id", candidate.get("candidateId")));
             browsingQueues.put(telegramUserId, new ArrayDeque<>(recommendations));
             browsingModes.put(telegramUserId, "MATCHES");

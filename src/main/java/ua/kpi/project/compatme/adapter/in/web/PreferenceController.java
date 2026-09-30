@@ -33,7 +33,7 @@ public class PreferenceController {
     public ResponseEntity<RefinePreferenceResponse> refinePreference(
             @PathVariable String profileId, @Valid @RequestBody RefinePreferenceRequest request) {
         RefinePreferenceResult result = preferenceRefinementUseCase.refine(new RefinePreferenceCommand(
-                profileId, request.message(), request.strategyOrDefault(), request.topNOrDefault(), request.scopeOrDefault()));
+                profileId, request.message(), request.topNOrDefault(), request.scopeOrDefault()));
 
         var items = result.recommendations().stream().map(mapper::toRecommendationItem).toList();
         return ResponseEntity.ok(new RefinePreferenceResponse(

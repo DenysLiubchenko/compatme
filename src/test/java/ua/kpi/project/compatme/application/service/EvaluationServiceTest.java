@@ -7,7 +7,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ua.kpi.project.compatme.application.dto.EvaluationReport;
 import ua.kpi.project.compatme.application.port.out.GroundTruthPairRepositoryPort;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
-import ua.kpi.project.compatme.domain.model.AggregationStrategyType;
 import ua.kpi.project.compatme.domain.model.EmbeddingVector;
 import ua.kpi.project.compatme.domain.model.Gender;
 import ua.kpi.project.compatme.domain.model.GroundTruthLabel;
@@ -17,12 +16,9 @@ import ua.kpi.project.compatme.domain.model.ProfileEmbeddings;
 import ua.kpi.project.compatme.domain.model.ProfileId;
 import ua.kpi.project.compatme.domain.service.CompatibilityScorer;
 import ua.kpi.project.compatme.domain.service.ReciprocalHarmonicAggregationStrategy;
-import ua.kpi.project.compatme.domain.service.SimpleAverageAggregationStrategy;
-import ua.kpi.project.compatme.domain.service.SimpleSelfSimilarityAggregationStrategy;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -32,8 +28,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Verifies {@link EvaluationService}'s grouping/averaging logic using hand-crafted embeddings
- * (chosen so each pair's aggregated score under each strategy is a known, simple value) and the
- * real {@link CompatibilityScorer} — no mocking of the scorer, matching the style of
+ * (chosen so each pair's aggregated score is a known, simple value) and the real
+ * {@link CompatibilityScorer} — no mocking of the scorer, matching the style of
  * {@link RecommendationServiceTest}. Only {@link ProfileRepositoryPort} and
  * {@link GroundTruthPairRepositoryPort} are mocked.
  */
@@ -48,28 +44,25 @@ class EvaluationServiceTest {
     @Mock
     private ProfileRepositoryPort profileRepository;
 
-    private final CompatibilityScorer scorer = new CompatibilityScorer(Map.of(
-            AggregationStrategyType.SIMPLE_AVERAGE, new SimpleAverageAggregationStrategy(),
-            AggregationStrategyType.SIMPLE_SELF_SIMILARITY, new SimpleSelfSimilarityAggregationStrategy(),
-            AggregationStrategyType.RECIPROCAL_HARMONIC, new ReciprocalHarmonicAggregationStrategy()));
+    private final CompatibilityScorer scorer = new CompatibilityScorer(new ReciprocalHarmonicAggregationStrategy());
 
     @Test
-    void generateReport_computesAveragePerLabelAndStrategyAcrossMultiplePairs() {
+    void generateReport_computesAveragePerLabelAcrossMultiplePairs() {
         // GIVEN two MUTUAL_MATCH pairs with different scores, and one NO_MATCH pair, all scorable.
         Profile mm1a = profileWith("mm1a", embedding(1f, 0f), embedding(1f, 0f));
         Profile mm1b = profileWith("mm1b", embedding(1f, 0f), embedding(1f, 0f));
         // scoreAtoB=cos(pref_a=[1,0], self_b=[1,0])=1; scoreBtoA=cos(pref_b=[1,0], self_a=[1,0])=1
-        // -> SIMPLE_AVERAGE=1.0, SELF_SELF_SIMILARITY=1.0, RECIPROCAL_HARMONIC=1.0
+        // -> reciprocal harmonic mean = 1.0
 
         Profile mm2a = profileWith("mm2a", embedding(1f, 0f), embedding(1f, 0f));
         Profile mm2b = profileWith("mm2b", embedding(1f, 0f), embedding(0f, 1f));
         // scoreAtoB=cos(pref_a=[1,0], self_b=[1,0])=1; scoreBtoA=cos(pref_b=[0,1], self_a=[1,0])=0
-        // -> SIMPLE_AVERAGE=0.5, SELF_SELF_SIMILARITY=cos([1,0],[1,0])=1.0, RECIPROCAL_HARMONIC=0.0 (b<=0)
+        // -> reciprocal harmonic mean = 0.0 (b<=0)
 
         Profile nma = profileWith("nma", embedding(0f, 1f), embedding(0f, 1f));
         Profile nmb = profileWith("nmb", embedding(1f, 0f), embedding(1f, 0f));
         // scoreAtoB=cos(pref_a=[0,1], self_b=[1,0])=0; scoreBtoA=cos(pref_b=[1,0], self_a=[0,1])=0
-        // -> all strategies = 0.0
+        // -> reciprocal harmonic mean = 0.0
 
         GroundTruthPair pairMm1 = new GroundTruthPair(mm1a.id(), mm1b.id(), GroundTruthLabel.MUTUAL_MATCH);
         GroundTruthPair pairMm2 = new GroundTruthPair(mm2a.id(), mm2b.id(), GroundTruthLabel.MUTUAL_MATCH);
@@ -93,22 +86,11 @@ class EvaluationServiceTest {
         assertThat(report.pairCounts().get(GroundTruthLabel.NO_MATCH)).isEqualTo(1);
         assertThat(report.pairCounts().get(GroundTruthLabel.ONE_SIDED)).isEqualTo(0);
 
-        Map<AggregationStrategyType, Double> mutualMatchAverages =
-                report.resultsByLabelAndStrategy().get(GroundTruthLabel.MUTUAL_MATCH);
-        assertThat(mutualMatchAverages.get(AggregationStrategyType.SIMPLE_AVERAGE)).isCloseTo(0.75, within(TOLERANCE));
-        assertThat(mutualMatchAverages.get(AggregationStrategyType.SIMPLE_SELF_SIMILARITY)).isCloseTo(1.0, within(TOLERANCE));
-        assertThat(mutualMatchAverages.get(AggregationStrategyType.RECIPROCAL_HARMONIC)).isCloseTo(0.5, within(TOLERANCE));
-
-        Map<AggregationStrategyType, Double> noMatchAverages =
-                report.resultsByLabelAndStrategy().get(GroundTruthLabel.NO_MATCH);
-        assertThat(noMatchAverages.get(AggregationStrategyType.SIMPLE_AVERAGE)).isCloseTo(0.0, within(TOLERANCE));
-        assertThat(noMatchAverages.get(AggregationStrategyType.SIMPLE_SELF_SIMILARITY)).isCloseTo(0.0, within(TOLERANCE));
-        assertThat(noMatchAverages.get(AggregationStrategyType.RECIPROCAL_HARMONIC)).isCloseTo(0.0, within(TOLERANCE));
-
-        // ONE_SIDED has no pairs -> averages default to 0.0 rather than throwing/NaN.
-        Map<AggregationStrategyType, Double> oneSidedAverages =
-                report.resultsByLabelAndStrategy().get(GroundTruthLabel.ONE_SIDED);
-        assertThat(oneSidedAverages.values()).allSatisfy(value -> assertThat(value).isCloseTo(0.0, within(TOLERANCE)));
+        // (1.0 + 0.0) / 2 pairs = 0.5
+        assertThat(report.averageScoreByLabel().get(GroundTruthLabel.MUTUAL_MATCH)).isCloseTo(0.5, within(TOLERANCE));
+        assertThat(report.averageScoreByLabel().get(GroundTruthLabel.NO_MATCH)).isCloseTo(0.0, within(TOLERANCE));
+        // ONE_SIDED has no pairs -> average defaults to 0.0 rather than throwing/NaN.
+        assertThat(report.averageScoreByLabel().get(GroundTruthLabel.ONE_SIDED)).isCloseTo(0.0, within(TOLERANCE));
     }
 
     @Test

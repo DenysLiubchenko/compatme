@@ -1,13 +1,12 @@
 package ua.kpi.project.compatme.adapter.out.gemini;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 /**
  * Externalized configuration for the Gemini API adapter. Bound from {@code application.yml}
- * under the {@code gemini} prefix. Model names are never hardcoded in adapter code, since they
- * are expected to change over time as Google releases newer models.
+ * under the {@code gemini} prefix (binding declared on the {@code geminiProperties} @Bean factory
+ * method in {@code config.GeminiClientConfig}, not here — see that class's Javadoc for why).
+ * Model names are never hardcoded in adapter code, since they are expected to change over time as
+ * Google releases newer models.
  */
-@ConfigurationProperties(prefix = "gemini")
 public class GeminiProperties {
 
     /** Gemini Developer API key. Must be supplied via environment variable, never hardcoded. */

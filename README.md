@@ -44,7 +44,7 @@ bootstrap/                  CommandLineRunner that seeds MongoDB with sample pro
 ```
 
 **Why this matters for the thesis**: the domain layer (`domain/service/CompatibilityScorer` and
-the `CompatibilityAggregationStrategy` implementations) can be unit-tested with zero Spring
+`CompatibilityAggregationStrategy`) can be unit-tested with zero Spring
 context — see `src/test/java/.../domain/service/`. Swapping MongoDB for another database, or the
 Gemini API for a different embedding provider, only requires writing a new class that implements
 `ProfileRepositoryPort` / `EmbeddingProviderPort` / `ChatCompletionPort` and rewiring one bean in
@@ -60,12 +60,25 @@ on the port interfaces, never on the concrete adapters.
   scoreAtoB = cosineSimilarity(embedding(preferenceDescription_A), embedding(selfDescription_B))
   scoreBtoA = cosineSimilarity(embedding(preferenceDescription_B), embedding(selfDescription_A))
   ```
-- Three selectable aggregation strategies (`domain/service/`), for the thesis's A/B evaluation:
-  - `SIMPLE_AVERAGE` — plain average of `scoreAtoB` and `scoreBtoA`
-  - `SIMPLE_SELF_SIMILARITY` — symmetric similarity between the two self-descriptions only
-  - `RECIPROCAL_HARMONIC` — harmonic mean: `2 * scoreAtoB * scoreBtoA / (scoreAtoB + scoreBtoA)`,
-    which collapses toward zero whenever either side's interest is weak (the thesis's core
-    contribution: a match only ranks highly when both sides are plausibly interested)
+- **Single, fixed compatibility-scoring method** (`domain/service/CompatibilityScorer` +
+  `ReciprocalHarmonicAggregationStrategy`): the harmonic mean of the two directional scores —
+  `2 * scoreAtoB * scoreBtoA / (scoreAtoB + scoreBtoA)`, clamped to `0.0` whenever either
+  directional score is zero or negative (cosine similarity can be negative for unrelated text,
+  and the harmonic mean is only well-behaved for same-signed positive inputs).
+
+  **Why reciprocal harmonic aggregation, not a plain average**: a recommendation is only
+  genuinely valuable if the interest is mutual. A simple average lets one very high directional
+  score mask a very low one — e.g. `average(0.95, 0.05) = 0.5`, still a "medium" recommendation
+  even though one side is barely interested. The harmonic mean collapses toward zero whenever
+  *either* direction is weak — `harmonic(0.95, 0.05) ≈ 0.095` — so a candidate only ranks highly
+  when both sides are plausibly interested in each other. One-directional infatuation does not
+  produce a high score. This is the project's only aggregation method; there is no
+  strategy-selection parameter anywhere in the API.
+
+  `CompatibilityAggregationStrategy` remains a separate interface (not inlined into
+  `CompatibilityScorer`) purely to keep the aggregation formula independently unit-testable and
+  swappable, without implying multiple interchangeable strategies exist — see
+  `domain/service/ReciprocalHarmonicAggregationStrategyTest`.
 - Embeddings are computed once and cached in MongoDB, tagged with the model name/version,
   dimensionality, and a SHA-256 hash of the source text — an embedding is only recomputed if the
   underlying text changed or the model changed (`application/service/EmbeddingGenerationService`).
@@ -98,10 +111,10 @@ on the port interfaces, never on the concrete adapters.
 - **`archetypeIds`** (`List<Integer>`, optional): a thesis-evaluation-only tag on `Profile`
   recording which synthetic personality archetype(s) a profile blends, set by the synthetic
   dataset generator. It is carried through the domain model, MongoDB document, seed-loader JSON,
-  and both profile DTOs, but is **never read by `CompatibilityScorer`, any
-  `CompatibilityAggregationStrategy`, or the recommendation candidate-filtering logic** — it exists
-  purely so evaluation results can be sliced/inspected by archetype after the fact. Every place it
-  appears in code is commented to make this explicit.
+  and both profile DTOs, but is **never read by `CompatibilityScorer` or
+  `CompatibilityAggregationStrategy`** — it exists purely so evaluation results can be
+  sliced/inspected by archetype after the fact. Every place it appears in code is commented to
+  make this explicit.
 - **`photoUrl`** (optional): a URL to the profile's photo — **only the URL is stored**, never
   image bytes (no file upload endpoint exists or is planned). Must start with `http://` or
   `https://` when present; any other scheme (e.g. `javascript:`, `data:`) is rejected both at the
@@ -109,9 +122,9 @@ on the port interfaces, never on the concrete adapters.
   constructor. Returned in `ProfileResponse` and in each `RecommendationItem` (so recommendation
   results can render a candidate's photo without a follow-up profile lookup).
 
-## Evaluating aggregation strategies against a ground-truth dataset
+## Evaluating compatibility scoring against a ground-truth dataset
 
-The thesis's results chapter compares how well each aggregation strategy reflects genuine
+The thesis's results chapter measures how well reciprocal harmonic aggregation reflects genuine
 reciprocal compatibility, using a hand- or synthetically-labeled ground-truth dataset: pairs of
 profile ids with an expected label (`MUTUAL_MATCH`, `ONE_SIDED`, or `NO_MATCH`).
 
@@ -127,23 +140,21 @@ profile ids with an expected label (`MUTUAL_MATCH`, `ONE_SIDED`, or `NO_MATCH`).
   previously stored dataset (it's a write-once import target, not an append log). Both referenced
   profiles must already exist (and, to be scorable, already have embeddings generated) — pairs
   referencing missing profiles or incomplete embeddings are skipped and logged at DEBUG.
-- **Report**: `GET /api/v1/evaluation/report` scores every stored pair under all three
-  aggregation strategies (reusing the same `CompatibilityScorer` the live recommendation flow
-  uses) and returns the average aggregated score per (label, strategy) combination, plus how many
+- **Report**: `GET /api/v1/evaluation/report` scores every stored pair via the app's single
+  `CompatibilityScorer` (reusing the same reciprocal-harmonic scoring logic the live
+  recommendation flow uses) and returns the average aggregated score per label, plus how many
   pairs contributed to each label:
   ```json
   {
-    "resultsByLabelAndStrategy": {
-      "MUTUAL_MATCH": { "SIMPLE_AVERAGE": 0.81, "SIMPLE_SELF_SIMILARITY": 0.77, "RECIPROCAL_HARMONIC": 0.79 },
-      "ONE_SIDED": { "SIMPLE_AVERAGE": 0.62, "SIMPLE_SELF_SIMILARITY": 0.58, "RECIPROCAL_HARMONIC": 0.31 },
-      "NO_MATCH": { "SIMPLE_AVERAGE": 0.18, "SIMPLE_SELF_SIMILARITY": 0.15, "RECIPROCAL_HARMONIC": 0.09 }
-    },
+    "averageScoreByLabel": { "MUTUAL_MATCH": 0.79, "ONE_SIDED": 0.31, "NO_MATCH": 0.09 },
     "pairCounts": { "MUTUAL_MATCH": 18, "ONE_SIDED": 17, "NO_MATCH": 10 }
   }
   ```
-  (numbers above are illustrative only). The same table is also logged at INFO as a plain-text
-  summary each time the report is generated, so it can be screenshotted for the thesis without a
-  JSON viewer.
+  (numbers above are illustrative only). A meaningfully higher average for `MUTUAL_MATCH` than for
+  `ONE_SIDED`/`NO_MATCH` is the empirical validation for choosing reciprocal harmonic aggregation
+  as the project's scoring method. The same table is also logged at INFO as a plain-text summary
+  each time the report is generated, so it can be screenshotted for the thesis without a JSON
+  viewer.
 
 ## Sample/test data (`sample-profiles.json` + `ground-truth.json`)
 
@@ -316,13 +327,14 @@ never blocks onboarding.
 | `GET` | `/api/v1/profiles` | List all profiles |
 | `DELETE` | `/api/v1/profiles/{id}` | Delete a profile |
 | `POST` | `/api/v1/profiles/{id}/embeddings` | Generate (cached) embeddings for a profile |
-| `GET` | `/api/v1/profiles/{id}/recommendations?strategy=&topN=&scope=` | Top-N recommendations |
+| `GET` | `/api/v1/profiles/{id}/recommendations?topN=&scope=` | Top-N recommendations |
 | `POST` | `/api/v1/profiles/{id}/preference-refinements` | Submit a natural-language refinement |
 | `POST` | `/api/v1/profiles/{likerId}/likes` | Record a like; returns `{"mutualMatch": bool}` |
 | `GET` | `/api/v1/profiles/{id}/liked-by` | Profiles who have liked this one, most recent first |
-| `GET` | `/api/v1/evaluation/report` | Ground-truth evaluation report (average score per label x strategy) |
+| `GET` | `/api/v1/evaluation/report` | Ground-truth evaluation report (average score per label) |
 
-`strategy` accepts `SIMPLE_AVERAGE`, `SIMPLE_SELF_SIMILARITY`, or `RECIPROCAL_HARMONIC` (default).
+All recommendations/refinements are scored via the app's single compatibility-scoring method
+(reciprocal harmonic mean) — there is no `strategy` parameter to select between alternatives.
 `scope` accepts `GLOBAL` (default), `COUNTRY`, or `CITY` — see "Location filtering" above.
 
 ## Running locally

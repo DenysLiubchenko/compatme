@@ -1,16 +1,15 @@
 package ua.kpi.project.compatme.application.dto;
 
-import ua.kpi.project.compatme.domain.model.AggregationStrategyType;
 import ua.kpi.project.compatme.domain.model.LocationScope;
 
 /**
- * Query for fetching top-N recommendations for a given profile under a selected aggregation
- * strategy — the strategy is selectable per-request to support the thesis's A/B evaluation.
+ * Query for fetching top-N recommendations for a given profile, scored via the app's single
+ * compatibility-scoring method (reciprocal harmonic mean — see {@code CompatibilityScorer}).
  *
  * @param locationScope how broadly to scope the candidate pool geographically, relative to the
  *     requester's own {@code country}/{@code city}; see {@link LocationScope}.
  */
-public record GetRecommendationsQuery(String requesterId, AggregationStrategyType strategy, int topN, LocationScope locationScope) {
+public record GetRecommendationsQuery(String requesterId, int topN, LocationScope locationScope) {
 
     public GetRecommendationsQuery {
         if (topN <= 0) {
@@ -22,7 +21,7 @@ public record GetRecommendationsQuery(String requesterId, AggregationStrategyTyp
     }
 
     /** Defaults {@code locationScope} to {@link LocationScope#GLOBAL} for callers that don't care. */
-    public GetRecommendationsQuery(String requesterId, AggregationStrategyType strategy, int topN) {
-        this(requesterId, strategy, topN, LocationScope.GLOBAL);
+    public GetRecommendationsQuery(String requesterId, int topN) {
+        this(requesterId, topN, LocationScope.GLOBAL);
     }
 }

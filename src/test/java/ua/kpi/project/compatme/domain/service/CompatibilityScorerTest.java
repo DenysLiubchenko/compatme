@@ -1,7 +1,6 @@
 package ua.kpi.project.compatme.domain.service;
 
 import org.junit.jupiter.api.Test;
-import ua.kpi.project.compatme.domain.model.AggregationStrategyType;
 import ua.kpi.project.compatme.domain.model.CandidateMatch;
 import ua.kpi.project.compatme.domain.model.EmbeddingVector;
 import ua.kpi.project.compatme.domain.model.Gender;
@@ -10,7 +9,6 @@ import ua.kpi.project.compatme.domain.model.ProfileEmbeddings;
 import ua.kpi.project.compatme.domain.model.ProfileId;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,20 +18,17 @@ class CompatibilityScorerTest {
 
     private static final String MODEL = "gemini-embedding-001";
 
-    private final CompatibilityScorer scorer = new CompatibilityScorer(Map.of(
-            AggregationStrategyType.SIMPLE_AVERAGE, new SimpleAverageAggregationStrategy(),
-            AggregationStrategyType.SIMPLE_SELF_SIMILARITY, new SimpleSelfSimilarityAggregationStrategy(),
-            AggregationStrategyType.RECIPROCAL_HARMONIC, new ReciprocalHarmonicAggregationStrategy()));
+    private final CompatibilityScorer scorer = new CompatibilityScorer(new ReciprocalHarmonicAggregationStrategy());
 
     @Test
-    void score_computesDirectionalScoresAndAppliesSelectedStrategy() {
+    void score_computesDirectionalScoresAndAggregatesViaReciprocalHarmonicMean() {
         // GIVEN: A's preference vector matches B's self vector well ([1,0]),
         // and B's preference vector matches A's self vector well too ([0,1] vs [0,1])
         Profile a = profileWith("Maria", embedding(new float[]{0f, 1f}), embedding(new float[]{1f, 0f}));
         Profile b = profileWith("Olena", embedding(new float[]{1f, 0f}), embedding(new float[]{0f, 1f}));
 
         // WHEN
-        CandidateMatch match = scorer.score(a, b, AggregationStrategyType.RECIPROCAL_HARMONIC);
+        CandidateMatch match = scorer.score(a, b);
 
         // THEN
         assertThat(match.candidateId()).isEqualTo(b.id());
@@ -49,7 +44,7 @@ class CompatibilityScorerTest {
         Profile withEmbeddings = profileWith("Olena", embedding(new float[]{1f, 0f}), embedding(new float[]{0f, 1f}));
 
         // WHEN / THEN
-        assertThatThrownBy(() -> scorer.score(withoutEmbeddings, withEmbeddings, AggregationStrategyType.SIMPLE_AVERAGE))
+        assertThatThrownBy(() -> scorer.score(withoutEmbeddings, withEmbeddings))
                 .isInstanceOf(IllegalStateException.class);
     }
 

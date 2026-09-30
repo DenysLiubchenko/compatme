@@ -7,7 +7,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ua.kpi.project.compatme.application.dto.GetRecommendationsQuery;
 import ua.kpi.project.compatme.application.dto.RecommendationResult;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
-import ua.kpi.project.compatme.domain.model.AggregationStrategyType;
 import ua.kpi.project.compatme.domain.model.EmbeddingVector;
 import ua.kpi.project.compatme.domain.model.Gender;
 import ua.kpi.project.compatme.domain.model.Profile;
@@ -15,12 +14,9 @@ import ua.kpi.project.compatme.domain.model.ProfileEmbeddings;
 import ua.kpi.project.compatme.domain.model.ProfileId;
 import ua.kpi.project.compatme.domain.service.CompatibilityScorer;
 import ua.kpi.project.compatme.domain.service.ReciprocalHarmonicAggregationStrategy;
-import ua.kpi.project.compatme.domain.service.SimpleAverageAggregationStrategy;
-import ua.kpi.project.compatme.domain.service.SimpleSelfSimilarityAggregationStrategy;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -34,10 +30,7 @@ class RecommendationServiceTest {
     @Mock
     private ProfileRepositoryPort profileRepository;
 
-    private final CompatibilityScorer scorer = new CompatibilityScorer(Map.of(
-            AggregationStrategyType.SIMPLE_AVERAGE, new SimpleAverageAggregationStrategy(),
-            AggregationStrategyType.SIMPLE_SELF_SIMILARITY, new SimpleSelfSimilarityAggregationStrategy(),
-            AggregationStrategyType.RECIPROCAL_HARMONIC, new ReciprocalHarmonicAggregationStrategy()));
+    private final CompatibilityScorer scorer = new CompatibilityScorer(new ReciprocalHarmonicAggregationStrategy());
 
     @Test
     void recommend_excludesCandidatesWithoutEmbeddingsAndSortsDescendingByScore() {
@@ -54,7 +47,7 @@ class RecommendationServiceTest {
 
         // WHEN
         List<RecommendationResult> results = service.recommend(
-                new GetRecommendationsQuery(requester.id().value(), AggregationStrategyType.RECIPROCAL_HARMONIC, 10));
+                new GetRecommendationsQuery(requester.id().value(), 10));
 
         // THEN
         assertThat(results).hasSize(2);
@@ -78,7 +71,7 @@ class RecommendationServiceTest {
 
         // WHEN
         List<RecommendationResult> results = service.recommend(
-                new GetRecommendationsQuery(requester.id().value(), AggregationStrategyType.SIMPLE_AVERAGE, 2));
+                new GetRecommendationsQuery(requester.id().value(), 2));
 
         // THEN
         assertThat(results).hasSize(2);

@@ -1,20 +1,18 @@
 package ua.kpi.project.compatme.domain.service;
 
-import ua.kpi.project.compatme.domain.model.AggregationStrategyType;
 import ua.kpi.project.compatme.domain.model.CandidateMatch;
 import ua.kpi.project.compatme.domain.model.DirectionalScores;
 import ua.kpi.project.compatme.domain.model.EmbeddingVector;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileEmbeddings;
 
-import java.util.Map;
 import java.util.Objects;
 
 /**
  * Domain service that computes the directional compatibility scores between two profiles and
- * aggregates them via the selected {@link CompatibilityAggregationStrategy}. This is the single
- * place where the "directional compatibility score" formulas from the thesis specification are
- * implemented:
+ * aggregates them via the single {@link CompatibilityAggregationStrategy} (reciprocal harmonic
+ * mean). This is the single place where the "directional compatibility score" formulas from the
+ * thesis specification are implemented:
  *
  * <pre>
  * scoreAtoB = cosineSimilarity(embedding(preferenceDescription_A), embedding(selfDescription_B))
@@ -26,26 +24,21 @@ import java.util.Objects;
  */
 public final class CompatibilityScorer {
 
-    private final Map<AggregationStrategyType, CompatibilityAggregationStrategy> strategies;
+    private final CompatibilityAggregationStrategy aggregationStrategy;
 
-    public CompatibilityScorer(Map<AggregationStrategyType, CompatibilityAggregationStrategy> strategies) {
-        this.strategies = Objects.requireNonNull(strategies, "strategies must not be null");
+    public CompatibilityScorer(CompatibilityAggregationStrategy aggregationStrategy) {
+        this.aggregationStrategy = Objects.requireNonNull(aggregationStrategy, "aggregationStrategy must not be null");
     }
 
     /**
-     * Scores {@code candidate} against {@code requester} using the given strategy.
+     * Scores {@code candidate} against {@code requester}.
      *
      * @throws IllegalStateException if either profile is missing a required embedding
-     * @throws IllegalArgumentException if {@code strategyType} has no registered implementation
      */
-    public CandidateMatch score(Profile requester, Profile candidate, AggregationStrategyType strategyType) {
+    public CandidateMatch score(Profile requester, Profile candidate) {
         DirectionalScores directionalScores = computeDirectionalScores(requester, candidate);
-        CompatibilityAggregationStrategy strategy = strategies.get(strategyType);
-        if (strategy == null) {
-            throw new IllegalArgumentException("No aggregation strategy registered for: " + strategyType);
-        }
-        double aggregated = strategy.aggregate(directionalScores);
-        return new CandidateMatch(candidate.id(), directionalScores, strategyType, aggregated);
+        double aggregated = aggregationStrategy.aggregate(directionalScores);
+        return new CandidateMatch(candidate.id(), directionalScores, aggregated);
     }
 
     private DirectionalScores computeDirectionalScores(Profile requester, Profile candidate) {

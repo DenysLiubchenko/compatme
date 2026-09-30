@@ -90,14 +90,14 @@ public class BackendApiClient {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> getRecommendations(String profileId, String strategy, int topN) {
-        String path = "/api/v1/profiles/%s/recommendations?strategy=%s&topN=%d".formatted(profileId, strategy, topN);
+    public List<Map<String, Object>> getRecommendations(String profileId, int topN) {
+        String path = "/api/v1/profiles/%s/recommendations?topN=%d".formatted(profileId, topN);
         Map<String, Object> response = getJson(path);
         return (List<Map<String, Object>>) response.getOrDefault("recommendations", List.of());
     }
 
-    public Map<String, Object> refinePreference(String profileId, String message, String strategy, int topN) {
-        Map<String, Object> body = Map.of("message", message, "strategy", strategy, "topN", topN);
+    public Map<String, Object> refinePreference(String profileId, String message, int topN) {
+        Map<String, Object> body = Map.of("message", message, "topN", topN);
         return postJson("/api/v1/profiles/%s/preference-refinements".formatted(profileId), body);
     }
 

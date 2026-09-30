@@ -77,7 +77,6 @@ public class ProfileWebMapper {
                 result.match().directionalScores().scoreAtoB(),
                 result.match().directionalScores().scoreBtoA(),
                 result.match().directionalScores().selfSelfSimilarity(),
-                result.match().strategy(),
                 result.match().aggregatedScore());
     }
 }

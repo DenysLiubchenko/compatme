@@ -1,7 +1,5 @@
 package ua.kpi.project.compatme.adapter.in.web.dto;
 
-import ua.kpi.project.compatme.domain.model.AggregationStrategyType;
-
 import java.util.List;
 
 /**
@@ -28,6 +26,5 @@ public record RecommendationItem(
         double scoreAtoB,
         double scoreBtoA,
         double selfSelfSimilarity,
-        AggregationStrategyType strategy,
         double aggregatedScore) {
 }

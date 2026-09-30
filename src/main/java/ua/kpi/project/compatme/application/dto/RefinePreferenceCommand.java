@@ -1,6 +1,5 @@
 package ua.kpi.project.compatme.application.dto;
 
-import ua.kpi.project.compatme.domain.model.AggregationStrategyType;
 import ua.kpi.project.compatme.domain.model.LocationScope;
 
 /**
@@ -8,7 +7,7 @@ import ua.kpi.project.compatme.domain.model.LocationScope;
  * (e.g. "I want someone calmer", "less about sports") and re-ranking recommendations afterward.
  */
 public record RefinePreferenceCommand(
-        String requesterId, String message, AggregationStrategyType strategy, int topN, LocationScope locationScope) {
+        String requesterId, String message, int topN, LocationScope locationScope) {
 
     public RefinePreferenceCommand {
         if (topN <= 0) {

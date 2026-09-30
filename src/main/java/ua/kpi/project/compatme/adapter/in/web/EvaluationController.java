@@ -6,27 +6,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ua.kpi.project.compatme.adapter.in.web.dto.EvaluationReportResponse;
 import ua.kpi.project.compatme.application.dto.EvaluationReport;
-import ua.kpi.project.compatme.application.port.in.EvaluateAggregationStrategiesUseCase;
+import ua.kpi.project.compatme.application.port.in.EvaluateCompatibilityScoringUseCase;
 
 /**
  * Inbound REST adapter exposing the thesis evaluation report: for every stored ground-truth pair,
- * the average aggregated compatibility score per (expected label, aggregation strategy)
- * combination. Read-only and side-effect-free (besides the INFO-level summary log emitted by the
- * use case) — safe to call repeatedly while iterating on the dataset.
+ * the average aggregated compatibility score per expected label. Read-only and side-effect-free
+ * (besides the INFO-level summary log emitted by the use case) — safe to call repeatedly while
+ * iterating on the dataset.
  */
 @RestController
 @RequestMapping("/api/v1/evaluation")
 public class EvaluationController {
 
-    private final EvaluateAggregationStrategiesUseCase evaluateAggregationStrategiesUseCase;
+    private final EvaluateCompatibilityScoringUseCase evaluateCompatibilityScoringUseCase;
 
-    public EvaluationController(EvaluateAggregationStrategiesUseCase evaluateAggregationStrategiesUseCase) {
-        this.evaluateAggregationStrategiesUseCase = evaluateAggregationStrategiesUseCase;
+    public EvaluationController(EvaluateCompatibilityScoringUseCase evaluateCompatibilityScoringUseCase) {
+        this.evaluateCompatibilityScoringUseCase = evaluateCompatibilityScoringUseCase;
     }
 
     @GetMapping("/report")
     public ResponseEntity<EvaluationReportResponse> getReport() {
-        EvaluationReport report = evaluateAggregationStrategiesUseCase.generateReport();
-        return ResponseEntity.ok(new EvaluationReportResponse(report.resultsByLabelAndStrategy(), report.pairCounts()));
+        EvaluationReport report = evaluateCompatibilityScoringUseCase.generateReport();
+        return ResponseEntity.ok(new EvaluationReportResponse(report.averageScoreByLabel(), report.pairCounts()));
     }
 }
