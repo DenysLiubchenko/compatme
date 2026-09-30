@@ -1,0 +1,19 @@
+src/main/resources/okcupid_profiles.csv
+  s_cf2f26eb338032::t_aa48b84bf077a6 1-10001
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "54d4bf35154ace80768e1c2f28175007ef59ae7f",
+  "prompts": {},
+  "sessions": {
+    "s_cf2f26eb338032": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f3031c784ffe4UCRv5AIxAeDvl",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
