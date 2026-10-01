@@ -136,16 +136,18 @@ Import is disabled by default. To seed the data without calling Gemini:
 
 ```bash
 export OKCUPID_IMPORT_ENABLED=true
+export OKCUPID_MAX_PROFILES=1000 # optional; defaults to 1000, maximum 10000
 export GEMINI_API_KEY=your-key
 export MONGODB_URI=mongodb://localhost:27017/compatme
 ./mvnw spring-boot:run
 ```
 
-The importer logs imported and skipped counts. CSV optional attributes are populated from their
-source columns and the importer deliberately does not call the Gemini attribute extractor or
-embedding generator. Imported profiles therefore have no embeddings and are excluded from
-recommendations until embeddings are generated separately. Profile ids are deterministic per
-retained CSV row, making reruns idempotent.
+The importer logs imported, skipped, and processed counts. `OKCUPID_MAX_PROFILES` controls the
+number of valid rows processed in one run (default 1000, capped at the 10,000 rows in the bundled
+CSV). CSV optional attributes are populated from their source columns, so Gemini attribute
+extraction is bypassed. The importer does generate the cached self/preference embeddings for the
+selected profiles; budget for up to 2,000 embedding requests at the default limit. Profile ids are
+deterministic per retained CSV row, making reruns idempotent.
 
 ## Profile schema and extraction
 
@@ -377,7 +379,8 @@ run the backend as a container too, if you'd rather): see **[STARTUP.md](STARTUP
 | `NOMINATIM_BASE_URL` | no | `https://nominatim.openstreetmap.org` | Reverse-geocoding endpoint base URL |
 | `NOMINATIM_USER_AGENT` | no | see `application.yml` | **Must** identify your app per Nominatim's usage policy |
 | `NOMINATIM_MIN_REQUEST_INTERVAL_MILLIS` | no | `1100` | Client-side guard for Nominatim's 1 req/sec limit |
-| `OKCUPID_IMPORT_ENABLED` | no | `false` | Set `true` to import up to 10,000 valid OkCupid profiles; no Gemini calls |
+| `OKCUPID_IMPORT_ENABLED` | no | `false` | Set `true` to import CSV profiles and generate embeddings |
+| `OKCUPID_MAX_PROFILES` | no | `1000` | Number of valid CSV profiles to process per run (maximum 10000) |
 
 ### Run
 
@@ -387,9 +390,9 @@ export MONGODB_URI=mongodb://localhost:27017/compatme   # or an Atlas SRV URI
 ./mvnw spring-boot:run
 ```
 
-To import the bundled OkCupid profiles at startup, export `OKCUPID_IMPORT_ENABLED=true` before
-running. The import does not call Gemini. Imported profiles have no embeddings; generate those
-later through the existing embeddings endpoint if needed for recommendations.
+To import the first 1,000 bundled OkCupid profiles and generate embeddings, export
+`OKCUPID_IMPORT_ENABLED=true`. Change `OKCUPID_MAX_PROFILES` to process a different batch size,
+up to 10,000.
 
 ### Pointing at MongoDB Atlas
 

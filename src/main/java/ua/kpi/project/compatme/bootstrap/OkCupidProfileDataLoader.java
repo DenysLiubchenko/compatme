@@ -5,10 +5,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import ua.kpi.project.compatme.application.dto.CreateOrUpdateProfileCommand;
+import ua.kpi.project.compatme.application.port.in.GenerateEmbeddingsUseCase;
 import ua.kpi.project.compatme.application.port.in.ProfileManagementUseCase;
 import ua.kpi.project.compatme.domain.model.DrinkingFrequency;
 import ua.kpi.project.compatme.domain.model.DrugUseFrequency;
@@ -33,21 +35,35 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-/** Imports at most 10,000 CSV records that have both required descriptions. */
+/** Imports a configurable batch of CSV profiles and generates their cached description embeddings. */
 @Component
 @ConditionalOnProperty(name = "app.okcupid.enabled", havingValue = "true")
 public class OkCupidProfileDataLoader implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(OkCupidProfileDataLoader.class);
-    private static final int MAX_PROFILES = 10_000;
+    private static final int DATASET_MAX_PROFILES = 10_000;
     private static final DateTimeFormatter LAST_ONLINE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm");
 
     private final ProfileManagementUseCase profileManagement;
+    private final GenerateEmbeddingsUseCase embeddingGeneration;
     private final Resource csv;
+    private final int maxProfiles;
 
-    public OkCupidProfileDataLoader(ProfileManagementUseCase profileManagement, ResourceLoader resources) {
+    public OkCupidProfileDataLoader(ProfileManagementUseCase profileManagement,
+                                    GenerateEmbeddingsUseCase embeddingGeneration,
+                                    ResourceLoader resources,
+                                    @Value("${app.okcupid.max-profiles:1000}") int maxProfiles) {
         this.profileManagement = profileManagement;
+        this.embeddingGeneration = embeddingGeneration;
         this.csv = resources.getResource("classpath:okcupid_profiles.csv");
+        this.maxProfiles = effectiveLimit(maxProfiles);
+    }
+
+    static int effectiveLimit(int configuredLimit) {
+        if (configuredLimit < 1) {
+            throw new IllegalArgumentException("app.okcupid.max-profiles must be at least 1");
+        }
+        return Math.min(configuredLimit, DATASET_MAX_PROFILES);
     }
 
     @Override
@@ -61,7 +77,7 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
             List<String> header = parseCsvLine(headerLine);
             String line;
             long lineNumber = 1;
-            while (created < MAX_PROFILES && (line = readCsvRecord(reader)) != null) {
+            while (created < maxProfiles && (line = readCsvRecord(reader)) != null) {
                 lineNumber++;
                 List<String> values = parseCsvLine(line);
                 if (values.size() != header.size()) {
@@ -78,7 +94,8 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
                 try {
                     String sampleKey = "okcupid-row-" + lineNumber;
                     CreateOrUpdateProfileCommand command = row.toCommand(sampleKey);
-                    profileManagement.createOrUpdateProfile(command);
+                    Profile profile = profileManagement.createOrUpdateProfile(command);
+                    embeddingGeneration.generateEmbeddings(profile.id());
                     created++;
                 } catch (RuntimeException e) {
                     invalidRequired++;
@@ -86,8 +103,8 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
                 }
             }
         }
-        log.info("OkCupid import complete: imported={}, skippedMissingEssay0Or9={}, skippedInvalid={}",
-                created, missingEssay, invalidRequired);
+        log.info("OkCupid import/embedding batch complete: processed={}, batchLimit={}, skippedMissingEssay0Or9={}, skippedInvalid={}",
+                created, maxProfiles, missingEssay, invalidRequired);
     }
 
     private final class CsvProfile {

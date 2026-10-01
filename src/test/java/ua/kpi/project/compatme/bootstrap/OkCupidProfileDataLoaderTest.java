@@ -45,4 +45,18 @@ class OkCupidProfileDataLoaderTest {
         assertThat(OkCupidProfileDataLoader.parseGender("f")).isEqualTo(Gender.FEMALE);
         assertThat(OkCupidProfileDataLoader.parseOrientation("bisexual")).isEqualTo(Orientation.BISEXUAL);
     }
+
+    @Test
+    void effectiveLimit_defaultsToConfiguredDefaultAndCapsAtDatasetSize() {
+        assertThat(OkCupidProfileDataLoader.effectiveLimit(1_000)).isEqualTo(1_000);
+        assertThat(OkCupidProfileDataLoader.effectiveLimit(20_000)).isEqualTo(10_000);
+    }
+
+    @Test
+    void effectiveLimit_rejectsZeroOrNegativeValues() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> OkCupidProfileDataLoader.effectiveLimit(0))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> OkCupidProfileDataLoader.effectiveLimit(-1))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

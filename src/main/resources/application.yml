@@ -36,6 +36,7 @@ nominatim:
 app:
   okcupid:
     enabled: ${OKCUPID_IMPORT_ENABLED:false}
+    max-profiles: ${OKCUPID_MAX_PROFILES:1000}
 
 springdoc:
   api-docs:
