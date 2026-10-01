@@ -34,7 +34,7 @@ public class ProfilePersistenceMapper {
         document.setCreatedAt(profile.createdAt());
         document.setUpdatedAt(profile.updatedAt());
         document.setArchetypeIds(profile.archetypeIds());
-        document.setPhotoUrl(profile.photoUrl());
+        document.setPhotoUrls(profile.photoUrls());
         document.setStatus(profile.status());
         document.setBodyType(profile.bodyType());
         document.setDiet(profile.diet());
@@ -78,7 +78,7 @@ public class ProfilePersistenceMapper {
                 .createdAt(document.getCreatedAt())
                 .updatedAt(document.getUpdatedAt())
                 .archetypeIds(document.getArchetypeIds())
-                .photoUrl(document.getPhotoUrl())
+                .photoUrls(document.getPhotoUrls())
                 .status(document.getStatus())
                 .bodyType(document.getBodyType())
                 .diet(document.getDiet())

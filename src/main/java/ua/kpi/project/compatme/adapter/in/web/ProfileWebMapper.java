@@ -39,9 +39,8 @@ public class ProfileWebMapper {
                 request.archetypeIds(),
                 request.country(),
                 request.city(),
-                request.photoUrl(),
-                request.optionalFields(),
-                request.photoUrns());
+                request.photoUrns(),
+                request.optionalFields());
     }
 
     public ProfileResponse toResponse(Profile profile) {
@@ -62,7 +61,7 @@ public class ProfileWebMapper {
                 profile.createdAt(),
                 profile.updatedAt(),
                 profile.archetypeIds(),
-                profile.photoUrl(),
+                profile.photoUrls(),
                 new OptionalProfileFields(profile.status(), profile.bodyType(), profile.diet(), profile.drinks(),
                         profile.drugs(), profile.education(), profile.ethnicity(), profile.height(), profile.income(),
                         profile.job(), profile.lastOnline(), profile.offspring(), profile.pets(), profile.religion(),
@@ -76,7 +75,7 @@ public class ProfileWebMapper {
                 candidate.id().value(),
                 candidate.displayName(),
                 candidate.age(),
-                candidate.photoUrl(),
+                candidate.photoUrls().isEmpty() ? null : candidate.photoUrls().get(0),
                 candidate.country(),
                 candidate.city(),
                 candidate.selfDescription(),

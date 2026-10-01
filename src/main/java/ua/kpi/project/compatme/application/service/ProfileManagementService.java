@@ -36,19 +36,24 @@ public class ProfileManagementService implements ProfileManagementUseCase {
     @Override
     public Profile createOrUpdateProfile(CreateOrUpdateProfileCommand command) {
         Instant now = Instant.now();
-        var optionalFields = command.optionalFields() == null
-                ? attributeExtraction.extract(command.selfDescription(), command.preferenceDescription())
-                : command.optionalFields();
-        command = new CreateOrUpdateProfileCommand(command.profileId(), command.telegramUserId(), command.displayName(),
-                command.age(), command.gender(), command.orientation(), command.seekingGenders(), command.selfDescription(),
-                command.preferenceDescription(), command.archetypeIds(), command.country(), command.city(), command.photoUrl(),
-                optionalFields, command.photoUrns());
         Profile existing = findExisting(command);
 
         if (existing == null) {
+            var optionalFields = command.optionalFields() == null
+                    ? attributeExtraction.extract(command.selfDescription(), command.preferenceDescription())
+                    : command.optionalFields();
+            command = withOptionalFields(command, optionalFields);
             ProfileId id = command.profileId() != null ? ProfileId.of(command.profileId()) : ProfileId.generate();
             Profile created = toProfileBuilder(command, id, now, now, ProfileEmbeddings.empty()).build();
             return profileRepository.save(created);
+        }
+
+        if (command.optionalFields() == null) {
+            command = withOptionalFields(command, new OptionalProfileFields(
+                    existing.status(), existing.bodyType(), existing.diet(), existing.drinks(), existing.drugs(),
+                    existing.education(), existing.ethnicity(), existing.height(), existing.income(), existing.job(),
+                    existing.lastOnline(), existing.offspring(), existing.pets(), existing.religion(), existing.sign(),
+                    existing.smokes(), existing.speaks()));
         }
 
         // Preserve embedding-staleness detection: only clears an embedding if its source text changed.
@@ -62,6 +67,14 @@ public class ProfileManagementService implements ProfileManagementUseCase {
         return profileRepository.save(rebuilt);
     }
 
+    private CreateOrUpdateProfileCommand withOptionalFields(
+            CreateOrUpdateProfileCommand command, OptionalProfileFields optionalFields) {
+        return new CreateOrUpdateProfileCommand(command.profileId(), command.telegramUserId(), command.displayName(),
+                command.age(), command.gender(), command.orientation(), command.seekingGenders(), command.selfDescription(),
+                command.preferenceDescription(), command.archetypeIds(), command.country(), command.city(), command.photoUrls(),
+                optionalFields);
+    }
+
     private Profile.Builder toProfileBuilder(
             CreateOrUpdateProfileCommand command, ProfileId id, Instant createdAt, Instant updatedAt,
             ProfileEmbeddings embeddings) {
@@ -73,13 +86,12 @@ public class ProfileManagementService implements ProfileManagementUseCase {
                 .country(command.country()).city(command.city()).seekingGenders(command.seekingGenders())
                 .selfDescription(command.selfDescription()).preferenceDescription(command.preferenceDescription())
                 .embeddings(embeddings).createdAt(createdAt).updatedAt(updatedAt)
-                .archetypeIds(command.archetypeIds()).photoUrl(command.photoUrl())
+                .archetypeIds(command.archetypeIds()).photoUrls(command.photoUrls())
                 .status(fields.status()).bodyType(fields.bodyType())
                 .diet(fields.diet()).drinks(fields.drinks()).drugs(fields.drugs()).education(fields.education())
                 .ethnicity(fields.ethnicity()).height(fields.height()).income(fields.income()).job(fields.job())
                 .lastOnline(fields.lastOnline()).offspring(fields.offspring()).pets(fields.pets())
-                .religion(fields.religion()).sign(fields.sign()).smokes(fields.smokes()).speaks(fields.speaks())
-                .photoUrns(command.photoUrns());
+                .religion(fields.religion()).sign(fields.sign()).smokes(fields.smokes()).speaks(fields.speaks());
     }
 
     /**

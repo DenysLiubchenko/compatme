@@ -132,7 +132,7 @@ The source `location` column was replaced by `country` and `city`. Source values
 `city` (for example, `san francisco, california` becomes `San Francisco`, `United States`). State
 is not misrepresented as a country. The CSV has no photo data, so imported `photoUrns` is empty.
 
-Import is disabled by default. To seed the data and generate embeddings:
+Import is disabled by default. To seed the data without calling Gemini:
 
 ```bash
 export OKCUPID_IMPORT_ENABLED=true
@@ -141,9 +141,11 @@ export MONGODB_URI=mongodb://localhost:27017/compatme
 ./mvnw spring-boot:run
 ```
 
-The importer logs imported and skipped counts. Two embedding calls are made per profile, up to
-20,000 Gemini calls for this dataset; check quota, runtime, and MongoDB capacity before enabling.
-Profile ids are deterministic per retained CSV row, making reruns idempotent.
+The importer logs imported and skipped counts. CSV optional attributes are populated from their
+source columns and the importer deliberately does not call the Gemini attribute extractor or
+embedding generator. Imported profiles therefore have no embeddings and are excluded from
+recommendations until embeddings are generated separately. Profile ids are deterministic per
+retained CSV row, making reruns idempotent.
 
 ## Profile schema and extraction
 
@@ -375,7 +377,7 @@ run the backend as a container too, if you'd rather): see **[STARTUP.md](STARTUP
 | `NOMINATIM_BASE_URL` | no | `https://nominatim.openstreetmap.org` | Reverse-geocoding endpoint base URL |
 | `NOMINATIM_USER_AGENT` | no | see `application.yml` | **Must** identify your app per Nominatim's usage policy |
 | `NOMINATIM_MIN_REQUEST_INTERVAL_MILLIS` | no | `1100` | Client-side guard for Nominatim's 1 req/sec limit |
-| `OKCUPID_IMPORT_ENABLED` | no | `false` | Set `true` to import up to 10,000 valid OkCupid profiles and generate embeddings |
+| `OKCUPID_IMPORT_ENABLED` | no | `false` | Set `true` to import up to 10,000 valid OkCupid profiles; no Gemini calls |
 
 ### Run
 
@@ -386,7 +388,8 @@ export MONGODB_URI=mongodb://localhost:27017/compatme   # or an Atlas SRV URI
 ```
 
 To import the bundled OkCupid profiles at startup, export `OKCUPID_IMPORT_ENABLED=true` before
-running. The import triggers up to 20,000 Gemini embedding calls, so allow for quota and runtime.
+running. The import does not call Gemini. Imported profiles have no embeddings; generate those
+later through the existing embeddings endpoint if needed for recommendations.
 
 ### Pointing at MongoDB Atlas
 

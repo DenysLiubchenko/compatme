@@ -16,8 +16,8 @@ import java.util.Set;
  * @param country optional free-text country, used only by the location-scope recommendation
  *     filter (see {@link ua.kpi.project.compatme.domain.model.LocationScope}).
  * @param city optional free-text city, used only by the location-scope recommendation filter.
- * @param photoUrl optional photo URL; must start with {@code http://} or {@code https://} when
- *     present (enforced by the domain {@code Profile} constructor).
+ * @param photoUrls optional set of photo URLs/URNs; each must start with {@code http://} or 
+ *     {@code https://} when present (enforced by the domain {@code Profile} constructor).
  */
 public record CreateOrUpdateProfileCommand(
         String profileId,
@@ -32,7 +32,6 @@ public record CreateOrUpdateProfileCommand(
         List<Integer> archetypeIds,
         String country,
         String city,
-        String photoUrl,
-        OptionalProfileFields optionalFields,
-        List<String> photoUrns) {
+        List<String> photoUrls,
+        OptionalProfileFields optionalFields) {
 }

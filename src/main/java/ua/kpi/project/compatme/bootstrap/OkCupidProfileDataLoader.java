@@ -9,7 +9,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import ua.kpi.project.compatme.application.dto.CreateOrUpdateProfileCommand;
-import ua.kpi.project.compatme.application.port.in.GenerateEmbeddingsUseCase;
 import ua.kpi.project.compatme.application.port.in.ProfileManagementUseCase;
 import ua.kpi.project.compatme.domain.model.DrinkingFrequency;
 import ua.kpi.project.compatme.domain.model.DrugUseFrequency;
@@ -44,13 +43,10 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
     private static final DateTimeFormatter LAST_ONLINE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm");
 
     private final ProfileManagementUseCase profileManagement;
-    private final GenerateEmbeddingsUseCase embeddings;
     private final Resource csv;
 
-    public OkCupidProfileDataLoader(ProfileManagementUseCase profileManagement, GenerateEmbeddingsUseCase embeddings,
-                                    ResourceLoader resources) {
+    public OkCupidProfileDataLoader(ProfileManagementUseCase profileManagement, ResourceLoader resources) {
         this.profileManagement = profileManagement;
-        this.embeddings = embeddings;
         this.csv = resources.getResource("classpath:okcupid_profiles.csv");
     }
 
@@ -82,8 +78,7 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
                 try {
                     String sampleKey = "okcupid-row-" + lineNumber;
                     CreateOrUpdateProfileCommand command = row.toCommand(sampleKey);
-                    Profile profile = profileManagement.createOrUpdateProfile(command);
-                    embeddings.generateEmbeddings(profile.id());
+                    profileManagement.createOrUpdateProfile(command);
                     created++;
                 } catch (RuntimeException e) {
                     invalidRequired++;
@@ -118,7 +113,7 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
             return new CreateOrUpdateProfileCommand(
                     deterministicId(sampleKey), null, name, integer(get("age")), gender, orientation,
                     seeking, get("essay0"), get("essay9"), List.of(), location.country(), location.city(),
-                    null, List.of(), optional, List.of());
+                    List.of(), optional);
         }
     }
 

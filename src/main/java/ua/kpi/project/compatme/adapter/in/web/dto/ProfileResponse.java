@@ -34,14 +34,13 @@ public record ProfileResponse(
         Instant createdAt,
         Instant updatedAt,
 
-        /**
-         * Thesis-evaluation-only metadata: synthetic personality archetype tags. Purely
+        /** Thesis-evaluation-only metadata: synthetic personality archetype tags. Purely
          * descriptive — never read by the compatibility scoring/recommendation logic.
          */
         List<Integer> archetypeIds,
 
-        /** Optional photo URL — only the URL is stored/returned, never image bytes. */
-        String photoUrl,
+        /** Photo URLs — only URLs are stored/returned, never image bytes. */
+        List<String> photoUrls,
 
         OptionalProfileFields optionalFields,
 

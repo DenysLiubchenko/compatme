@@ -56,8 +56,8 @@ public class ProfileDocument {
      */
     private List<Integer> archetypeIds;
 
-    /** Optional photo URL. Only the URL is stored — never image bytes. */
-    private String photoUrl;
+    /** Photo URLs. Only URLs are stored — never image bytes. */
+    private List<String> photoUrls;
 
     private RelationshipStatus status;
     private String bodyType;
@@ -192,12 +192,12 @@ public class ProfileDocument {
         this.archetypeIds = archetypeIds;
     }
 
-    public String getPhotoUrl() {
-        return photoUrl;
+    public List<String> getPhotoUrls() {
+        return photoUrls;
     }
 
-    public void setPhotoUrl(String photoUrl) {
-        this.photoUrl = photoUrl;
+    public void setPhotoUrls(List<String> photoUrls) {
+        this.photoUrls = photoUrls;
     }
 
     public RelationshipStatus getStatus() { return status; }
