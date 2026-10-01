@@ -16,6 +16,8 @@ import ua.kpi.project.compatme.domain.service.CompatibilityScorer;
 
 import java.util.Comparator;
 import java.util.List;
+import java.time.Duration;
+import java.time.Instant;
 
 /**
  * Application service implementing top-N recommendation retrieval.
@@ -46,7 +48,10 @@ public class RecommendationService implements RecommendationUseCase {
 
     @Override
     public List<RecommendationResult> recommend(GetRecommendationsQuery query) {
+        Instant startedAt = Instant.now();
         ProfileId requesterId = ProfileId.of(query.requesterId());
+        log.info("Starting recommendation search for profile {}, topN={}, scope={}",
+                requesterId, query.topN(), query.locationScope());
         Profile requester = profileRepository.findById(requesterId)
                 .orElseThrow(() -> new ProfileNotFoundException(requesterId.value()));
 
@@ -58,11 +63,14 @@ public class RecommendationService implements RecommendationUseCase {
 
         ProfileRepositoryPort.CandidateFilter filter = ageFilterCenteredOn(requester);
         List<Profile> candidates = profileRepository.findCandidates(requesterId, filter);
+        List<Profile> genderMatches = candidates.stream()
+                .filter(candidate -> mutuallyMatchesGenderPreference(requester, candidate)).toList();
+        List<Profile> locationMatches = genderMatches.stream()
+                .filter(candidate -> matchesLocationScope(requester, candidate, query.locationScope())).toList();
+        List<Profile> scorableCandidates = locationMatches.stream()
+                .filter(candidate -> hasScorableEmbeddings(requester, candidate)).toList();
 
-        return candidates.stream()
-                .filter(candidate -> mutuallyMatchesGenderPreference(requester, candidate))
-                .filter(candidate -> matchesLocationScope(requester, candidate, query.locationScope()))
-                .filter(candidate -> hasScorableEmbeddings(requester, candidate))
+        List<RecommendationResult> results = scorableCandidates.stream()
                 .map(candidate -> {
                     CandidateMatch match = compatibilityScorer.score(requester, candidate);
                     return new RecommendationResult(candidate, match);
@@ -70,6 +78,12 @@ public class RecommendationService implements RecommendationUseCase {
                 .sorted(Comparator.comparingDouble((RecommendationResult r) -> r.match().aggregatedScore()).reversed())
                 .limit(query.topN())
                 .toList();
+
+        log.info("Recommendation search completed for profile {}: candidates={}, genderMatches={}, "
+                        + "locationMatches={}, scorable={}, returned={}, durationMs={}",
+                requesterId, candidates.size(), genderMatches.size(), locationMatches.size(),
+                scorableCandidates.size(), results.size(), Duration.between(startedAt, Instant.now()).toMillis());
+        return results;
     }
 
     private boolean mutuallyMatchesGenderPreference(Profile requester, Profile candidate) {

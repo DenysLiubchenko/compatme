@@ -909,12 +909,7 @@ public class ConversationFlowHandler {
             Map<String, Object> ownProfile = backendApiClient.getProfileByTelegramUserId(telegramUserId);
             String ownProfileId = String.valueOf(ownProfile.get("id"));
             String candidateId = String.valueOf(candidate.get("id"));
-            boolean mutualMatch = backendApiClient.recordLike(ownProfileId, candidateId);
-            if (mutualMatch) {
-                send(SendMessage.builder().chatId(chatId)
-                        .text("🎉 It's a mutual match with " + candidate.get("displayName") + "!")
-                        .build());
-            }
+            backendApiClient.recordLike(ownProfileId, candidateId);
         } catch (Exception e) {
             log.warn("Failed to record like for chat {}: {}", chatId, e.getMessage());
         }

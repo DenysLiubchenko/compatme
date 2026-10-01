@@ -5,12 +5,16 @@ import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
 import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
+
+import java.util.List;
 
 /**
  * Thin Telegram bot client. Deliberately contains no domain/business logic — every user action is
@@ -52,8 +56,21 @@ public class CompatmeTelegramBot extends TelegramLongPollingBot {
         return botUsername;
     }
 
+    public void sendNotification(String telegramUserId, String text) throws TelegramApiException {
+        execute(SendMessage.builder().chatId(telegramUserId).text(text).build());
+    }
+
+    public void sendNotification(String telegramUserId, String text, String buttonText, String buttonUrl)
+            throws TelegramApiException {
+        InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
+                .keyboardRow(List.of(InlineKeyboardButton.builder().text(buttonText).url(buttonUrl).build()))
+                .build();
+        execute(SendMessage.builder().chatId(telegramUserId).text(text).replyMarkup(keyboard).build());
+    }
+
     @Override
     public void onUpdateReceived(Update update) {
+        log.info("Received Telegram update {} ({})", update.getUpdateId(), updateType(update));
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
             if (isBotAccount(callbackQuery.getFrom())) {
@@ -95,6 +112,15 @@ public class CompatmeTelegramBot extends TelegramLongPollingBot {
         } else {
             flowHandler.onTextMessage(chatId, telegramUserId, text);
         }
+    }
+
+    private String updateType(Update update) {
+        if (update.hasCallbackQuery()) return "callback";
+        if (!update.hasMessage()) return "other";
+        Message message = update.getMessage();
+        if (message.hasLocation()) return "location";
+        if (message.hasText()) return "text";
+        return "other-message";
     }
 
     /** Telegram's own {@code User.isBot()} flag — {@code null}-safe since {@code from} can theoretically be absent. */
