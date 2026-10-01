@@ -1,0 +1,34 @@
+src/main/java/ua/kpi/project/compatme/adapter/in/web/RequestLoggingFilter.java
+  h_9cec5b0d0295d7 1-41
+src/main/java/ua/kpi/project/compatme/adapter/telegram/CompatmeTelegramBot.java
+  h_9cec5b0d0295d7 8-9,17-18,59-70,73,117-125
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandler.java
+  h_9cec5b0d0295d7 912
+src/main/java/ua/kpi/project/compatme/adapter/telegram/NoOpLikeNotificationAdapter.java
+  h_9cec5b0d0295d7 1-22
+src/main/java/ua/kpi/project/compatme/adapter/telegram/TelegramLikeNotificationAdapter.java
+  h_9cec5b0d0295d7 1-72
+src/main/java/ua/kpi/project/compatme/application/port/out/LikeNotificationPort.java
+  h_9cec5b0d0295d7 1-11
+src/main/java/ua/kpi/project/compatme/application/service/LikeService.java
+  h_9cec5b0d0295d7 8,29,31-32,35,40-41,45-53
+src/main/java/ua/kpi/project/compatme/application/service/RecommendationService.java
+  h_9cec5b0d0295d7 19-20,51,53-54,66-71,73,81-86
+src/test/java/ua/kpi/project/compatme/adapter/in/web/RequestLoggingFilterTest.java
+  h_9cec5b0d0295d7 1-15
+src/test/java/ua/kpi/project/compatme/adapter/telegram/TelegramLikeNotificationAdapterTest.java
+  h_9cec5b0d0295d7 1-20
+src/test/java/ua/kpi/project/compatme/application/service/LikeServiceTest.java
+  h_9cec5b0d0295d7 9,11-13,16-18,39-41,44,49-50,56,61,66-67,73-74,79,88-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "15341c1c9d31df9f32d9c2067846960d88359b45",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
