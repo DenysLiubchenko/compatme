@@ -1,0 +1,34 @@
+README.md
+  h_9cec5b0d0295d7 135,144-148,380,391-392
+src/main/java/ua/kpi/project/compatme/adapter/in/web/ProfileWebMapper.java
+  h_9cec5b0d0295d7 42-43,64,78
+src/main/java/ua/kpi/project/compatme/adapter/in/web/dto/ProfileResponse.java
+  h_9cec5b0d0295d7 37,42-43
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/ProfilePersistenceMapper.java
+  h_9cec5b0d0295d7 37,81
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/document/ProfileDocument.java
+  h_9cec5b0d0295d7 59-60,195-196,199-200
+src/main/java/ua/kpi/project/compatme/application/dto/CreateOrUpdateProfileCommand.java
+  h_9cec5b0d0295d7 19-20,35-36
+src/main/java/ua/kpi/project/compatme/application/service/ProfileManagementService.java
+  h_9cec5b0d0295d7 42-45,51-58,70-77,89,94
+src/main/java/ua/kpi/project/compatme/bootstrap/OkCupidProfileDataLoader.java
+  h_9cec5b0d0295d7 48,81,116
+src/main/java/ua/kpi/project/compatme/domain/model/Profile.java
+  h_9cec5b0d0295d7 37,75,128-141,165,207,243,279
+src/test/java/ua/kpi/project/compatme/application/service/ProfileManagementServiceTest.java
+  h_9cec5b0d0295d7 128
+src/test/java/ua/kpi/project/compatme/domain/model/ProfilePhotoUrlTest.java
+  h_9cec5b0d0295d7 13,21-22,24,28-29,31,35-36,38,42-43,45,49-50,55-56,60,62,66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1f2501565683b183fe4f2313d3aae06f4da63b6c",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
