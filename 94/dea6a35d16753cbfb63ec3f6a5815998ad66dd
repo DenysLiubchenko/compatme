@@ -1,0 +1,19 @@
+src/main/resources/okcupid_profiles.csv
+  s_8ece2a842a9ce8::t_905f688772d2d4 2-10001
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "94dea6a35d16753cbfb63ec3f6a5815998ad66dd",
+  "prompts": {},
+  "sessions": {
+    "s_8ece2a842a9ce8": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f0849a7c2ffetnxb5447qxVzZQ",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
