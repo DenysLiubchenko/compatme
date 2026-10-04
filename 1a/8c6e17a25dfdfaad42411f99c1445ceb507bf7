@@ -1,0 +1,59 @@
+src/main/java/ua/kpi/project/compatme/adapter/telegram/CompatmeTelegramBot.java
+  s_7401d0addb4cac::t_03ccf7124c6ddf 15-16,20,116-121
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandler.java
+  s_7401d0addb4cac::t_16ad0326d8c439 6-11,15-17,21-24,26-29,35,38-42,49,51-58,64-66,69,72,74-75,78-79,83,86-87,89-90,93-94,97-98,101-105,109-111,114-117,120,123-124,127-128,130-137,140-141,145-149,151,154-158
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/BrowsingFlow.java
+  s_7401d0addb4cac::t_9ecc3b855e8b52 1-185
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/MenuFlow.java
+  s_7401d0addb4cac::t_d5ef42366911fe 1-101
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/OnboardingFlow.java
+  s_7401d0addb4cac::t_212906f0847518 1-850
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/PreferencesFlow.java
+  s_7401d0addb4cac::t_89694e8df81910 1-90
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/SettingsFlow.java
+  s_7401d0addb4cac::t_61d24bb43b61ab 1-228
+src/main/java/ua/kpi/project/compatme/adapter/telegram/session/BrowsingSession.java
+  s_7401d0addb4cac::t_121b3dbbd7499a 1-64
+src/main/java/ua/kpi/project/compatme/adapter/telegram/session/BrowsingSessionStore.java
+  s_7401d0addb4cac::t_bb1b71879bf21a 1-23
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/Card.java
+  s_7401d0addb4cac::t_eba21857f5c26e 1-18
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/CardMessenger.java
+  s_7401d0addb4cac::t_42c9e5e8056920 1-125
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/Keyboards.java
+  s_7401d0addb4cac::t_90b893dd9069de 1-80
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/Labels.java
+  s_7401d0addb4cac::t_4d486cfb61bd14 1-50
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/MainMenuKeyboard.java
+  s_7401d0addb4cac::t_a09a17f6e93d3c 1-50
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/MenuAction.java
+  s_7401d0addb4cac::t_be74b418097c3c 1-9
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/ProfileCardFormatter.java
+  s_7401d0addb4cac::t_f5c4aca961a704 1-74
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/TelegramSender.java
+  s_7401d0addb4cac::t_7fd98935223c0c 1-119
+src/test/java/ua/kpi/project/compatme/adapter/telegram/BrowsingAndMenuFlowTest.java
+  s_7401d0addb4cac::t_f3c6261690a0c4 1-219
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandlerTest.java
+  s_7401d0addb4cac::t_3f83fec28738ab 244,270-272
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ui/CardMessengerTest.java
+  s_7401d0addb4cac::t_80fd66e30b4371 1-143
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ui/MainMenuKeyboardTest.java
+  s_7401d0addb4cac::t_78b69abc729543 1-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1a8c6e17a25dfdfaad42411f99c1445ceb507bf7",
+  "prompts": {},
+  "sessions": {
+    "s_7401d0addb4cac": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ef8bd64a6ffeN8vqFr5O26NYxZ",
+        "model": "claude-sonnet-5.5"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
