@@ -1,0 +1,18 @@
+src/main/java/ua/kpi/project/compatme/bootstrap/OkCupidProfileDataLoader.java
+  h_9cec5b0d0295d7 50,54-57,60-61,79,124
+src/main/resources/application-test.yml
+  h_9cec5b0d0295d7 1-9
+src/main/resources/application.yml
+  h_9cec5b0d0295d7 55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e42a3c45feaf1feea852100f14d53493e45490dc",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
