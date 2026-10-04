@@ -1,0 +1,21 @@
+src/main/java/ua/kpi/project/compatme/bootstrap/OkCupidProfileDataLoader.java
+  s_be03567e0c3c3d::t_38581398e56e43 133,141-150
+src/main/resources/okcupid_profiles.csv
+  s_be03567e0c3c3d::t_f17a835b92cadd 1-10001
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "75150898a77f70b79138ac63d57238e7fc090a68",
+  "prompts": {},
+  "sessions": {
+    "s_be03567e0c3c3d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ef92c3a03ffeJasDOGHrg6uXqZ",
+        "model": "claude-sonnet-5.5"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
