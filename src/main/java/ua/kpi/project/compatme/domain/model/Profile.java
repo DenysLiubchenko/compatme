@@ -165,6 +165,10 @@ public final class Profile {
         return toBuilder().embeddings(newEmbeddings).updatedAt(now).build();
     }
 
+    public Profile withPhotoUrns(List<String> newPhotoUrns, Instant now) {
+        return toBuilder().photoUrns(newPhotoUrns).updatedAt(now).build();
+    }
+
     private Builder toBuilder() {
         return builder().id(id).telegramUserId(telegramUserId).displayName(displayName).age(age).gender(gender)
                 .orientation(orientation).seekingGenders(seekingGenders)

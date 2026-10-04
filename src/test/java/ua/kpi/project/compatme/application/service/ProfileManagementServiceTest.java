@@ -6,6 +6,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ua.kpi.project.compatme.application.dto.CreateOrUpdateProfileCommand;
 import ua.kpi.project.compatme.application.port.out.LikeRepositoryPort;
+import ua.kpi.project.compatme.application.port.out.PhotoStoragePort;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
 import ua.kpi.project.compatme.application.port.out.ProfileAttributeExtractionPort;
 import ua.kpi.project.compatme.domain.model.Gender;
@@ -39,6 +40,9 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class ProfileManagementServiceTest {
+
+    @Mock
+    private PhotoStoragePort photoStorage;
 
     @Mock
     private ProfileRepositoryPort profileRepository;
@@ -101,12 +105,27 @@ class ProfileManagementServiceTest {
     void deleteProfile_cascadesToLikeRepository() {
         ProfileManagementService service = service();
         ProfileId id = ProfileId.generate();
-        when(profileRepository.existsById(id)).thenReturn(true);
+        Profile existing = profileWith(id, "tg").withPhotoUrns(List.of("profile-photos/a.jpg"), Instant.now());
+        when(profileRepository.findById(id)).thenReturn(Optional.of(existing));
 
         service.deleteProfile(id);
 
         verify(likeRepository).deleteAllInvolvingProfile(id);
         verify(profileRepository).deleteById(id);
+        verify(photoStorage).delete("profile-photos/a.jpg");
+    }
+
+    @Test
+    void createOrUpdateProfile_preservesExistingPhotoUrns() {
+        ProfileManagementService service = service();
+        Profile existing = profileWith(ProfileId.generate(), "tg-photos")
+                .withPhotoUrns(List.of("profile-photos/a.jpg"), Instant.now());
+        when(profileRepository.findByTelegramUserId("tg-photos")).thenReturn(Optional.of(existing));
+        when(profileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Profile result = service.createOrUpdateProfile(command(null, "tg-photos", "Renamed", Gender.FEMALE));
+
+        assertThat(result.photoUrns()).containsExactly("profile-photos/a.jpg");
     }
 
     private static Profile profileWith(ProfileId id, String telegramUserId) {
@@ -119,7 +138,7 @@ class ProfileManagementServiceTest {
     }
 
     private ProfileManagementService service() {
-        return new ProfileManagementService(profileRepository, likeRepository, attributeExtraction);
+        return new ProfileManagementService(profileRepository, likeRepository, attributeExtraction, photoStorage);
     }
 
     private static CreateOrUpdateProfileCommand command(String id, String telegramId, String name, Gender gender) {

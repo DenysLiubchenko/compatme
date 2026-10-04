@@ -4,10 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.PhotoSize;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -16,7 +18,10 @@ import ua.kpi.project.compatme.adapter.telegram.ui.MainMenuKeyboard;
 import ua.kpi.project.compatme.adapter.telegram.ui.MenuAction;
 import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
 
+import java.io.InputStream;
 import java.util.List;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -101,6 +106,14 @@ public class CompatmeTelegramBot extends TelegramLongPollingBot {
             flowHandler.onLocationMessage(chatId, telegramUserId, message.getLocation().getLatitude(), message.getLocation().getLongitude());
             return;
         }
+        if (message.hasPhoto()) {
+            handlePhotoMessage(chatId, telegramUserId, message);
+            return;
+        }
+        if (message.hasDocument()) {
+            handleDocumentPhoto(chatId, telegramUserId, message);
+            return;
+        }
         if (!message.hasText()) {
             return;
         }
@@ -119,6 +132,43 @@ public class CompatmeTelegramBot extends TelegramLongPollingBot {
             } else {
                 flowHandler.onTextMessage(chatId, telegramUserId, text);
             }
+        }
+    }
+
+    private void handlePhotoMessage(long chatId, String telegramUserId, Message message) {
+        PhotoSize largest = message.getPhoto().stream()
+                .max(Comparator.comparingInt(photo -> photo.getFileSize() == null ? 0 : photo.getFileSize()))
+                .orElse(null);
+        if (largest == null) {
+            reply(chatId, "I couldn't read that photo. Please try again.");
+            return;
+        }
+        downloadAndUpload(chatId, telegramUserId, largest.getFileId(), "image/jpeg");
+    }
+
+    private void handleDocumentPhoto(long chatId, String telegramUserId, Message message) {
+        downloadAndUpload(chatId, telegramUserId, message.getDocument().getFileId(),
+                message.getDocument().getMimeType());
+    }
+
+    private void downloadAndUpload(long chatId, String telegramUserId, String fileId, String contentType) {
+        try {
+            org.telegram.telegrambots.meta.api.objects.File file = execute(GetFile.builder().fileId(fileId).build());
+            try (InputStream stream = downloadFileAsStream(file)) {
+                flowHandler.onPhotoMessage(chatId, telegramUserId, stream.readAllBytes(),
+                        contentType == null ? "application/octet-stream" : contentType);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to process photo for chat {}: {}", chatId, e.getMessage());
+            reply(chatId, "I couldn't upload that photo right now. Please try again later.");
+        }
+    }
+
+    private void reply(long chatId, String text) {
+        try {
+            execute(SendMessage.builder().chatId(chatId).text(text).build());
+        } catch (TelegramApiException e) {
+            log.warn("Failed to send photo upload reply: {}", e.getMessage());
         }
     }
 

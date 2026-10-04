@@ -5,12 +5,16 @@ import ua.kpi.project.compatme.application.dto.CreateOrUpdateProfileCommand;
 import ua.kpi.project.compatme.application.exception.ProfileNotFoundException;
 import ua.kpi.project.compatme.application.port.in.ProfileManagementUseCase;
 import ua.kpi.project.compatme.application.port.out.LikeRepositoryPort;
+import ua.kpi.project.compatme.application.port.out.PhotoStoragePort;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
 import ua.kpi.project.compatme.application.port.out.ProfileAttributeExtractionPort;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileEmbeddings;
 import ua.kpi.project.compatme.domain.model.ProfileId;
 import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,15 +26,20 @@ import java.util.List;
 @Service
 public class ProfileManagementService implements ProfileManagementUseCase {
 
+    private static final Logger log = LoggerFactory.getLogger(ProfileManagementService.class);
+
     private final ProfileRepositoryPort profileRepository;
     private final LikeRepositoryPort likeRepository;
     private final ProfileAttributeExtractionPort attributeExtraction;
+    private final PhotoStoragePort photoStorage;
 
     public ProfileManagementService(ProfileRepositoryPort profileRepository, LikeRepositoryPort likeRepository,
-                                    ProfileAttributeExtractionPort attributeExtraction) {
+                                    ProfileAttributeExtractionPort attributeExtraction,
+                                    PhotoStoragePort photoStorage) {
         this.profileRepository = profileRepository;
         this.likeRepository = likeRepository;
         this.attributeExtraction = attributeExtraction;
+        this.photoStorage = photoStorage;
     }
 
     @Override
@@ -63,6 +72,8 @@ public class ProfileManagementService implements ProfileManagementUseCase {
         Profile rebuilt = toProfileBuilder(command, updated.id(), updated.createdAt(), now, updated.embeddings())
                 .selfDescription(updated.selfDescription())
                 .preferenceDescription(updated.preferenceDescription())
+                // photoUrns are owned by ProfilePhotoService; a profile update must never drop them.
+                .photoUrns(existing.photoUrns())
                 .searchScope(command.searchScope() != null ? command.searchScope() : existing.searchScope())
                 .minPreferredAge(command.minPreferredAge() != null ? command.minPreferredAge() : existing.minPreferredAge())
                 .maxPreferredAge(command.maxPreferredAge() != null ? command.maxPreferredAge() : existing.maxPreferredAge())
@@ -137,12 +148,19 @@ public class ProfileManagementService implements ProfileManagementUseCase {
 
     @Override
     public void deleteProfile(ProfileId id) {
-        if (!profileRepository.existsById(id)) {
-            throw new ProfileNotFoundException(id.value());
-        }
+        Profile profile = profileRepository.findById(id)
+                .orElseThrow(() -> new ProfileNotFoundException(id.value()));
         // Cascades likes on both sides (liker and liked) — orphaned like records referencing a
         // deleted profile would otherwise linger forever and pollute "Who Liked Me" for others.
         likeRepository.deleteAllInvolvingProfile(id);
         profileRepository.deleteById(id);
+        // Best effort: a storage hiccup must not make profile deletion fail or leave the profile behind.
+        for (String urn : profile.photoUrns()) {
+            try {
+                photoStorage.delete(urn);
+            } catch (RuntimeException e) {
+                log.warn("Failed to delete photo {} of deleted profile {}", urn, id.value(), e);
+            }
+        }
     }
 }

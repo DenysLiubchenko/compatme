@@ -81,6 +81,10 @@ public class MenuFlow {
         }
     }
 
+    public Map<String, Object> profileFor(String telegramUserId) {
+        return backendApiClient.getProfileByTelegramUserId(telegramUserId);
+    }
+
     /** The user pressed a bottom-menu button, so they evidently have the keyboard. */
     public void markMenuAttached(String telegramUserId) {
         menuAttached.add(telegramUserId);
@@ -122,10 +126,19 @@ public class MenuFlow {
 
             String text = ProfileCardFormatter.formatProfileCard(profile, true);
             String photoUrl = ProfileCardFormatter.firstPhotoUrl(profile);
+            String photoUrn = ProfileCardFormatter.firstPhotoUrn(profile);
             Integer sent = null;
             if (photoUrl != null) {
                 sent = telegram.sendPhoto(SendPhoto.builder().chatId(chatId)
                         .photo(new InputFile(photoUrl))
+                        .caption(truncate(text))
+                        .replyMarkup(ReplyKeyboards.profileMenu())
+                        .build());
+            }
+            if (sent == null && photoUrn != null) {
+                byte[] bytes = backendApiClient.downloadPhoto(String.valueOf(profile.get("id")), photoUrn);
+                sent = telegram.sendPhoto(SendPhoto.builder().chatId(chatId)
+                        .photo(new InputFile(new java.io.ByteArrayInputStream(bytes), "profile-photo"))
                         .caption(truncate(text))
                         .replyMarkup(ReplyKeyboards.profileMenu())
                         .build());

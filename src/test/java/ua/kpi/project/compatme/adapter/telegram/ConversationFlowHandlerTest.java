@@ -330,21 +330,22 @@ class ConversationFlowHandlerTest {
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "Someone calm who enjoys deep conversations.");
         assertThat(currentState().step()).isEqualTo(ConversationStep.PHOTOS);
 
-        // WHEN six valid URLs are entered, only five are retained.
-        for (int i = 1; i <= 6; i++) {
+        // WHEN seven valid URLs are entered, only the configured six are retained.
+        for (int i = 1; i <= 7; i++) {
             flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "https://example.com/photo-" + i + ".jpg");
         }
 
-        assertThat(currentState().photoUrns()).hasSize(5).containsExactly(
+        assertThat(currentState().photoUrns()).hasSize(6).containsExactly(
                 "https://example.com/photo-1.jpg", "https://example.com/photo-2.jpg", "https://example.com/photo-3.jpg",
-                "https://example.com/photo-4.jpg", "https://example.com/photo-5.jpg");
+                "https://example.com/photo-4.jpg", "https://example.com/photo-5.jpg",
+                "https://example.com/photo-6.jpg");
 
         // WHEN done is tapped
         flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 6, "cb7", "photo:done");
 
-        // THEN it proceeds to Review with all 5 photos intact
+        // THEN it proceeds to Review with all 6 photos intact
         assertThat(currentState().step()).isEqualTo(ConversationStep.REVIEW);
-        assertThat(currentState().photoUrns()).hasSize(5);
+        assertThat(currentState().photoUrns()).hasSize(6);
     }
 
     @Test

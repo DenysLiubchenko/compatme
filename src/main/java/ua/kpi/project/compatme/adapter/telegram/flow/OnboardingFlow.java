@@ -31,7 +31,7 @@ public class OnboardingFlow {
     private static final Logger log = LoggerFactory.getLogger(OnboardingFlow.class);
 
     private static final List<String> GENDER_OPTIONS = List.of("MALE", "FEMALE", "NON_BINARY");
-    private static final int MAX_PHOTOS = 5;
+    private static final int MAX_PHOTOS = 6;
 
     private final TelegramSender telegram;
     private final BackendApiClient backendApiClient;
@@ -99,6 +99,44 @@ public class OnboardingFlow {
             telegram.sendTextRemovingKeyboard(chatId,
                     "We couldn't detect your location automatically. Let's enter it manually instead.");
             promptManualCountry(chatId);
+        }
+    }
+
+    /**
+     * Persists the fully collected profile draft, then uploads through the shared REST use case.
+     * The final Review save updates this same profile and preserves its storage-owned URNs.
+     */
+    @SuppressWarnings("unchecked")
+    public void onPhotoMessage(long chatId, String telegramUserId, ConversationState state,
+                               byte[] bytes, String contentType) {
+        try {
+            Map<String, Object> profile;
+            try {
+                profile = backendApiClient.getProfileByTelegramUserId(telegramUserId);
+            } catch (BackendApiClient.BackendApiException e) {
+                if (e.statusCode() != 404) {
+                    throw e;
+                }
+                profile = backendApiClient.createProfile(
+                        telegramUserId, state.name(), state.age(), state.gender(), state.orientation(),
+                        state.seekingGenders(), state.country(), state.city(), state.selfDescription(),
+                        state.preferenceDescription(), List.of(), state.searchScope(),
+                        state.minPreferredAge(), state.maxPreferredAge());
+            }
+            Map<String, Object> result = backendApiClient.uploadPhoto(
+                    String.valueOf(profile.get("id")), bytes, contentType);
+            Object urn = result.get("urn");
+            if (urn instanceof String value && !state.photoUrns().contains(value)) {
+                state.addPhotoUrn(value);
+                stateStore.save(state);
+            }
+            sendNew(chatId, "Photo added (" + state.photoUrns().size() + "/" + MAX_PHOTOS + ").",
+                    photosKeyboard(state));
+        } catch (BackendApiClient.BackendApiException e) {
+            sendNew(chatId, e.getMessage(), photosKeyboard(state));
+        } catch (Exception e) {
+            log.warn("Failed to upload onboarding photo for chat {}: {}", chatId, e.getMessage());
+            sendNew(chatId, "I couldn't upload that photo right now. Please try again later.", photosKeyboard(state));
         }
     }
 
@@ -369,8 +407,8 @@ public class OnboardingFlow {
     private void promptPhotos(long chatId, ConversationState state) {
         state.setStep(ConversationStep.PHOTOS);
         stateStore.save(state);
-        sendNew(chatId, "Would you like to add a photo URL? (optional, up to " + MAX_PHOTOS
-                + "). It is shown on your profile card if Telegram can load it.", photosKeyboard(state));
+        sendNew(chatId, "Would you like to add a photo? (optional, up to " + MAX_PHOTOS
+                + "). Send it as a Telegram photo or image document.", photosKeyboard(state));
     }
 
     private org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard photosKeyboard(ConversationState state) {
@@ -380,22 +418,24 @@ public class OnboardingFlow {
     private void handlePhotoAddPrompt(long chatId, ConversationState state) {
         state.setStep(ConversationStep.PHOTOS);
         stateStore.save(state);
-        promptText(chatId, "Send a photo URL (https://...).");
+        promptText(chatId, "Send a photo now (JPEG, PNG, or WebP; maximum 5 MB).");
     }
 
-    private void handlePhotoUrlInput(long chatId, ConversationState state, String url) {
-        if (!ProfileInputValidator.isValidPhotoUrl(url)) {
-            sendNew(chatId, "Please send a valid http:// or https:// photo URL, or choose Done/Skip.", photosKeyboard(state));
+    private void handlePhotoUrlInput(long chatId, ConversationState state, String value) {
+        // Keep the pre-existing external-URL option; actual uploads still use the shared REST use case.
+        if (!ProfileInputValidator.isValidPhotoUrl(value)) {
+            sendNew(chatId, "Please send an actual photo, a valid photo URL, or choose Done/Skip.",
+                    photosKeyboard(state));
             return;
         }
-        boolean added = state.addPhotoUrn(url.trim());
+        boolean added = state.addPhotoUrn(value.trim());
         stateStore.save(state);
-        int count = state.photoUrns().size();
         if (!added) {
-            sendNew(chatId, "You've reached the " + MAX_PHOTOS + "-URL limit.", photosKeyboard(state));
+            sendNew(chatId, "You've reached the " + MAX_PHOTOS + "-photo limit.", photosKeyboard(state));
             return;
         }
-        sendNew(chatId, "✅ Photo URL added (" + count + "/" + MAX_PHOTOS + ").", photosKeyboard(state));
+        sendNew(chatId, "Photo URL added (" + state.photoUrns().size() + "/" + MAX_PHOTOS + ").",
+                photosKeyboard(state));
     }
 
     private void handlePhotosDone(long chatId, ConversationState state) {
@@ -413,8 +453,8 @@ public class OnboardingFlow {
 
     private void renderPhotoManageView(long chatId, ConversationState state) {
         List<String> photos = state.photoUrns();
-        String text = photos.isEmpty() ? "You haven't added any photo URLs yet."
-                : "Manage photo URL references:\n" + Labels.numbered(photos);
+        String text = photos.isEmpty() ? "You haven't added any photos yet."
+                : "Manage stored photos:\n" + Labels.numbered(photos);
         sendNew(chatId, text, ReplyKeyboards.photoManage(photos.size(), MAX_PHOTOS));
     }
 
@@ -422,10 +462,22 @@ public class OnboardingFlow {
         state.setReturnToReview(true);
         state.setStep(ConversationStep.PHOTOS);
         stateStore.save(state);
-        promptText(chatId, "Send a photo URL (https://...).");
+        promptText(chatId, "Send a photo now (JPEG, PNG, or WebP; maximum 5 MB).");
     }
 
     private void handlePhotoManageRemove(long chatId, ConversationState state, int index) {
+        if (index >= 0 && index < state.photoUrns().size()) {
+            String urn = state.photoUrns().get(index);
+            if (!urn.startsWith("http://") && !urn.startsWith("https://")) {
+                try {
+                    Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(state.telegramUserId());
+                    backendApiClient.deletePhoto(String.valueOf(profile.get("id")), urn);
+                } catch (BackendApiClient.BackendApiException e) {
+                    sendNew(chatId, e.getMessage(), ReplyKeyboards.photoManage(state.photoUrns().size(), MAX_PHOTOS));
+                    return;
+                }
+            }
+        }
         state.removePhotoUrnAt(index);
         stateStore.save(state);
         renderPhotoManageView(chatId, state);

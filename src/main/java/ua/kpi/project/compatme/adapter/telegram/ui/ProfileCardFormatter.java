@@ -30,13 +30,20 @@ public final class ProfileCardFormatter {
     public static Card toCard(Map<String, Object> profile, boolean includePreference, InlineKeyboardMarkup keyboard) {
         String text = formatProfileCard(profile, includePreference);
         String photoUrl = firstPhotoUrl(profile);
-        if (photoUrl == null) {
-            Object urns = profile.get("photoUrns");
-            if (urns instanceof List<?> list && !list.isEmpty()) {
-                text += "\n📷 Photo references: " + list.size();
+        String photoUrn = firstPhotoUrn(profile);
+        Object id = profile.get("id") != null ? profile.get("id") : profile.get("candidateId");
+        return new Card(text, photoUrl, id == null ? null : String.valueOf(id), photoUrn, keyboard);
+    }
+
+    public static String firstPhotoUrn(Map<String, Object> profile) {
+        if (profile.get("photoUrns") instanceof List<?> list) {
+            for (Object item : list) {
+                if (item instanceof String value && !value.isBlank() && !isHttp(value)) {
+                    return value;
+                }
             }
         }
-        return new Card(text, photoUrl, keyboard);
+        return null;
     }
 
     /** First http(s) photo reference of a profile, looking at {@code photoUrl}, {@code photoUrls} and {@code photoUrns}. */

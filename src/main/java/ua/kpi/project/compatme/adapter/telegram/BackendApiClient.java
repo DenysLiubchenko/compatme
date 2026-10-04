@@ -6,10 +6,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.Map;
 
@@ -20,6 +20,19 @@ import java.util.Map;
  * not be embedded directly in domain/service logic.
  */
 public class BackendApiClient {
+
+    public static class BackendApiException extends RuntimeException {
+        private final int statusCode;
+
+        BackendApiException(int statusCode, String message) {
+            super(message);
+            this.statusCode = statusCode;
+        }
+
+        public int statusCode() {
+            return statusCode;
+        }
+    }
 
     private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -119,6 +132,68 @@ public class BackendApiClient {
         return getJson("/api/v1/profiles/" + profileId);
     }
 
+    /** Uploads through the same REST endpoint used by every client, so all validation is shared. */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> uploadPhoto(String profileId, byte[] bytes, String contentType) {
+        String boundary = "CompatMe-" + java.util.UUID.randomUUID();
+        byte[] prefix = ("--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"file\"; filename=\"photo\"\r\n"
+                + "Content-Type: " + contentType + "\r\n\r\n").getBytes(StandardCharsets.UTF_8);
+        byte[] suffix = ("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8);
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/v1/profiles/" + profileId + "/photos"))
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .POST(HttpRequest.BodyPublishers.concat(
+                            HttpRequest.BodyPublishers.ofByteArray(prefix),
+                            HttpRequest.BodyPublishers.ofByteArray(bytes),
+                            HttpRequest.BodyPublishers.ofByteArray(suffix)))
+                    .timeout(Duration.ofSeconds(30))
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            ensureSuccess(response);
+            return objectMapper.readValue(response.body(), Map.class);
+        } catch (BackendApiException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to upload photo", e);
+        }
+    }
+
+    /** Fetches stored photo bytes through the backend; the bot never connects to MinIO directly. */
+    public byte[] downloadPhoto(String profileId, String urn) {
+        try {
+            String encodedUrn = java.net.URLEncoder.encode(urn, StandardCharsets.UTF_8).replace("%2F", "/");
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/v1/profiles/" + profileId + "/photos/" + encodedUrn))
+                    .GET().timeout(Duration.ofSeconds(30)).build();
+            HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() >= 400) {
+                throw new BackendApiException(response.statusCode(), "Could not download photo");
+            }
+            return response.body();
+        } catch (BackendApiException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to download photo", e);
+        }
+    }
+
+    public void deletePhoto(String profileId, String urn) {
+        try {
+            String encodedUrn = java.net.URLEncoder.encode(urn, StandardCharsets.UTF_8).replace("%2F", "/");
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/v1/profiles/" + profileId + "/photos/" + encodedUrn))
+                    .DELETE().timeout(Duration.ofSeconds(30)).build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            ensureSuccess(response);
+        } catch (BackendApiException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to delete photo", e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getRecommendations(String profileId, int topN) {
         String path = "/api/v1/profiles/%s/recommendations?topN=%d".formatted(profileId, topN);
@@ -186,6 +261,7 @@ public class BackendApiClient {
                     .timeout(Duration.ofSeconds(30))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            ensureSuccess(response);
             return objectMapper.readValue(response.body(), Map.class);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to call backend API: " + path, e);
@@ -202,6 +278,7 @@ public class BackendApiClient {
                     .timeout(Duration.ofSeconds(30))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            ensureSuccess(response);
             return objectMapper.readValue(response.body(), Map.class);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to call backend API: " + path, e);
@@ -218,9 +295,27 @@ public class BackendApiClient {
                     .timeout(Duration.ofSeconds(30))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            ensureSuccess(response);
             return objectMapper.readValue(response.body(), List.class);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to call backend API: " + path, e);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void ensureSuccess(HttpResponse<String> response) {
+        if (response.statusCode() < 400) {
+            return;
+        }
+        String message = "Backend returned HTTP " + response.statusCode();
+        try {
+            Map<String, Object> error = objectMapper.readValue(response.body(), Map.class);
+            if (error.get("message") instanceof String value && !value.isBlank()) {
+                message = value;
+            }
+        } catch (Exception ignored) {
+            // Keep the status-only fallback when the backend response is not JSON.
+        }
+        throw new BackendApiException(response.statusCode(), message);
     }
 }

@@ -13,6 +13,9 @@ public record RecommendationItem(
         /** Optional photo URL of the candidate — only the URL, never image bytes. */
         String photoUrl,
 
+        /** Stored photo references; bytes remain behind the profile-photo endpoint. */
+        List<String> photoUrns,
+
         /** Optional free-text country/city, for rendering a candidate's location on a card. */
         String country,
         String city,

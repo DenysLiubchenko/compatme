@@ -6,8 +6,11 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMe
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
+import ua.kpi.project.compatme.adapter.telegram.BackendApiClient;
 import ua.kpi.project.compatme.adapter.telegram.session.BrowsingSession;
 import ua.kpi.project.compatme.adapter.telegram.ui.TelegramSender.Outcome;
+
+import java.io.ByteArrayInputStream;
 
 /**
  * Owns the "one current card per user" message lifecycle: edit the tracked message in place when
@@ -20,9 +23,15 @@ public class CardMessenger {
     static final int TEXT_LIMIT = 4096;
 
     private final TelegramSender telegram;
+    private final BackendApiClient backend;
 
     public CardMessenger(TelegramSender telegram) {
+        this(telegram, null);
+    }
+
+    public CardMessenger(TelegramSender telegram, BackendApiClient backend) {
         this.telegram = telegram;
+        this.backend = backend;
     }
 
     /**
@@ -70,9 +79,13 @@ public class CardMessenger {
 
     private Sent send(long chatId, Card card) {
         if (card.hasPhoto()) {
+            InputFile photo = inputFile(card);
+            if (photo == null) {
+                return sendText(chatId, card);
+            }
             Integer photoMessage = telegram.sendPhoto(SendPhoto.builder()
                     .chatId(chatId)
-                    .photo(new InputFile(card.photoUrl()))
+                    .photo(photo)
                     .caption(truncate(card.text(), CAPTION_LIMIT))
                     .replyMarkup(card.keyboard())
                     .build());
@@ -81,12 +94,31 @@ public class CardMessenger {
             }
             // Telegram could not fetch/send the image: degrade to the text-only card.
         }
+        return sendText(chatId, card);
+    }
+
+    private Sent sendText(long chatId, Card card) {
         Integer textMessage = telegram.sendMessage(SendMessage.builder()
                 .chatId(chatId)
                 .text(truncate(card.text(), TEXT_LIMIT))
                 .replyMarkup(card.keyboard())
                 .build());
         return textMessage == null ? null : new Sent(textMessage, false);
+    }
+
+    private InputFile inputFile(Card card) {
+        if (card.photoUrl() != null && !card.photoUrl().isBlank()) {
+            return new InputFile(card.photoUrl());
+        }
+        if (backend == null || card.profileId() == null || card.photoUrn() == null) {
+            return null;
+        }
+        try {
+            byte[] bytes = backend.downloadPhoto(card.profileId(), card.photoUrn());
+            return new InputFile(new ByteArrayInputStream(bytes), "profile-photo");
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     /** @return {@code true} if the message now shows {@code card} (including "not modified"). */
@@ -96,6 +128,11 @@ public class CardMessenger {
         }
         Outcome outcome;
         if (card.hasPhoto()) {
+            // Telegram can edit media by URL/file-id, but a fresh byte stream is an upload. Replace
+            // the message instead so stored photos are sent reliably.
+            if (card.photoUrn() != null) {
+                return false;
+            }
             outcome = telegram.editMedia(EditMessageMedia.builder()
                     .chatId(chatId)
                     .messageId(messageId)

@@ -430,3 +430,19 @@ that this logic be testable in complete isolation.
   keeps the prototype runnable on a free-tier/local MongoDB instance; this is a deliberate,
   documented tradeoff appropriate for a thesis prototype's expected data scale (hundreds to a few
   thousand profiles).
+# Profile Photo Storage (MinIO)
+
+Profile photos are stored in MinIO rather than MongoDB. Start the local infrastructure with:
+
+```bash
+docker compose up -d mongodb minio
+```
+
+The MinIO S3 API is available at `http://localhost:9000`. Open the web console at
+`http://localhost:9001` and sign in with `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` from `.env`
+(the local defaults in `.env.example` are `minioadmin` / `minioadmin`). The application creates
+the configured `MINIO_BUCKET` automatically.
+
+Uploads accept JPEG, PNG, and WebP files, default to a 5 MB maximum, and allow six photos per
+profile. These rules can be overridden with `PHOTO_ALLOWED_CONTENT_TYPES`,
+`PHOTO_MAX_SIZE_BYTES`, and `PHOTO_MAX_PER_PROFILE`.

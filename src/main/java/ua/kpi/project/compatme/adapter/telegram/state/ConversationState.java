@@ -198,7 +198,7 @@ public class ConversationState {
     }
 
     public boolean addPhotoUrn(String photoUrn) {
-        if (photoUrns.size() >= 5) {
+        if (photoUrns.size() >= 6) {
             return false;
         }
         photoUrns.add(photoUrn);

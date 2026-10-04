@@ -9,10 +9,16 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import ua.kpi.project.compatme.adapter.in.web.dto.ApiErrorResponse;
 import ua.kpi.project.compatme.application.exception.ChatCompletionException;
 import ua.kpi.project.compatme.application.exception.EmbeddingGenerationException;
+import ua.kpi.project.compatme.application.exception.PhotoNotFoundException;
+import ua.kpi.project.compatme.application.exception.PhotoStorageException;
+import ua.kpi.project.compatme.application.exception.PhotoTooLargeException;
 import ua.kpi.project.compatme.application.exception.ProfileNotFoundException;
+import ua.kpi.project.compatme.application.exception.TooManyPhotosException;
+import ua.kpi.project.compatme.application.exception.UnsupportedPhotoTypeException;
 import ua.kpi.project.compatme.domain.exception.InvalidProfileDataException;
 
 import java.time.Instant;
@@ -32,6 +38,38 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ProfileNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleProfileNotFound(ProfileNotFoundException e, WebRequest request) {
         return build(HttpStatus.NOT_FOUND, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(PhotoTooLargeException.class)
+    public ResponseEntity<ApiErrorResponse> handlePhotoTooLarge(PhotoTooLargeException e, WebRequest request) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, e.getMessage(), request);
+    }
+
+    /** Raised by the servlet layer when the upload exceeds the transport-level multipart ceiling. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleMultipartTooLarge(MaxUploadSizeExceededException e, WebRequest request) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "This photo is too large - please send a smaller one.", request);
+    }
+
+    @ExceptionHandler(UnsupportedPhotoTypeException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnsupportedPhotoType(UnsupportedPhotoTypeException e, WebRequest request) {
+        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(TooManyPhotosException.class)
+    public ResponseEntity<ApiErrorResponse> handleTooManyPhotos(TooManyPhotosException e, WebRequest request) {
+        return build(HttpStatus.CONFLICT, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(PhotoNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handlePhotoNotFound(PhotoNotFoundException e, WebRequest request) {
+        return build(HttpStatus.NOT_FOUND, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(PhotoStorageException.class)
+    public ResponseEntity<ApiErrorResponse> handlePhotoStorageFailure(PhotoStorageException e, WebRequest request) {
+        log.error("Photo storage failed", e);
+        return build(HttpStatus.BAD_GATEWAY, "Photo storage is currently unavailable. Please try again later.", request);
     }
 
     @ExceptionHandler(InvalidProfileDataException.class)

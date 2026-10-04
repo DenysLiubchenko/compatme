@@ -18,6 +18,8 @@ import ua.kpi.project.compatme.adapter.telegram.ui.ReplyButtons;
 import ua.kpi.project.compatme.adapter.telegram.ui.TelegramSender;
 import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
 
+import java.util.Map;
+
 /**
  * Thin router of the Telegram conversation. Every incoming update (free text, persistent-menu
  * button, location share, or inline-button callback) is dispatched to the flow that owns it:
@@ -35,6 +37,7 @@ public class ConversationFlowHandler {
 
     private final TelegramSender telegram;
     private final ConversationStateStore stateStore;
+    private final BackendApiClient backendApiClient;
 
     private final BrowsingFlow browsingFlow;
     private final MenuFlow menuFlow;
@@ -49,9 +52,10 @@ public class ConversationFlowHandler {
             ConversationStateStore stateStore) {
         this.telegram = new TelegramSender(sender);
         this.stateStore = stateStore;
+        this.backendApiClient = backendApiClient;
 
         BrowsingSessionStore sessions = new BrowsingSessionStore();
-        CardMessenger cards = new CardMessenger(telegram);
+        CardMessenger cards = new CardMessenger(telegram, backendApiClient);
         this.browsingFlow = new BrowsingFlow(telegram, backendApiClient, sessions, cards);
         this.menuFlow = new MenuFlow(telegram, backendApiClient, browsingFlow, sessions);
         this.onboardingFlow = new OnboardingFlow(telegram, backendApiClient, reverseGeocodingPort, stateStore, menuFlow);
@@ -141,6 +145,25 @@ public class ConversationFlowHandler {
 
     public void onLocationMessage(long chatId, String telegramUserId, double latitude, double longitude) {
         onboardingFlow.onLocationMessage(chatId, telegramUserId, latitude, longitude);
+    }
+
+    /** Photo bytes downloaded by the Telegram adapter; upload and validation still happen via REST. */
+    public void onPhotoMessage(long chatId, String telegramUserId, byte[] bytes, String contentType) {
+        ConversationState state = stateStore.loadOrCreate(telegramUserId);
+        if (state.step() == ConversationStep.PHOTOS || state.step() == ConversationStep.PHOTO_MANAGE) {
+            onboardingFlow.onPhotoMessage(chatId, telegramUserId, state, bytes, contentType);
+            return;
+        }
+        try {
+            Map<String, Object> profile = menuFlow.profileFor(telegramUserId);
+            backendApiClient.uploadPhoto(String.valueOf(profile.get("id")), bytes, contentType);
+            telegram.sendText(chatId, "Photo added to your profile.");
+        } catch (BackendApiClient.BackendApiException e) {
+            telegram.sendText(chatId, e.getMessage());
+        } catch (Exception e) {
+            log.warn("Failed to upload photo for chat {}: {}", chatId, e.getMessage());
+            telegram.sendText(chatId, "I couldn't upload that photo right now. Please try again later.");
+        }
     }
 
     /**
