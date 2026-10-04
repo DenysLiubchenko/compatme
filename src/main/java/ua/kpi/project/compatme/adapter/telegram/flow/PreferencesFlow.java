@@ -7,7 +7,6 @@ import ua.kpi.project.compatme.adapter.telegram.BackendApiClient;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationState;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStep;
-import ua.kpi.project.compatme.adapter.telegram.ui.Keyboards;
 import ua.kpi.project.compatme.adapter.telegram.ui.ProfileCardFormatter;
 import ua.kpi.project.compatme.adapter.telegram.ui.TelegramSender;
 
@@ -24,17 +23,23 @@ public class PreferencesFlow {
     private final BackendApiClient backendApiClient;
     private final ConversationStateStore stateStore;
 
-    public PreferencesFlow(TelegramSender telegram, BackendApiClient backendApiClient, ConversationStateStore stateStore) {
+    private final MenuFlow menuFlow;
+
+    public PreferencesFlow(
+            TelegramSender telegram,
+            BackendApiClient backendApiClient,
+            ConversationStateStore stateStore,
+            MenuFlow menuFlow) {
         this.telegram = telegram;
         this.backendApiClient = backendApiClient;
         this.stateStore = stateStore;
+        this.menuFlow = menuFlow;
     }
 
-    public void showMenu(long chatId) {
-        telegram.sendNew(chatId,
+    public void showMenu(long chatId, String telegramUserId) {
+        menuFlow.showPreferencesMenu(chatId, telegramUserId,
                 "⚙️ Preferences — tune who you see. You can also just send me a message describing what you want "
-                        + "(e.g. \"someone calmer\") at any time.",
-                Keyboards.preferences());
+                        + "(e.g. \"someone calmer\") at any time.");
     }
 
     /** @return {@code true} if {@code data} belonged to this flow. */

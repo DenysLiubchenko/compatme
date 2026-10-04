@@ -307,7 +307,7 @@ class ConversationFlowHandlerTest {
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "30-40");
 
         verify(backendApiClient).updateAgeRange("profile-123", 30, 40);
-        assertThat(currentState().step()).isEqualTo(ConversationStep.SETTINGS_MENU);
+        assertThat(currentState().step()).isEqualTo(ConversationStep.DONE);
     }
 
     @Test

@@ -14,6 +14,7 @@ import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStep;
 import ua.kpi.project.compatme.adapter.telegram.ui.CardMessenger;
 import ua.kpi.project.compatme.adapter.telegram.ui.MenuAction;
+import ua.kpi.project.compatme.adapter.telegram.ui.ReplyButtons;
 import ua.kpi.project.compatme.adapter.telegram.ui.TelegramSender;
 import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
 
@@ -52,10 +53,10 @@ public class ConversationFlowHandler {
         BrowsingSessionStore sessions = new BrowsingSessionStore();
         CardMessenger cards = new CardMessenger(telegram);
         this.browsingFlow = new BrowsingFlow(telegram, backendApiClient, sessions, cards);
-        this.menuFlow = new MenuFlow(telegram, backendApiClient, browsingFlow);
+        this.menuFlow = new MenuFlow(telegram, backendApiClient, browsingFlow, sessions);
         this.onboardingFlow = new OnboardingFlow(telegram, backendApiClient, reverseGeocodingPort, stateStore, menuFlow);
-        this.settingsFlow = new SettingsFlow(telegram, backendApiClient, stateStore, sessions, onboardingFlow);
-        this.preferencesFlow = new PreferencesFlow(telegram, backendApiClient, stateStore);
+        this.settingsFlow = new SettingsFlow(telegram, backendApiClient, stateStore, sessions, onboardingFlow, menuFlow);
+        this.preferencesFlow = new PreferencesFlow(telegram, backendApiClient, stateStore, menuFlow);
     }
 
     // ─────────────────────────────── entry points ───────────────────────────────
@@ -94,20 +95,38 @@ public class ConversationFlowHandler {
             telegram.sendText(chatId, "You don't have a profile yet. Send /start to create one.");
             return;
         }
+        menuFlow.markMenuAttached(telegramUserId);
         if (state.step() != ConversationStep.DONE) {
             state.setStep(ConversationStep.DONE);
             stateStore.save(state);
         }
         switch (action) {
             case BROWSE -> browsingFlow.resumeOrStartMatches(chatId, telegramUserId);
-            case MY_PROFILE -> menuFlow.showOwnProfile(chatId, telegramUserId, null);
-            case PREFERENCES -> preferencesFlow.showMenu(chatId);
+            case MY_PROFILE -> menuFlow.showOwnProfile(chatId, telegramUserId);
+            case PREFERENCES -> preferencesFlow.showMenu(chatId, telegramUserId);
             case HELP -> menuFlow.sendHelp(chatId);
         }
     }
 
+    /**
+     * Free text. Reply-keyboard buttons of the active menu/step arrive here as plain text, so the
+     * label is resolved to an action first; anything else is form input or preference refinement.
+     */
     public void onTextMessage(long chatId, String telegramUserId, String text) {
         ConversationState state = stateStore.loadOrCreate(telegramUserId);
+        var action = ReplyButtons.resolve(text, state.step());
+        if (action.isPresent()) {
+            try {
+                if (dispatch(chatId, telegramUserId, null, null, action.get(), state)) {
+                    return;
+                }
+            } catch (Exception e) {
+                log.warn("Failed to handle button '{}' for chat {}: {}", text, chatId, e.getMessage());
+                telegram.sendText(chatId, "Something went wrong. Please try /start again.");
+                return;
+            }
+        }
+        menuFlow.ensureMenuAttached(chatId, telegramUserId, state.step());
         if (onboardingFlow.onText(chatId, state, text) || settingsFlow.onText(chatId, state, text)) {
             return;
         }
@@ -117,22 +136,21 @@ public class ConversationFlowHandler {
             preferencesFlow.onFreeText(chatId, telegramUserId, text);
             return;
         }
-        telegram.sendText(chatId, "Please use the buttons above, or send /start to begin.");
+        telegram.sendText(chatId, "Please use the buttons below, or send /start to begin.");
     }
 
     public void onLocationMessage(long chatId, String telegramUserId, double latitude, double longitude) {
         onboardingFlow.onLocationMessage(chatId, telegramUserId, latitude, longitude);
     }
 
+    /**
+     * Inline-button taps. Only the Like/Skip card buttons are inline now; the other branches stay so
+     * buttons on messages sent before the move to reply keyboards keep working.
+     */
     public void onCallbackQuery(long chatId, String telegramUserId, Integer messageId, String callbackQueryId, String callbackData) {
         ConversationState state = stateStore.loadOrCreate(telegramUserId);
         try {
-            boolean handled = onboardingFlow.onCallback(chatId, telegramUserId, messageId, callbackQueryId, callbackData, state)
-                    || settingsFlow.onCallback(chatId, telegramUserId, messageId, callbackQueryId, callbackData, state)
-                    || browsingFlow.onCallback(chatId, telegramUserId, messageId, callbackQueryId, callbackData)
-                    || preferencesFlow.onCallback(chatId, telegramUserId, callbackQueryId, callbackData)
-                    || onMenuCallback(chatId, telegramUserId, messageId, callbackQueryId, callbackData);
-            if (!handled) {
+            if (!dispatch(chatId, telegramUserId, messageId, callbackQueryId, callbackData, state)) {
                 log.warn("Unrecognized callback data: {}", callbackData);
                 telegram.answerCallback(callbackQueryId, null, false);
             }
@@ -142,10 +160,21 @@ public class ConversationFlowHandler {
         }
     }
 
-    private boolean onMenuCallback(long chatId, String telegramUserId, Integer messageId, String callbackQueryId, String data) {
+    /** Routes an action id (inline callback data, or a resolved reply-button label) to its flow. */
+    private boolean dispatch(long chatId, String telegramUserId, Integer messageId, String callbackQueryId,
+                             String action, ConversationState state) {
+        return onboardingFlow.onCallback(chatId, telegramUserId, messageId, callbackQueryId, action, state)
+                || settingsFlow.onCallback(chatId, telegramUserId, messageId, callbackQueryId, action, state)
+                || browsingFlow.onCallback(chatId, telegramUserId, messageId, callbackQueryId, action)
+                || preferencesFlow.onCallback(chatId, telegramUserId, callbackQueryId, action)
+                || onLegacyMenuCallback(chatId, telegramUserId, callbackQueryId, action);
+    }
+
+    /** The inline main menu no longer exists; old ones in a chat just re-attach the bottom keyboard. */
+    private boolean onLegacyMenuCallback(long chatId, String telegramUserId, String callbackQueryId, String data) {
         switch (data) {
-            case "menu:back" -> { telegram.ackSilently(callbackQueryId); menuFlow.showMainMenuInPlace(chatId, telegramUserId, messageId); }
-            case "menu:profile" -> { telegram.ackSilently(callbackQueryId); menuFlow.showOwnProfile(chatId, telegramUserId, messageId); }
+            case "menu:back" -> { telegram.ackSilently(callbackQueryId); menuFlow.sendMainMenu(chatId, telegramUserId); }
+            case "menu:profile" -> { telegram.ackSilently(callbackQueryId); menuFlow.showOwnProfile(chatId, telegramUserId); }
             default -> { return false; }
         }
         return true;

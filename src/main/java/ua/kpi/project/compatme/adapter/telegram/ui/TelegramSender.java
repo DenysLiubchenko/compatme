@@ -10,7 +10,10 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -90,7 +93,7 @@ public class TelegramSender {
         }
     }
 
-    public void sendNew(long chatId, String text, InlineKeyboardMarkup keyboard) {
+    public void sendNew(long chatId, String text, ReplyKeyboard keyboard) {
         send(SendMessage.builder().chatId(chatId).text(text).replyMarkup(keyboard).build());
     }
 
@@ -98,7 +101,33 @@ public class TelegramSender {
         send(SendMessage.builder().chatId(chatId).text(text).build());
     }
 
+    /** Sends {@code text} and hides any reply keyboard (used when the next input is free text). */
+    public void sendTextRemovingKeyboard(long chatId, String text) {
+        send(SendMessage.builder().chatId(chatId).text(text)
+                .replyMarkup(ReplyKeyboardRemove.builder().removeKeyboard(true).build())
+                .build());
+    }
+
+    /** Edits a message that came from a (legacy) inline tap; does nothing when there is no such message. */
+    public void editIfPresent(long chatId, Integer messageId, String text) {
+        if (messageId != null) {
+            send(EditMessageText.builder().chatId(chatId).messageId(messageId).text(text).build());
+        }
+    }
+
+    /** Alert for a callback, or a plain message when the action came from a reply-keyboard button. */
+    public void alert(String callbackQueryId, long chatId, String text) {
+        if (callbackQueryId != null) {
+            answerCallback(callbackQueryId, text, true);
+        } else {
+            sendText(chatId, text);
+        }
+    }
+
     public void removeKeyboard(long chatId, Integer messageId) {
+        if (messageId == null) {
+            return;
+        }
         send(EditMessageReplyMarkup.builder().chatId(chatId).messageId(messageId)
                 .replyMarkup(InlineKeyboardMarkup.builder().build())
                 .build());
@@ -109,6 +138,9 @@ public class TelegramSender {
     }
 
     public void answerCallback(String callbackQueryId, String alertText, boolean showAlert) {
+        if (callbackQueryId == null) {
+            return;
+        }
         AnswerCallbackQuery.AnswerCallbackQueryBuilder builder =
                 AnswerCallbackQuery.builder().callbackQueryId(callbackQueryId);
         if (alertText != null) {

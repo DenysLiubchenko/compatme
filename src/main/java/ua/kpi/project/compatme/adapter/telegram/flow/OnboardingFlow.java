@@ -3,20 +3,13 @@ package ua.kpi.project.compatme.adapter.telegram.flow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import ua.kpi.project.compatme.adapter.telegram.BackendApiClient;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationState;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStep;
-import ua.kpi.project.compatme.adapter.telegram.ui.Keyboards;
 import ua.kpi.project.compatme.adapter.telegram.ui.Labels;
+import ua.kpi.project.compatme.adapter.telegram.ui.ReplyKeyboards;
 import ua.kpi.project.compatme.adapter.telegram.ui.TelegramSender;
 import ua.kpi.project.compatme.adapter.telegram.validation.ProfileInputValidator;
 import ua.kpi.project.compatme.application.exception.ReverseGeocodingException;
@@ -65,18 +58,11 @@ public class OnboardingFlow {
         ConversationState state = new ConversationState(telegramUserId);
         state.setStep(ConversationStep.WELCOME);
         stateStore.save(state);
-
-        InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(button("🚀 Create My Profile", "start_create")))
-                .build();
-        send(SendMessage.builder()
-                .chatId(chatId)
-                .text("Welcome to CompatMe! Let's build a profile that finds people who are genuinely compatible with you.")
-                .replyMarkup(keyboard)
-                .build());
+        telegram.sendNew(chatId,
+                "Welcome to CompatMe! Let's build a profile that finds people who are genuinely compatible with you.",
+                ReplyKeyboards.welcome());
     }
 
-    /** Handles free text for onboarding steps; returns {@code false} if the step is not an onboarding text step. */
     public boolean onText(long chatId, ConversationState state, String text) {
         switch (state.step()) {
             case NAME -> handleNameInput(chatId, state, text);
@@ -94,14 +80,11 @@ public class OnboardingFlow {
 
     public void onLocationMessage(long chatId, String telegramUserId, double latitude, double longitude) {
         ConversationState state = stateStore.loadOrCreate(telegramUserId);
-        if (state.step() != ConversationStep.LOCATION_SHARE_PENDING) {
+        if (state.step() != ConversationStep.LOCATION_SHARE_PENDING && state.step() != ConversationStep.LOCATION_CHOICE) {
             return;
         }
-        send(SendMessage.builder().chatId(chatId).text("Got it, looking that up...")
-                .replyMarkup(menuFlow.hasExistingProfile(telegramUserId)
-                        ? ua.kpi.project.compatme.adapter.telegram.ui.MainMenuKeyboard.build()
-                        : ReplyKeyboardRemove.builder().removeKeyboard(true).build())
-                .build());
+        // The shared-location reply keyboard is replaced by the next prompt; hide it meanwhile.
+        telegram.sendTextRemovingKeyboard(chatId, "Got it, looking that up...");
         try {
             LocationResult result = reverseGeocodingPort.resolveLocation(latitude, longitude);
             state.setPendingCountry(result.country());
@@ -113,14 +96,12 @@ public class OnboardingFlow {
             log.warn("Reverse geocoding failed for chat {}: {}", chatId, e.getMessage());
             state.setStep(ConversationStep.LOCATION_MANUAL_COUNTRY);
             stateStore.save(state);
-            send(SendMessage.builder().chatId(chatId)
-                    .text("We couldn't detect your location automatically. Let's enter it manually instead.")
-                    .build());
+            telegram.sendTextRemovingKeyboard(chatId,
+                    "We couldn't detect your location automatically. Let's enter it manually instead.");
             promptManualCountry(chatId);
         }
     }
 
-    /** @return {@code true} if {@code data} belonged to the onboarding flow. */
     public boolean onCallback(long chatId, String telegramUserId, Integer messageId, String callbackQueryId,
                               String data, ConversationState state) {
         switch (data) {
@@ -176,9 +157,7 @@ public class OnboardingFlow {
     private void startNameStep(long chatId, Integer messageId, ConversationState state) {
         state.setStep(ConversationStep.NAME);
         stateStore.save(state);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("Great! First, what's your name?")
-                .build());
+        promptText(chatId, "Great! First, what's your name?");
     }
 
     private void handleNameInput(long chatId, ConversationState state, String text) {
@@ -205,61 +184,31 @@ public class OnboardingFlow {
     }
 
     private void promptAge(long chatId) {
-        send(SendMessage.builder().chatId(chatId).text("How old are you? (18-99)").build());
+        promptText(chatId, "How old are you? (18-99)");
     }
 
     // ─────────────────────────────── step 3: sex and orientation ───────────────────────────────
 
     private void promptGender(long chatId) {
-        sendNew(chatId, "What is your sex?", genderKeyboard());
-    }
-
-    private InlineKeyboardMarkup genderKeyboard() {
-        return InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(
-                        button("Male", "gender:MALE"),
-                        button("Female", "gender:FEMALE"),
-                        button("Non-binary", "gender:NON_BINARY")))
-                .keyboardRow(List.of(button("⬅️ Back", "back")))
-                .build();
+        sendNew(chatId, "What is your sex?", ReplyKeyboards.gender());
     }
 
     private void promptOrientation(long chatId) {
-        sendNew(chatId, "What is your orientation?", orientationKeyboard());
-    }
-
-    private InlineKeyboardMarkup orientationKeyboard() {
-        return InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(button("Straight", "orientation:STRAIGHT"), button("Gay", "orientation:GAY")))
-                .keyboardRow(List.of(button("Bisexual", "orientation:BISEXUAL"), button("Other", "orientation:OTHER")))
-                .keyboardRow(List.of(button("⬅️ Back", "back")))
-                .build();
+        sendNew(chatId, "What is your orientation?", ReplyKeyboards.orientation());
     }
 
     // ─────────────────────────────── step 4: seeking genders (multi-select) ───────────────────────────────
 
     private void promptSeekingGenders(long chatId, ConversationState state) {
-        sendNew(chatId, "Who are you interested in meeting? (select all that apply)", seekingGendersKeyboard(state));
+        sendNew(chatId, "Who are you interested in meeting? (select all that apply)",
+                ReplyKeyboards.seekingGenders(state.seekingGenders()));
     }
 
-    private InlineKeyboardMarkup seekingGendersKeyboard(ConversationState state) {
-        List<InlineKeyboardButton> options = GENDER_OPTIONS.stream()
-                .map(gender -> button(
-                        (state.seekingGenders().contains(gender) ? "✅ " : "") + Labels.humanize(gender),
-                        "seek:" + gender))
-                .toList();
-        return InlineKeyboardMarkup.builder()
-                .keyboardRow(options)
-                .keyboardRow(List.of(button("➡️ Continue", "seek:continue")))
-                .keyboardRow(List.of(button("⬅️ Back", "back")))
-                .build();
-    }
+
 
     private void handleGenderChoice(long chatId, Integer messageId, ConversationState state, String gender) {
         state.setGender(gender);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("Gender: " + Labels.humanize(gender) + " ✅")
-                .build());
+        telegram.editIfPresent(chatId, messageId, "Gender: " + Labels.humanize(gender) + " ✅");
         advanceAfter(chatId, state, ConversationStep.GENDER);
     }
 
@@ -267,28 +216,25 @@ public class OnboardingFlow {
             long chatId, Integer messageId, String callbackQueryId, ConversationState state, String gender) {
         state.toggleSeekingGender(gender);
         stateStore.save(state);
-        send(EditMessageReplyMarkup.builder().chatId(chatId).messageId(messageId)
-                .replyMarkup(seekingGendersKeyboard(state))
-                .build());
+        // A reply keyboard can only be changed by sending a message, so show the new selection state.
+        sendNew(chatId, "Selected: " + Labels.joinHumanized(state.seekingGenders()),
+                ReplyKeyboards.seekingGenders(state.seekingGenders()));
         ackSilently(callbackQueryId);
     }
 
     private void handleSeekingGendersContinue(long chatId, Integer messageId, String callbackQueryId, ConversationState state) {
         if (state.seekingGenders().isEmpty()) {
-            answerCallback(callbackQueryId, "Please select at least one option first.", true);
+            telegram.alert(callbackQueryId, chatId, "Please select at least one option first.");
             return;
         }
         ackSilently(callbackQueryId);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("Looking for: " + Labels.joinHumanized(state.seekingGenders()) + " ✅")
-                .build());
+        telegram.editIfPresent(chatId, messageId, "Looking for: " + Labels.joinHumanized(state.seekingGenders()) + " ✅");
         advanceAfter(chatId, state, ConversationStep.SEEKING_GENDERS);
     }
 
     private void handleOrientationChoice(long chatId, Integer messageId, ConversationState state, String value) {
         state.setOrientation(value);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("Orientation: " + Labels.humanize(value) + " ✅").build());
+        telegram.editIfPresent(chatId, messageId, "Orientation: " + Labels.humanize(value) + " ✅");
         state.setStep(ConversationStep.SEEKING_GENDERS);
         stateStore.save(state);
         promptSeekingGenders(chatId, state);
@@ -297,46 +243,29 @@ public class OnboardingFlow {
     // ─────────────────────────────── step 5: location ───────────────────────────────
 
     private void promptLocationChoice(long chatId) {
-        InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(button("📍 Share My Location", "loc:share")))
-                .keyboardRow(List.of(button("✍️ Enter Manually", "loc:manual")))
-                .keyboardRow(List.of(button("⬅️ Back", "back")))
-                .build();
-        sendNew(chatId, "How would you like to set your location?", keyboard);
+        sendNew(chatId, "How would you like to set your location?", ReplyKeyboards.locationChoice());
     }
 
+    /** Legacy inline "Share" tap: the reply keyboard's own share button is what actually requests the location. */
     private void handleLocationShareChoice(long chatId, Integer messageId, ConversationState state) {
         state.setStep(ConversationStep.LOCATION_SHARE_PENDING);
         stateStore.save(state);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("Tap the button below to share your location.")
-                .build());
-
-        KeyboardRow row = new KeyboardRow();
-        row.add(KeyboardButton.builder().text("📍 Share My Location").requestLocation(true).build());
-        ReplyKeyboardMarkup replyKeyboard = ReplyKeyboardMarkup.builder()
-                .keyboardRow(row)
-                .resizeKeyboard(true)
-                .oneTimeKeyboard(true)
-                .build();
-        send(SendMessage.builder().chatId(chatId).text("Waiting for your location...").replyMarkup(replyKeyboard).build());
+        sendNew(chatId, "Tap the button below to share your location.", ReplyKeyboards.locationChoice());
     }
 
     private void handleLocationManualChoice(long chatId, Integer messageId, ConversationState state) {
         state.setStep(ConversationStep.LOCATION_MANUAL_COUNTRY);
         stateStore.save(state);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("Let's enter your location manually.")
-                .build());
+        telegram.editIfPresent(chatId, messageId, "Let's enter your location manually.");
         promptManualCountry(chatId);
     }
 
     private void promptManualCountry(long chatId) {
-        send(SendMessage.builder().chatId(chatId).text("What country are you in?").build());
+        promptText(chatId, "What country are you in?");
     }
 
     private void promptManualCity(long chatId) {
-        send(SendMessage.builder().chatId(chatId).text("What city are you in?").build());
+        promptText(chatId, "What city are you in?");
     }
 
     private void handleManualCountryInput(long chatId, ConversationState state, String text) {
@@ -366,11 +295,8 @@ public class OnboardingFlow {
     }
 
     private void promptLocationConfirm(long chatId, LocationResult result) {
-        InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(button("✅ Yes", "loc:confirm_yes"), button("✍️ No, enter manually", "loc:confirm_no")))
-                .keyboardRow(List.of(button("⬅️ Back", "back")))
-                .build();
-        sendNew(chatId, "📍 Detected: " + result.city() + ", " + result.country() + " — is this correct?", keyboard);
+        sendNew(chatId, "📍 Detected: " + result.city() + ", " + result.country() + " — is this correct?",
+                ReplyKeyboards.locationConfirm());
     }
 
     private void handleLocationConfirmYes(long chatId, Integer messageId, ConversationState state) {
@@ -378,23 +304,18 @@ public class OnboardingFlow {
         if (state.city() == null || state.city().isBlank() || state.country() == null || state.country().isBlank()) {
             state.setStep(ConversationStep.LOCATION_MANUAL_COUNTRY);
             stateStore.save(state);
-            send(SendMessage.builder().chatId(chatId)
-                    .text("We couldn't identify both city and country. Please enter them manually.").build());
+            telegram.sendTextRemovingKeyboard(chatId, "We couldn't identify both city and country. Please enter them manually.");
             promptManualCountry(chatId);
             return;
         }
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("📍 Location confirmed: " + state.city() + ", " + state.country())
-                .build());
+        telegram.editIfPresent(chatId, messageId, "📍 Location confirmed: " + state.city() + ", " + state.country());
         advanceAfter(chatId, state, ConversationStep.LOCATION_CONFIRM);
     }
 
     private void handleLocationConfirmNo(long chatId, Integer messageId, ConversationState state) {
         state.setStep(ConversationStep.LOCATION_MANUAL_COUNTRY);
         stateStore.save(state);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("No problem, let's enter it manually.")
-                .build());
+        telegram.editIfPresent(chatId, messageId, "No problem, let's enter it manually.");
         promptManualCountry(chatId);
     }
 
@@ -407,6 +328,7 @@ public class OnboardingFlow {
                         + "children, languages, or anything else you want a potential partner to know. "
                         + "Only details you explicitly write may be used to fill optional profile fields; "
                         + "unstated details will be left blank. Please write at least 10 characters.")
+                .replyMarkup(ReplyKeyboardRemove.builder().removeKeyboard(true).build())
                 .build());
     }
 
@@ -416,6 +338,7 @@ public class OnboardingFlow {
                         + "preferences or deal-breakers. You can mention lifestyle or demographic "
                         + "preferences if relevant. We will not guess or infer anything you don't state. "
                         + "Please write at least 10 characters.")
+                .replyMarkup(ReplyKeyboardRemove.builder().removeKeyboard(true).build())
                 .build());
     }
 
@@ -446,51 +369,33 @@ public class OnboardingFlow {
     private void promptPhotos(long chatId, ConversationState state) {
         state.setStep(ConversationStep.PHOTOS);
         stateStore.save(state);
-        InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(button("🔗 Add Photo URL", "photo:add")))
-                .keyboardRow(List.of(button("⏭ Skip for now", "photo:skip")))
-                .build();
         sendNew(chatId, "Would you like to add a photo URL? (optional, up to " + MAX_PHOTOS
-                + "). The reference is stored only; it is never fetched or analyzed.", keyboard);
+                + "). It is shown on your profile card if Telegram can load it.", photosKeyboard(state));
+    }
+
+    private org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard photosKeyboard(ConversationState state) {
+        return ReplyKeyboards.photos(state.photoUrns().size(), MAX_PHOTOS);
     }
 
     private void handlePhotoAddPrompt(long chatId, ConversationState state) {
         state.setStep(ConversationStep.PHOTOS);
         stateStore.save(state);
-        send(SendMessage.builder().chatId(chatId)
-                .text("Send a photo URL (https://...). I will store the reference only; I will not fetch or analyze it.")
-                .build());
+        promptText(chatId, "Send a photo URL (https://...).");
     }
 
     private void handlePhotoUrlInput(long chatId, ConversationState state, String url) {
         if (!ProfileInputValidator.isValidPhotoUrl(url)) {
-            send(SendMessage.builder().chatId(chatId)
-                    .text("Please send a valid http:// or https:// photo URL, or choose Done/Skip.")
-                    .build());
+            sendNew(chatId, "Please send a valid http:// or https:// photo URL, or choose Done/Skip.", photosKeyboard(state));
             return;
         }
         boolean added = state.addPhotoUrn(url.trim());
         stateStore.save(state);
         int count = state.photoUrns().size();
         if (!added) {
-            send(SendMessage.builder().chatId(chatId)
-                    .text("You've reached the " + MAX_PHOTOS + "-URL limit.")
-                    .replyMarkup(InlineKeyboardMarkup.builder()
-                            .keyboardRow(List.of(button("✅ Done Adding Photos", "photo:done")))
-                            .build())
-                    .build());
+            sendNew(chatId, "You've reached the " + MAX_PHOTOS + "-URL limit.", photosKeyboard(state));
             return;
         }
-
-        List<InlineKeyboardButton> buttons = new ArrayList<>();
-        if (count < MAX_PHOTOS) {
-            buttons.add(button("➕ Add Another", "photo:add_another"));
-        }
-        buttons.add(button("✅ Done Adding Photos", "photo:done"));
-        send(SendMessage.builder().chatId(chatId)
-                .text("✅ Photo URL added (" + count + "/" + MAX_PHOTOS + ").")
-                .replyMarkup(InlineKeyboardMarkup.builder().keyboardRow(buttons).build())
-                .build());
+        sendNew(chatId, "✅ Photo URL added (" + count + "/" + MAX_PHOTOS + ").", photosKeyboard(state));
     }
 
     private void handlePhotosDone(long chatId, ConversationState state) {
@@ -508,30 +413,16 @@ public class OnboardingFlow {
 
     private void renderPhotoManageView(long chatId, ConversationState state) {
         List<String> photos = state.photoUrns();
-
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        for (int i = 0; i < photos.size(); i++) {
-            rows.add(List.of(button("🗑 Remove URL " + (i + 1), "photo_manage:remove:" + i)));
-        }
-        List<InlineKeyboardButton> lastRow = new ArrayList<>();
-        if (photos.size() < MAX_PHOTOS) {
-            lastRow.add(button("➕ Add URL", "photo_manage:add"));
-        }
-        lastRow.add(button("✅ Done", "photo_manage:done"));
-        rows.add(lastRow);
-
-        InlineKeyboardMarkup.InlineKeyboardMarkupBuilder keyboardBuilder = InlineKeyboardMarkup.builder();
-        rows.forEach(keyboardBuilder::keyboardRow);
         String text = photos.isEmpty() ? "You haven't added any photo URLs yet."
-                : "Manage photo URL references (stored only; not fetched or analyzed):\n" + Labels.numbered(photos);
-        sendNew(chatId, text, keyboardBuilder.build());
+                : "Manage photo URL references:\n" + Labels.numbered(photos);
+        sendNew(chatId, text, ReplyKeyboards.photoManage(photos.size(), MAX_PHOTOS));
     }
 
     private void handlePhotoManageAdd(long chatId, ConversationState state) {
         state.setReturnToReview(true);
         state.setStep(ConversationStep.PHOTOS);
         stateStore.save(state);
-        send(SendMessage.builder().chatId(chatId).text("Send a photo URL (https://...).").build());
+        promptText(chatId, "Send a photo URL (https://...).");
     }
 
     private void handlePhotoManageRemove(long chatId, ConversationState state, int index) {
@@ -541,8 +432,8 @@ public class OnboardingFlow {
     }
 
     private void promptSearchScope(long chatId) {
-        sendNew(chatId, "Where should I look for matches? You can change this later in Settings.",
-                Keyboards.scope("scope:"));
+        sendNew(chatId, "Where should I look for matches? You can change this later in Preferences.",
+                ReplyKeyboards.scope());
     }
 
     private void handleScopeChoice(long chatId, Integer messageId, ConversationState state, String scope) {
@@ -550,8 +441,7 @@ public class OnboardingFlow {
             return;
         }
         state.setSearchScope(scope);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("Search scope: " + Labels.humanizeScope(scope) + " ✅").build());
+        telegram.editIfPresent(chatId, messageId, "Search scope: " + Labels.humanizeScope(scope) + " ✅");
         advanceAfter(chatId, state, ConversationStep.SEARCH_SCOPE);
     }
 
@@ -568,16 +458,12 @@ public class OnboardingFlow {
         return new int[] {Math.max(18, base - 3), Math.min(99, base + 3)};
     }
 
-    private InlineKeyboardMarkup ageRangeKeyboard(Integer age) {
-        int[] range = defaultAgeRange(age);
-        return InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(button("Use my age \u00b13 (" + range[0] + "-" + range[1] + ")", "agerange:default")))
-                .build();
-    }
+
 
     private void promptAgeRange(long chatId, ConversationState state) {
+        int[] range = defaultAgeRange(state.age());
         sendNew(chatId, "What age range should your matches be in? Send it like 25-35, or use the default below.",
-                ageRangeKeyboard(state.age()));
+                ReplyKeyboards.ageRange(range[0], range[1]));
     }
 
     private void handleAgeRangeInput(long chatId, ConversationState state, String text) {
@@ -596,8 +482,7 @@ public class OnboardingFlow {
     private void handleAgeRangeDefault(long chatId, Integer messageId, ConversationState state) {
         int[] range = defaultAgeRange(state.age());
         state.setPreferredAgeRange(range[0], range[1]);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("Preferred age range: " + range[0] + "-" + range[1] + " \u2705").build());
+        telegram.editIfPresent(chatId, messageId, "Preferred age range: " + range[0] + "-" + range[1] + " \u2705");
         advanceAfter(chatId, state, ConversationStep.AGE_RANGE);
     }
 
@@ -612,7 +497,7 @@ public class OnboardingFlow {
     public void showReview(long chatId, ConversationState state) {
         state.setStep(ConversationStep.REVIEW);
         stateStore.save(state);
-        sendNew(chatId, formatReview(state), reviewKeyboard());
+        sendNew(chatId, formatReview(state), ReplyKeyboards.review());
     }
 
     private String formatReview(ConversationState state) {
@@ -644,17 +529,7 @@ public class OnboardingFlow {
                 state.preferenceDescription());
     }
 
-    private InlineKeyboardMarkup reviewKeyboard() {
-        return InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(button("✅ Looks good, save it!", "review:save")))
-                .keyboardRow(List.of(button("✏️ Edit Name", "review:edit_name"), button("✏️ Edit Age", "review:edit_age")))
-                .keyboardRow(List.of(button("✏️ Edit Sex", "review:edit_gender"), button("✏️ Edit Orientation", "review:edit_orientation")))
-                .keyboardRow(List.of(button("✏️ Edit Location", "review:edit_location"), button("✏️ Edit Descriptions", "review:edit_desc")))
-                .keyboardRow(List.of(button("✏️ Edit Photos", "review:edit_photos"), button("✏️ Edit Search Scope", "review:edit_scope")))
-                .keyboardRow(List.of(button("✏️ Edit Age Range", "review:edit_agerange")))
-                .keyboardRow(List.of(button("⬅️ Back", "back")))
-                .build();
-    }
+
 
     private void jumpToEdit(long chatId, Integer messageId, ConversationState state, ConversationStep target) {
         state.setReturnToReview(true);
@@ -662,7 +537,7 @@ public class OnboardingFlow {
         stateStore.save(state);
         removeKeyboard(chatId, messageId);
         switch (target) {
-            case NAME -> send(SendMessage.builder().chatId(chatId).text("What's your name?").build());
+            case NAME -> promptText(chatId, "What's your name?");
             case AGE -> promptAge(chatId);
             case SELF_DESCRIPTION -> promptSelfDescription(chatId);
             default -> throw new IllegalStateException("Unsupported direct edit target: " + target);
@@ -698,49 +573,37 @@ public class OnboardingFlow {
             case GENDER -> {
                 state.setStep(ConversationStep.AGE);
                 stateStore.save(state);
-                removeKeyboard(chatId, messageId);
                 promptAge(chatId);
             }
             case ORIENTATION -> {
                 state.setStep(ConversationStep.GENDER);
                 stateStore.save(state);
-                send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                        .text("What is your sex?").replyMarkup(genderKeyboard()).build());
+                promptGender(chatId);
             }
             case SEEKING_GENDERS -> {
                 state.setStep(ConversationStep.ORIENTATION);
                 stateStore.save(state);
-                send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                        .text("What is your orientation?")
-                        .replyMarkup(orientationKeyboard())
-                        .build());
+                promptOrientation(chatId);
             }
-            case LOCATION_CHOICE -> {
+            case LOCATION_CHOICE, LOCATION_SHARE_PENDING -> {
                 state.setStep(ConversationStep.SEEKING_GENDERS);
                 stateStore.save(state);
-                send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                        .text("Who are you interested in meeting? (select all that apply)")
-                        .replyMarkup(seekingGendersKeyboard(state))
-                        .build());
+                promptSeekingGenders(chatId, state);
             }
             case LOCATION_CONFIRM -> {
                 state.setStep(ConversationStep.LOCATION_CHOICE);
                 stateStore.save(state);
-                InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
-                        .keyboardRow(List.of(button("📍 Share My Location", "loc:share")))
-                        .keyboardRow(List.of(button("✍️ Enter Manually", "loc:manual")))
-                        .keyboardRow(List.of(button("⬅️ Back", "back")))
-                        .build();
-                send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                        .text("How would you like to set your location?")
-                        .replyMarkup(keyboard)
-                        .build());
+                promptLocationChoice(chatId);
             }
             case REVIEW -> {
                 state.setStep(ConversationStep.PREFERENCE_DESCRIPTION);
                 stateStore.save(state);
-                removeKeyboard(chatId, messageId);
                 promptPreferenceDescription(chatId);
+            }
+            case SETTINGS_SCOPE, SETTINGS_AGE_RANGE -> {
+                state.setStep(ConversationStep.DONE);
+                stateStore.save(state);
+                menuFlow.showPreferencesMenu(chatId, state.telegramUserId(), "⚙️ Preferences");
             }
             default -> log.warn("Back pressed on a step with no defined back-target: {}", state.step());
         }
@@ -816,24 +679,27 @@ public class OnboardingFlow {
         idle.setStep(ConversationStep.DONE);
         stateStore.save(idle);
 
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("🎉 Your profile is live!")
-                .build());
+        if (messageId != null) {
+            telegram.editIfPresent(chatId, messageId, "🎉 Your profile is live!");
+        } else {
+            telegram.sendText(chatId, "🎉 Your profile is live!");
+        }
         menuFlow.sendMainMenu(chatId, telegramUserId);
     }
 
     // ─────────────────────────────── helpers ───────────────────────────────
 
-    private static InlineKeyboardButton button(String text, String callbackData) {
-        return Keyboards.button(text, callbackData);
-    }
-
     private void send(org.telegram.telegrambots.meta.api.methods.BotApiMethod<? extends java.io.Serializable> method) {
         telegram.send(method);
     }
 
-    private void sendNew(long chatId, String text, InlineKeyboardMarkup keyboard) {
+    private void sendNew(long chatId, String text, org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard keyboard) {
         telegram.sendNew(chatId, text, keyboard);
+    }
+
+    /** Prompt for free-text input: hides whichever reply keyboard was showing. */
+    private void promptText(long chatId, String text) {
+        telegram.sendTextRemovingKeyboard(chatId, text);
     }
 
     private void removeKeyboard(long chatId, Integer messageId) {

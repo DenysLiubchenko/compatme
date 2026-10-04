@@ -42,6 +42,9 @@ public enum ConversationStep {
     /** Settings sub-flow: waiting for a new preferred age range as text. */
     SETTINGS_AGE_RANGE,
 
+    /** Settings sub-flow: choosing the default search scope with the reply keyboard. */
+    SETTINGS_SCOPE,
+
     /** "Are you sure?" step before {@code deleteProfile} is actually called. */
     DELETE_CONFIRM
 }

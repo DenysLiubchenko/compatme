@@ -3,16 +3,13 @@ package ua.kpi.project.compatme.adapter.telegram.flow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import ua.kpi.project.compatme.adapter.telegram.BackendApiClient;
 import ua.kpi.project.compatme.adapter.telegram.session.BrowsingSessionStore;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationState;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStep;
-import ua.kpi.project.compatme.adapter.telegram.ui.Keyboards;
+import ua.kpi.project.compatme.adapter.telegram.ui.ReplyKeyboards;
 import ua.kpi.project.compatme.adapter.telegram.ui.Labels;
 import ua.kpi.project.compatme.adapter.telegram.ui.TelegramSender;
 import ua.kpi.project.compatme.adapter.telegram.validation.ProfileInputValidator;
@@ -30,13 +27,16 @@ public class SettingsFlow {
     private final ConversationStateStore stateStore;
     private final BrowsingSessionStore browsingSessions;
     private final OnboardingFlow onboardingFlow;
+    private final MenuFlow menuFlow;
 
     public SettingsFlow(
             TelegramSender telegram,
             BackendApiClient backendApiClient,
             ConversationStateStore stateStore,
             BrowsingSessionStore browsingSessions,
-            OnboardingFlow onboardingFlow) {
+            OnboardingFlow onboardingFlow,
+            MenuFlow menuFlow) {
+        this.menuFlow = menuFlow;
         this.telegram = telegram;
         this.backendApiClient = backendApiClient;
         this.stateStore = stateStore;
@@ -58,7 +58,7 @@ public class SettingsFlow {
                               String data, ConversationState state) {
         switch (data) {
             case "settings:agerange" -> { ackSilently(callbackQueryId); promptSettingsAgeRange(chatId, state); }
-            case "settings:scope" -> { ackSilently(callbackQueryId); showSettingsScopeMenu(chatId); }
+            case "settings:scope" -> { ackSilently(callbackQueryId); showSettingsScopeMenu(chatId, telegramUserId); }
             case "settings:edit", "profile:edit" -> { ackSilently(callbackQueryId); handleSettingsEditProfile(chatId, telegramUserId); }
             case "settings:pause" -> { ackSilently(callbackQueryId); handleSettingsPause(chatId); }
             case "settings:delete" -> { ackSilently(callbackQueryId); handleSettingsDelete(chatId, messageId, state); }
@@ -77,15 +77,19 @@ public class SettingsFlow {
         return true;
     }
 
+    /** {@code /settings}: account actions live in the "My Profile" menu, so open that. */
     public void showSettingsMenu(long chatId, String telegramUserId) {
         ConversationState state = stateStore.loadOrCreate(telegramUserId);
-        state.setStep(ConversationStep.SETTINGS_MENU);
+        state.setStep(ConversationStep.DONE);
         stateStore.save(state);
-        sendNew(chatId, "⚙️ Settings", Keyboards.settings());
+        menuFlow.showOwnProfile(chatId, telegramUserId);
     }
 
-    private void showSettingsScopeMenu(long chatId) {
-        sendNew(chatId, "🌍 Choose your default search scope:", Keyboards.scope("setscope:"));
+    private void showSettingsScopeMenu(long chatId, String telegramUserId) {
+        ConversationState state = stateStore.loadOrCreate(telegramUserId);
+        state.setStep(ConversationStep.SETTINGS_SCOPE);
+        stateStore.save(state);
+        telegram.sendNew(chatId, "🌍 Choose your default search scope:", ReplyKeyboards.scopeWithBack());
     }
 
     private void handleSettingsScopeChoice(long chatId, Integer messageId, String telegramUserId, String scope) {
@@ -95,8 +99,12 @@ public class SettingsFlow {
         try {
             Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(telegramUserId);
             backendApiClient.updateSearchScope(String.valueOf(profile.get("id")), scope);
-            send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                    .text("Search scope updated: " + Labels.humanizeScope(scope) + " ✅").build());
+            telegram.editIfPresent(chatId, messageId, "Search scope updated: " + Labels.humanizeScope(scope) + " ✅");
+            ConversationState state = stateStore.loadOrCreate(telegramUserId);
+            state.setStep(ConversationStep.DONE);
+            stateStore.save(state);
+            menuFlow.showPreferencesMenu(chatId, telegramUserId,
+                    "Search scope updated: " + Labels.humanizeScope(scope) + " ✅");
         } catch (Exception e) {
             log.warn("Failed to update search scope for chat {}: {}", chatId, e.getMessage());
             send(SendMessage.builder().chatId(chatId).text("Couldn't update your search scope. Try again shortly.").build());
@@ -106,8 +114,8 @@ public class SettingsFlow {
     private void promptSettingsAgeRange(long chatId, ConversationState state) {
         state.setStep(ConversationStep.SETTINGS_AGE_RANGE);
         stateStore.save(state);
-        send(SendMessage.builder().chatId(chatId)
-                .text("\ud83c\udfaf Send your new preferred match age range, like 25-35.").build());
+        telegram.sendNew(chatId, "\ud83c\udfaf Send your new preferred match age range, like 25-35.",
+                ReplyKeyboards.backOnly());
     }
 
     private void handleSettingsAgeRangeInput(long chatId, ConversationState state, String text) {
@@ -120,10 +128,10 @@ public class SettingsFlow {
         try {
             Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(state.telegramUserId());
             backendApiClient.updateAgeRange(String.valueOf(profile.get("id")), range.get()[0], range.get()[1]);
-            state.setStep(ConversationStep.SETTINGS_MENU);
+            state.setStep(ConversationStep.DONE);
             stateStore.save(state);
-            send(SendMessage.builder().chatId(chatId)
-                    .text("Preferred age range updated: " + range.get()[0] + "-" + range.get()[1] + " \u2705").build());
+            menuFlow.showPreferencesMenu(chatId, state.telegramUserId(),
+                    "Preferred age range updated: " + range.get()[0] + "-" + range.get()[1] + " \u2705");
         } catch (Exception e) {
             log.warn("Failed to update age range for chat {}: {}", chatId, e.getMessage());
             send(SendMessage.builder().chatId(chatId).text("Couldn't update your age range. Try again shortly.").build());
@@ -173,14 +181,7 @@ public class SettingsFlow {
     private void handleSettingsDelete(long chatId, Integer messageId, ConversationState state) {
         state.setStep(ConversationStep.DELETE_CONFIRM);
         stateStore.save(state);
-        InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(button("❌ Yes, delete everything", "delete:yes")))
-                .keyboardRow(List.of(button("⬅️ No, keep my profile", "delete:no")))
-                .build();
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("⚠️ Are you sure? This cannot be undone.")
-                .replyMarkup(keyboard)
-                .build());
+        telegram.sendNew(chatId, "⚠️ Are you sure? This cannot be undone.", ReplyKeyboards.deleteConfirm());
     }
 
     private void handleDeleteConfirmed(long chatId, Integer messageId, String telegramUserId) {
@@ -192,33 +193,23 @@ public class SettingsFlow {
         }
         stateStore.clear(telegramUserId);
         browsingSessions.remove(telegramUserId);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("Your account has been deleted. Send /start any time to create a new profile.")
-                .build());
-        // The persistent bottom menu is meaningless without a profile.
-        send(SendMessage.builder().chatId(chatId).text("Bottom menu removed.")
-                .replyMarkup(ReplyKeyboardRemove.builder().removeKeyboard(true).build())
-                .build());
+        telegram.editIfPresent(chatId, messageId, "Your account has been deleted.");
+        // Also removes the bottom menu, which is meaningless without a profile.
+        telegram.sendTextRemovingKeyboard(chatId,
+                "Your account has been deleted. Send /start any time to create a new profile.");
     }
 
     private void handleDeleteCancelled(long chatId, Integer messageId, ConversationState state) {
-        state.setStep(ConversationStep.SETTINGS_MENU);
+        state.setStep(ConversationStep.DONE);
         stateStore.save(state);
-        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
-                .text("⚙️ Settings")
-                .replyMarkup(Keyboards.settings())
-                .build());
-    }
-
-    private static InlineKeyboardButton button(String text, String callbackData) {
-        return Keyboards.button(text, callbackData);
+        menuFlow.showOwnProfile(chatId, state.telegramUserId());
     }
 
     private void send(org.telegram.telegrambots.meta.api.methods.BotApiMethod<? extends java.io.Serializable> method) {
         telegram.send(method);
     }
 
-    private void sendNew(long chatId, String text, InlineKeyboardMarkup keyboard) {
+    private void sendNew(long chatId, String text, ReplyKeyboard keyboard) {
         telegram.sendNew(chatId, text, keyboard);
     }
 

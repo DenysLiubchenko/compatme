@@ -77,7 +77,7 @@ public class BrowsingFlow {
         } catch (Exception e) {
             log.warn("Failed to fetch matches for chat {}: {}", chatId, e.getMessage());
             showCard(chatId, telegramUserId, sourceMessageId,
-                    Card.text("Couldn't fetch matches right now. Try again shortly.", Keyboards.backToMenu()));
+                    Card.text("Couldn't fetch matches right now. Try again shortly.", null));
         }
     }
 
@@ -89,7 +89,7 @@ public class BrowsingFlow {
             if (likers.isEmpty()) {
                 sessions.getOrCreate(telegramUserId).clearBrowsing();
                 showCard(chatId, telegramUserId, sourceMessageId,
-                        Card.text("No one yet — but check back soon!", Keyboards.backToMenu()));
+                        Card.text("No one yet — but check back soon!", null));
                 return;
             }
             sessions.getOrCreate(telegramUserId)
@@ -98,7 +98,7 @@ public class BrowsingFlow {
         } catch (Exception e) {
             log.warn("Failed to fetch who-liked-me for chat {}: {}", chatId, e.getMessage());
             showCard(chatId, telegramUserId, sourceMessageId,
-                    Card.text("Couldn't load this right now. Try again shortly.", Keyboards.backToMenu()));
+                    Card.text("Couldn't load this right now. Try again shortly.", null));
         }
     }
 
@@ -140,7 +140,7 @@ public class BrowsingFlow {
         if (candidate == null) {
             session.clearBrowsing();
             showCard(chatId, telegramUserId, sourceMessageId,
-                    Card.text("That's everyone for now — check back later!", Keyboards.backToMenu()));
+                    Card.text("That's everyone for now — check back later!", null));
             return;
         }
         var keyboard = BrowsingSession.MODE_LIKED_ME.equals(session.mode())

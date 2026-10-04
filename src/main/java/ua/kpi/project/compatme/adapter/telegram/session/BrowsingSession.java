@@ -18,6 +18,7 @@ public class BrowsingSession {
     private Map<String, Object> current;
     private Integer cardMessageId;
     private boolean cardHasPhoto;
+    private Integer profileMessageId;
 
     public synchronized void startBrowsing(String mode, Deque<Map<String, Object>> queue) {
         this.mode = mode;
@@ -60,5 +61,14 @@ public class BrowsingSession {
     public synchronized void forgetCard() {
         this.cardMessageId = null;
         this.cardHasPhoto = false;
+    }
+
+    /** The last "My Profile" message, deleted before a new one is sent so it never stacks. */
+    public synchronized Integer profileMessageId() {
+        return profileMessageId;
+    }
+
+    public synchronized void setProfileMessageId(Integer messageId) {
+        this.profileMessageId = messageId;
     }
 }
