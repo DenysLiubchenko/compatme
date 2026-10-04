@@ -15,15 +15,15 @@ class MainMenuKeyboardTest {
         assertThat(keyboard.getResizeKeyboard()).isTrue();
         assertThat(keyboard.getKeyboard()).hasSize(2);
         assertThat(keyboard.getKeyboard().stream().flatMap(row -> row.stream()).map(b -> b.getText()))
-                .containsExactly(MainMenuKeyboard.BROWSE, MainMenuKeyboard.MY_PROFILE,
-                        MainMenuKeyboard.PREFERENCES, MainMenuKeyboard.HELP);
+                .containsExactly(MainMenuKeyboard.BROWSE, MainMenuKeyboard.WHO_LIKED_ME,
+                        MainMenuKeyboard.MY_PROFILE, MainMenuKeyboard.HELP);
     }
 
     @Test
     void match_mapsEveryLabelToItsAction() {
         assertThat(MainMenuKeyboard.match(MainMenuKeyboard.BROWSE)).contains(MenuAction.BROWSE);
         assertThat(MainMenuKeyboard.match(MainMenuKeyboard.MY_PROFILE)).contains(MenuAction.MY_PROFILE);
-        assertThat(MainMenuKeyboard.match(MainMenuKeyboard.PREFERENCES)).contains(MenuAction.PREFERENCES);
+        assertThat(MainMenuKeyboard.match(MainMenuKeyboard.WHO_LIKED_ME)).contains(MenuAction.WHO_LIKED_ME);
         assertThat(MainMenuKeyboard.match(" " + MainMenuKeyboard.HELP + " ")).contains(MenuAction.HELP);
     }
 

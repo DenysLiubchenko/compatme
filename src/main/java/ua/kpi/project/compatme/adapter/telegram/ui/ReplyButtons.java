@@ -53,16 +53,13 @@ public final class ReplyButtons {
         return label.equals(expected) ? Optional.of(action) : Optional.empty();
     }
 
-    /** Buttons of the "My Profile" / "Preferences" menus, valid whenever no form is in progress. */
+    /** Buttons of the "My Profile" view, valid whenever no form is in progress. */
     private static Optional<String> idle(String label) {
         return switch (label) {
             case EDIT_PROFILE -> Optional.of("profile:edit");
-            case WHO_LIKED_ME -> Optional.of("menu:liked");
             case PAUSE -> Optional.of("settings:pause");
             case DELETE_ACCOUNT -> Optional.of("settings:delete");
-            case DESCRIBE_PREFERENCES -> Optional.of("post:prefs");
-            case SEARCH_SCOPE -> Optional.of("settings:scope");
-            case MATCH_AGE_RANGE -> Optional.of("settings:agerange");
+            case MAIN_MENU -> Optional.of("menu:back");
             default -> Optional.empty();
         };
     }

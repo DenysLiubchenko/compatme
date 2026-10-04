@@ -81,7 +81,7 @@ public class ConversationFlowHandler {
     }
 
     public void onSettingsCommand(long chatId, String telegramUserId) {
-        settingsFlow.showSettingsMenu(chatId, telegramUserId);
+        settingsFlow.handleSettingsEditProfile(chatId, telegramUserId);
     }
 
     /** A tap on the persistent bottom menu (delivered by Telegram as a plain text message). */
@@ -103,7 +103,7 @@ public class ConversationFlowHandler {
         switch (action) {
             case BROWSE -> browsingFlow.resumeOrStartMatches(chatId, telegramUserId);
             case MY_PROFILE -> menuFlow.showOwnProfile(chatId, telegramUserId);
-            case PREFERENCES -> preferencesFlow.showMenu(chatId, telegramUserId);
+            case WHO_LIKED_ME -> browsingFlow.startLikedMe(chatId, telegramUserId, null);
             case HELP -> menuFlow.sendHelp(chatId);
         }
     }

@@ -36,12 +36,6 @@ public class PreferencesFlow {
         this.menuFlow = menuFlow;
     }
 
-    public void showMenu(long chatId, String telegramUserId) {
-        menuFlow.showPreferencesMenu(chatId, telegramUserId,
-                "⚙️ Preferences — tune who you see. You can also just send me a message describing what you want "
-                        + "(e.g. \"someone calmer\") at any time.");
-    }
-
     /** @return {@code true} if {@code data} belonged to this flow. */
     public boolean onCallback(long chatId, String telegramUserId, String callbackQueryId, String data) {
         switch (data) {

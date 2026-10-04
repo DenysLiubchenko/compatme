@@ -596,14 +596,21 @@ public class OnboardingFlow {
                 promptLocationChoice(chatId);
             }
             case REVIEW -> {
-                state.setStep(ConversationStep.PREFERENCE_DESCRIPTION);
-                stateStore.save(state);
-                promptPreferenceDescription(chatId);
+                if (menuFlow.hasExistingProfile(state.telegramUserId())) {
+                    // Editing an existing profile: Back leaves the edit view for the profile view.
+                    state.setStep(ConversationStep.DONE);
+                    stateStore.save(state);
+                    menuFlow.showOwnProfile(chatId, state.telegramUserId());
+                } else {
+                    state.setStep(ConversationStep.PREFERENCE_DESCRIPTION);
+                    stateStore.save(state);
+                    promptPreferenceDescription(chatId);
+                }
             }
             case SETTINGS_SCOPE, SETTINGS_AGE_RANGE -> {
                 state.setStep(ConversationStep.DONE);
                 stateStore.save(state);
-                menuFlow.showPreferencesMenu(chatId, state.telegramUserId(), "⚙️ Preferences");
+                menuFlow.showOwnProfile(chatId, state.telegramUserId());
             }
             default -> log.warn("Back pressed on a step with no defined back-target: {}", state.step());
         }

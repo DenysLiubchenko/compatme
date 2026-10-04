@@ -192,7 +192,7 @@ class BrowsingAndMenuFlowTest {
         handler.onMenuAction(CHAT_ID, USER, MenuAction.HELP);
 
         assertThat(sentMessages()).hasSize(1);
-        assertThat(sentMessages().get(0).getText()).contains("Browse").contains("Preferences");
+        assertThat(sentMessages().get(0).getText()).contains("Browse").contains("Who Liked Me");
     }
 
     @Test

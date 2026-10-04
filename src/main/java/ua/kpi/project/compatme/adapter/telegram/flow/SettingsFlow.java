@@ -103,8 +103,7 @@ public class SettingsFlow {
             ConversationState state = stateStore.loadOrCreate(telegramUserId);
             state.setStep(ConversationStep.DONE);
             stateStore.save(state);
-            menuFlow.showPreferencesMenu(chatId, telegramUserId,
-                    "Search scope updated: " + Labels.humanizeScope(scope) + " ✅");
+            menuFlow.showOwnProfile(chatId, telegramUserId);
         } catch (Exception e) {
             log.warn("Failed to update search scope for chat {}: {}", chatId, e.getMessage());
             send(SendMessage.builder().chatId(chatId).text("Couldn't update your search scope. Try again shortly.").build());
@@ -130,8 +129,8 @@ public class SettingsFlow {
             backendApiClient.updateAgeRange(String.valueOf(profile.get("id")), range.get()[0], range.get()[1]);
             state.setStep(ConversationStep.DONE);
             stateStore.save(state);
-            menuFlow.showPreferencesMenu(chatId, state.telegramUserId(),
-                    "Preferred age range updated: " + range.get()[0] + "-" + range.get()[1] + " \u2705");
+            telegram.sendText(chatId, "Preferred age range updated: " + range.get()[0] + "-" + range.get()[1] + " \u2705");
+            menuFlow.showOwnProfile(chatId, state.telegramUserId());
         } catch (Exception e) {
             log.warn("Failed to update age range for chat {}: {}", chatId, e.getMessage());
             send(SendMessage.builder().chatId(chatId).text("Couldn't update your age range. Try again shortly.").build());

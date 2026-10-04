@@ -43,11 +43,11 @@ public class MenuFlow {
             ℹ️ How CompatMe works
 
             🔍 Browse — see people who match you and tap 👍 Like or 👎 Skip on their card.
-            👤 My Profile — view your profile, edit it, see who liked you, pause or delete your account.
-            ⚙️ Preferences — describe who you're looking for, or change search scope and age range.
+            ❤️ Who Liked Me — people who already liked you.
+            👤 My Profile — view your profile, edit it (name, photos, search scope, age range, descriptions…), pause or delete your account.
             ❓ Help — this message.
 
-            The menu at the bottom of the chat is always available. /menu re-opens it.""";
+            To refine who you see, just send me a message like "someone calmer". /menu shows the main menu again.""";
 
     private final TelegramSender telegram;
     private final BackendApiClient backendApiClient;
@@ -103,7 +103,7 @@ public class MenuFlow {
     /** (Re)sends the persistent bottom keyboard. Used after profile creation, {@code /menu} and {@code /start}. */
     public void sendMainMenu(long chatId, String telegramUserId) {
         browsingFlow.endSession(chatId, telegramUserId);
-        sendMenuKeyboard(chatId, telegramUserId, "👇 Use the menu below at any time.");
+        sendMenuKeyboard(chatId, telegramUserId, "👇 Main menu");
     }
 
     private void sendMenuKeyboard(long chatId, String telegramUserId, String text) {
@@ -112,8 +112,7 @@ public class MenuFlow {
     }
 
     /**
-     * Own profile with the "My Profile" menu (top-level buttons + edit / who liked me / pause /
-     * delete). The previous profile message is deleted first so repeated taps never stack.
+     * Own profile with the profile view keyboard (edit / pause / delete / back to the main menu). The previous profile message is deleted first so repeated taps never stack.
      */
     public void showOwnProfile(long chatId, String telegramUserId) {
         try {
@@ -142,12 +141,6 @@ public class MenuFlow {
             log.warn("Failed to load own profile for chat {}: {}", chatId, e.getMessage());
             telegram.sendText(chatId, "We couldn't load your profile. Send /start to create one.");
         }
-    }
-
-    /** Shows the Preferences menu (top-level buttons + preference actions) under {@code text}. */
-    public void showPreferencesMenu(long chatId, String telegramUserId, String text) {
-        telegram.sendNew(chatId, text, ReplyKeyboards.preferencesMenu());
-        menuAttached.add(telegramUserId);
     }
 
     public void sendHelp(long chatId) {

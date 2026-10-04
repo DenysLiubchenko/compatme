@@ -135,41 +135,85 @@ class ReplyKeyboardFlowTest {
         assertThat(sent.get(sent.size() - 1).getReplyMarkup()).isInstanceOf(ReplyKeyboardMarkup.class);
     }
 
+    private static List<String> labels(ReplyKeyboardMarkup markup) {
+        return markup.getKeyboard().stream().flatMap(row -> row.stream()).map(b -> b.getText()).toList();
+    }
+
     @Test
-    void mainMenuAndSubMenus_areReplyKeyboardsKeepingTheFourTopLevelButtons() {
+    void mainMenu_showsOnlyTheFourMainButtons() {
+        when(backendApiClient.getProfileByTelegramUserId(USER)).thenReturn(new HashMap<>(Map.of("id", "me")));
+        ConversationState idle = new ConversationState(USER);
+        idle.setStep(ConversationStep.DONE);
+        states.put(USER, idle);
+
+        handler.onMenuCommand(CHAT_ID, USER);
+
+        ReplyKeyboardMarkup markup = (ReplyKeyboardMarkup) sent.get(sent.size() - 1).getReplyMarkup();
+        assertThat(markup.getIsPersistent()).isTrue();
+        assertThat(labels(markup)).containsExactly(MainMenuKeyboard.BROWSE, MainMenuKeyboard.WHO_LIKED_ME,
+                MainMenuKeyboard.MY_PROFILE, MainMenuKeyboard.HELP);
+        assertThat(sent).noneMatch(m -> m.getReplyMarkup() instanceof InlineKeyboardMarkup);
+    }
+
+    @Test
+    void myProfile_swapsToItsOwnViewWithoutTheMainMenuButtons() {
         when(backendApiClient.getProfileByTelegramUserId(USER)).thenReturn(new HashMap<>(Map.of(
                 "id", "me", "displayName", "Maria", "age", 27, "selfDescription", "Hi")));
         ConversationState idle = new ConversationState(USER);
         idle.setStep(ConversationStep.DONE);
         states.put(USER, idle);
 
-        handler.onMenuCommand(CHAT_ID, USER);
         handler.onMenuAction(CHAT_ID, USER, MenuAction.MY_PROFILE);
-        handler.onMenuAction(CHAT_ID, USER, MenuAction.PREFERENCES);
 
-        assertThat(sent).isNotEmpty().noneMatch(m -> m.getReplyMarkup() instanceof InlineKeyboardMarkup);
-        for (SendMessage message : sent) {
-            ReplyKeyboardMarkup markup = (ReplyKeyboardMarkup) message.getReplyMarkup();
-            assertThat(markup.getIsPersistent()).isTrue();
-            assertThat(markup.getKeyboard().get(0).get(0).getText()).isEqualTo(MainMenuKeyboard.BROWSE);
-            assertThat(markup.getKeyboard().get(1).get(1).getText()).isEqualTo(MainMenuKeyboard.HELP);
-        }
+        ReplyKeyboardMarkup markup = (ReplyKeyboardMarkup) sent.get(sent.size() - 1).getReplyMarkup();
+        assertThat(labels(markup)).containsExactly(ReplyKeyboards.EDIT_PROFILE, ReplyKeyboards.PAUSE,
+                ReplyKeyboards.DELETE_ACCOUNT, ReplyKeyboards.MAIN_MENU);
     }
 
     @Test
-    void whoLikedMe_andPreferenceButtons_routeFromTheirMenus() {
+    void mainMenuButton_returnsFromProfileViewToTheMainMenu() {
+        when(backendApiClient.getProfileByTelegramUserId(USER)).thenReturn(new HashMap<>(Map.of("id", "me")));
+        ConversationState idle = new ConversationState(USER);
+        idle.setStep(ConversationStep.DONE);
+        states.put(USER, idle);
+
+        typeAs(ReplyKeyboards.MAIN_MENU);
+
+        ReplyKeyboardMarkup markup = (ReplyKeyboardMarkup) sent.get(sent.size() - 1).getReplyMarkup();
+        assertThat(labels(markup)).contains(MainMenuKeyboard.BROWSE, MainMenuKeyboard.HELP);
+    }
+
+    @Test
+    void editProfile_opensTheFieldEditingViewAndBackReturnsToProfileView() {
+        Map<String, Object> profile = new HashMap<>(Map.of("id", "me", "displayName", "Maria", "age", 27,
+                "gender", "FEMALE", "selfDescription", "Hi there friend", "preferenceDescription", "Someone kind"));
+        when(backendApiClient.getProfileByTelegramUserId(USER)).thenReturn(profile);
+        ConversationState idle = new ConversationState(USER);
+        idle.setStep(ConversationStep.DONE);
+        states.put(USER, idle);
+
+        typeAs(ReplyKeyboards.EDIT_PROFILE);
+        assertThat(state().step()).isEqualTo(ConversationStep.REVIEW);
+        assertThat(labels((ReplyKeyboardMarkup) sent.get(sent.size() - 1).getReplyMarkup()))
+                .contains(ReplyKeyboards.EDIT_NAME, ReplyKeyboards.EDIT_SCOPE, ReplyKeyboards.EDIT_AGE_RANGE);
+
+        typeAs(ReplyKeyboards.BACK);
+        assertThat(state().step()).isEqualTo(ConversationStep.DONE);
+        assertThat(labels((ReplyKeyboardMarkup) sent.get(sent.size() - 1).getReplyMarkup()))
+                .contains(ReplyKeyboards.MAIN_MENU);
+    }
+
+    @Test
+    void whoLikedMe_isAMainMenuButton() {
         when(backendApiClient.getProfileByTelegramUserId(USER)).thenReturn(new HashMap<>(Map.of("id", "me")));
         when(backendApiClient.getProfilesWhoLikedMe("me")).thenReturn(List.of());
         ConversationState idle = new ConversationState(USER);
         idle.setStep(ConversationStep.DONE);
         states.put(USER, idle);
 
-        typeAs(ReplyKeyboards.WHO_LIKED_ME);
-        typeAs(ReplyKeyboards.SEARCH_SCOPE);
+        handler.onMenuAction(CHAT_ID, USER, MenuAction.WHO_LIKED_ME);
 
         org.mockito.Mockito.verify(backendApiClient).getProfilesWhoLikedMe("me");
-        assertThat(state().step()).isEqualTo(ConversationStep.SETTINGS_SCOPE);
-        assertThat(sent.get(sent.size() - 1).getReplyMarkup()).isInstanceOf(ReplyKeyboardMarkup.class);
     }
 
     @Test

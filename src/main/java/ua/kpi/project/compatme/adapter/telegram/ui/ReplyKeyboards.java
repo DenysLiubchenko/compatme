@@ -60,16 +60,11 @@ public final class ReplyKeyboards {
     public static final String EDIT_SCOPE = "✏️ Edit Search Scope";
     public static final String EDIT_AGE_RANGE = "✏️ Edit Age Range";
 
-    // "My Profile" menu
-    public static final String EDIT_PROFILE = "✏️ Edit My Profile";
-    public static final String WHO_LIKED_ME = "❤️ Who Liked Me";
+    // "My Profile" menu (its own view; replaces the main menu until "Main Menu" is pressed)
+    public static final String EDIT_PROFILE = "✏️ Edit Profile";
     public static final String PAUSE = "🔕 Pause Matching";
     public static final String DELETE_ACCOUNT = "🗑 Delete My Account";
-
-    // "Preferences" menu
-    public static final String DESCRIBE_PREFERENCES = "📝 Describe who I'm looking for";
-    public static final String SEARCH_SCOPE = "🌍 Search scope";
-    public static final String MATCH_AGE_RANGE = "🎯 Match age range";
+    public static final String MAIN_MENU = "⬅️ Main Menu";
 
     public static final String DELETE_YES = "❌ Yes, delete everything";
     public static final String DELETE_NO = "⬅️ No, keep my profile";
@@ -183,17 +178,11 @@ public final class ReplyKeyboards {
         return of(List.of(List.of(DELETE_YES), List.of(DELETE_NO)));
     }
 
-    /** Top-level menu plus the profile actions. */
+    /** The profile view: only profile actions plus a way back to the main menu. */
     public static ReplyKeyboardMarkup profileMenu() {
-        return MainMenuKeyboard.buildWith(List.of(
-                List.of(EDIT_PROFILE, WHO_LIKED_ME),
-                List.of(PAUSE, DELETE_ACCOUNT)));
-    }
-
-    /** Top-level menu plus the preference actions. */
-    public static ReplyKeyboardMarkup preferencesMenu() {
-        return MainMenuKeyboard.buildWith(List.of(
-                List.of(DESCRIBE_PREFERENCES),
-                List.of(SEARCH_SCOPE, MATCH_AGE_RANGE)));
+        return of(List.of(
+                List.of(EDIT_PROFILE),
+                List.of(PAUSE, DELETE_ACCOUNT),
+                List.of(MAIN_MENU)));
     }
 }

@@ -11,25 +11,20 @@ import java.util.Optional;
 /**
  * The persistent bottom menu ({@link ReplyKeyboardMarkup}). Pressing a button makes Telegram send
  * its label as a normal text message, so {@link #match(String)} maps incoming text back to a
- * {@link MenuAction}. Sub-menus reuse these two rows and append their own rows below, so the
- * four top-level actions stay visible at all times.
+ * {@link MenuAction}. Other views (e.g. the profile menu in {@link ReplyKeyboards}) replace this
+ * keyboard while the user is in them and offer a way back to it.
  */
 public final class MainMenuKeyboard {
 
     public static final String BROWSE = "🔍 Browse";
+    public static final String WHO_LIKED_ME = "❤️ Who Liked Me";
     public static final String MY_PROFILE = "👤 My Profile";
-    public static final String PREFERENCES = "⚙️ Preferences";
     public static final String HELP = "❓ Help";
 
     private MainMenuKeyboard() {
     }
 
     public static ReplyKeyboardMarkup build() {
-        return buildWith(List.of());
-    }
-
-    /** The four top-level buttons followed by {@code extraRows} of plain-text buttons. */
-    public static ReplyKeyboardMarkup buildWith(List<List<String>> extraRows) {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         keyboardMarkup.setResizeKeyboard(true);
         keyboardMarkup.setSelective(false);
@@ -39,19 +34,13 @@ public final class MainMenuKeyboard {
 
         KeyboardRow row1 = new KeyboardRow();
         row1.add(new KeyboardButton(BROWSE));
-        row1.add(new KeyboardButton(MY_PROFILE));
+        row1.add(new KeyboardButton(WHO_LIKED_ME));
         keyboard.add(row1);
 
         KeyboardRow row2 = new KeyboardRow();
-        row2.add(new KeyboardButton(PREFERENCES));
+        row2.add(new KeyboardButton(MY_PROFILE));
         row2.add(new KeyboardButton(HELP));
         keyboard.add(row2);
-
-        for (List<String> labels : extraRows) {
-            KeyboardRow row = new KeyboardRow();
-            labels.forEach(label -> row.add(new KeyboardButton(label)));
-            keyboard.add(row);
-        }
 
         keyboardMarkup.setKeyboard(keyboard);
         return keyboardMarkup;
@@ -63,8 +52,8 @@ public final class MainMenuKeyboard {
         }
         return switch (text.trim()) {
             case BROWSE -> Optional.of(MenuAction.BROWSE);
+            case WHO_LIKED_ME -> Optional.of(MenuAction.WHO_LIKED_ME);
             case MY_PROFILE -> Optional.of(MenuAction.MY_PROFILE);
-            case PREFERENCES -> Optional.of(MenuAction.PREFERENCES);
             case HELP -> Optional.of(MenuAction.HELP);
             default -> Optional.empty();
         };
