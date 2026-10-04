@@ -1,0 +1,61 @@
+docker-compose.yml
+  s_3219515c242fb1::t_dddb9cfd8ad680 21-43,89-94,108
+pom.xml
+  s_3219515c242fb1::t_12db65bed35391 88-94,96-100
+src/main/java/ua/kpi/project/compatme/adapter/in/web/GlobalExceptionHandler.java
+  s_3219515c242fb1::t_3e31e9b06a7438 12,16-18,20-21,43-74
+src/main/java/ua/kpi/project/compatme/adapter/in/web/ProfilePhotoController.java
+  s_3219515c242fb1::t_8f99b8cd1fcbc2 1-83
+src/main/java/ua/kpi/project/compatme/adapter/in/web/dto/PhotoUploadResponse.java
+  s_3219515c242fb1::t_a1f1ac4a238743 1-7
+src/main/java/ua/kpi/project/compatme/adapter/out/storage/MinioClientConfig.java
+  s_3219515c242fb1::t_393d9de4801642 1-19
+src/main/java/ua/kpi/project/compatme/adapter/out/storage/MinioPhotoStorageAdapter.java
+  s_3219515c242fb1::t_1b4d4bca268397 1-118
+src/main/java/ua/kpi/project/compatme/adapter/out/storage/MinioProperties.java
+  s_3219515c242fb1::t_23e3e7ccde8c58 1-13
+src/main/java/ua/kpi/project/compatme/application/config/PhotoPolicyProperties.java
+  s_3219515c242fb1::t_46d9e528b78713 1-14
+src/main/java/ua/kpi/project/compatme/application/exception/PhotoNotFoundException.java
+  s_3219515c242fb1::t_94d5a89acec00e 1-8
+src/main/java/ua/kpi/project/compatme/application/exception/PhotoStorageException.java
+  s_3219515c242fb1::t_33830d3469a58c 1-9
+src/main/java/ua/kpi/project/compatme/application/exception/PhotoTooLargeException.java
+  s_3219515c242fb1::t_ef8a8e0dea401d 1-25
+src/main/java/ua/kpi/project/compatme/application/exception/PhotoValidationException.java
+  s_3219515c242fb1::t_7f8d2fee40c088 1-9
+src/main/java/ua/kpi/project/compatme/application/exception/TooManyPhotosException.java
+  s_3219515c242fb1::t_f04f7725fcd4d0 1-13
+src/main/java/ua/kpi/project/compatme/application/exception/UnsupportedPhotoTypeException.java
+  s_3219515c242fb1::t_f7e61d3ce37c65 1-19
+src/main/java/ua/kpi/project/compatme/application/port/in/ProfilePhotoUseCase.java
+  s_3219515c242fb1::t_bd3c8d027b9bf1 1-19
+src/main/java/ua/kpi/project/compatme/application/port/out/PhotoStoragePort.java
+  s_3219515c242fb1::t_1dc08e598d4a6c 1-25
+src/main/java/ua/kpi/project/compatme/application/service/ProfileManagementService.java
+  s_3219515c242fb1::t_003c8e72d9cc45 8,16-18,29-30,34,37-38,42,75-76,151-152,157-164
+src/main/java/ua/kpi/project/compatme/application/service/ProfilePhotoService.java
+  s_3219515c242fb1::t_d8840cb3b07ded 1-114
+src/main/java/ua/kpi/project/compatme/config/PhotoStorageConfig.java
+  s_3219515c242fb1::t_eded087ebaa881 1-33
+src/test/java/ua/kpi/project/compatme/adapter/in/web/ProfilePhotoControllerTest.java
+  s_3219515c242fb1::t_4958ffe982c8f3 1-84
+src/test/java/ua/kpi/project/compatme/application/service/ProfilePhotoServiceTest.java
+  s_3219515c242fb1::t_1a962d62fdbf37 1-230
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8d50c318064a75b45bb325c4df298d93ea668907",
+  "prompts": {},
+  "sessions": {
+    "s_3219515c242fb1": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ef80ea559ffejA5Q4sv1v0YCWp",
+        "model": "claude-sonnet-5.5"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
