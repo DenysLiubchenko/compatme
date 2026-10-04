@@ -241,7 +241,7 @@ class ConversationFlowHandlerTest {
     }
 
     @Test
-    void reviewSave_delegatesToBackendApiClientAndClearsState() {
+    void reviewSave_delegatesToBackendApiClientAndResetsDraftToIdleDone() {
         ConversationState state = new ConversationState(TELEGRAM_USER_ID);
         state.setStep(ConversationStep.REVIEW);
         state.setName("Maria");
@@ -267,7 +267,9 @@ class ConversationFlowHandlerTest {
         verify(backendApiClient).createProfile(
                 anyString(), anyString(), any(), anyString(), nullable(String.class), any(), anyString(), anyString(), anyString(), anyString(), any(), eq("CITY"), eq(26), eq(32));
         verify(backendApiClient).generateEmbeddings("profile-123");
-        verify(stateStore).clear(TELEGRAM_USER_ID);
+        // the draft is replaced by an idle DONE state with no leftover personal data
+        assertThat(currentState().step()).isEqualTo(ConversationStep.DONE);
+        assertThat(currentState().name()).isNull();
     }
 
     @Test

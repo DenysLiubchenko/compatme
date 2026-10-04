@@ -12,9 +12,12 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
+import ua.kpi.project.compatme.adapter.telegram.ui.MainMenuKeyboard;
+import ua.kpi.project.compatme.adapter.telegram.ui.MenuAction;
 import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Thin Telegram bot client. Deliberately contains no domain/business logic — every user action is
@@ -110,7 +113,12 @@ public class CompatmeTelegramBot extends TelegramLongPollingBot {
         } else if (text.startsWith("/menu")) {
             flowHandler.onMenuCommand(chatId, telegramUserId);
         } else {
-            flowHandler.onTextMessage(chatId, telegramUserId, text);
+            Optional<MenuAction> menuAction = MainMenuKeyboard.match(text);
+            if (menuAction.isPresent()) {
+                flowHandler.onMenuAction(chatId, telegramUserId, menuAction.get());
+            } else {
+                flowHandler.onTextMessage(chatId, telegramUserId, text);
+            }
         }
     }
 

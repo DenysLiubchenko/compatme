@@ -1,0 +1,74 @@
+package ua.kpi.project.compatme.adapter.telegram.ui;
+
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+
+import java.util.List;
+import java.util.Map;
+
+/** Renders backend profile/recommendation maps into {@link Card}s. */
+public final class ProfileCardFormatter {
+
+    private ProfileCardFormatter() {
+    }
+
+    public static String formatProfileCard(Map<String, Object> profile, boolean includePreference) {
+        Object age = profile.get("age");
+        StringBuilder sb = new StringBuilder();
+        sb.append("👤 %s, %s\n".formatted(profile.get("displayName"), age));
+        String city = (String) profile.get("city");
+        String country = (String) profile.get("country");
+        if (city != null || country != null) {
+            sb.append("📍 %s, %s\n".formatted(city, country));
+        }
+        sb.append("\n\"%s\"".formatted(profile.get("selfDescription")));
+        if (includePreference && profile.get("preferenceDescription") != null) {
+            sb.append("\n\nLooking for: \"%s\"".formatted(profile.get("preferenceDescription")));
+        }
+        return sb.toString();
+    }
+
+    public static Card toCard(Map<String, Object> profile, boolean includePreference, InlineKeyboardMarkup keyboard) {
+        String text = formatProfileCard(profile, includePreference);
+        String photoUrl = firstPhotoUrl(profile);
+        if (photoUrl == null) {
+            Object urns = profile.get("photoUrns");
+            if (urns instanceof List<?> list && !list.isEmpty()) {
+                text += "\n📷 Photo references: " + list.size();
+            }
+        }
+        return new Card(text, photoUrl, keyboard);
+    }
+
+    /** First http(s) photo reference of a profile, looking at {@code photoUrl}, {@code photoUrls} and {@code photoUrns}. */
+    public static String firstPhotoUrl(Map<String, Object> profile) {
+        Object single = profile.get("photoUrl");
+        if (single instanceof String s && isHttp(s)) {
+            return s;
+        }
+        for (String key : List.of("photoUrls", "photoUrns")) {
+            if (profile.get(key) instanceof List<?> list) {
+                for (Object item : list) {
+                    if (item instanceof String s && isHttp(s)) {
+                        return s;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean isHttp(String value) {
+        return value.startsWith("http://") || value.startsWith("https://");
+    }
+
+    public static String formatRecommendations(List<Map<String, Object>> recommendations) {
+        if (recommendations.isEmpty()) {
+            return "No matches available right now.";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Map<String, Object> r : recommendations) {
+            sb.append("• %s (score: %.2f)\n".formatted(r.get("displayName"), ((Number) r.get("aggregatedScore")).doubleValue()));
+        }
+        return sb.toString().stripTrailing();
+    }
+}
