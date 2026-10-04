@@ -1,0 +1,63 @@
+README.md
+  s_be03567e0c3c3d::t_5d37a03ff4801c 111-116
+src/main/java/ua/kpi/project/compatme/adapter/in/web/ProfileWebMapper.java
+  s_be03567e0c3c3d::t_5416646ff96ddf 44-46,60-61
+src/main/java/ua/kpi/project/compatme/adapter/in/web/dto/ProfileRequest.java
+  s_be03567e0c3c3d::t_fa15314f82dbad 47-55
+src/main/java/ua/kpi/project/compatme/adapter/in/web/dto/ProfileResponse.java
+  s_be03567e0c3c3d::t_7d6aacc5fdf436 30-31
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/ProfilePersistenceMapper.java
+  s_be03567e0c3c3d::t_065fcb85b42db2 30-31,77-78
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/document/ProfileDocument.java
+  s_be03567e0c3c3d::t_480bdadb1c6d12 40-41,133-136
+src/main/java/ua/kpi/project/compatme/adapter/telegram/BackendApiClient.java
+  s_be03567e0c3c3d::t_c6573acb3b490e 52,68-70,86-89,152-160,162
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandler.java
+  s_be03567e0c3c3d::t_fd9408a1799141 154-155,202-204,703-777,797,808,822,877-879,1112,1144-1146,1259,1281-1285
+src/main/java/ua/kpi/project/compatme/adapter/telegram/state/ConversationState.java
+  s_be03567e0c3c3d::t_48a00781f56c10 32-34,127-134
+src/main/java/ua/kpi/project/compatme/adapter/telegram/state/ConversationStateDocument.java
+  s_be03567e0c3c3d::t_e65bd60c6f38c3 34-35,47-50
+src/main/java/ua/kpi/project/compatme/adapter/telegram/state/ConversationStateStore.java
+  s_be03567e0c3c3d::t_6dbd66fe4a8d5e 57-58,82
+src/main/java/ua/kpi/project/compatme/adapter/telegram/state/ConversationStep.java
+  s_be03567e0c3c3d::t_409ce81050f03e 24-26,42-44
+src/main/java/ua/kpi/project/compatme/adapter/telegram/validation/ProfileInputValidator.java
+  s_be03567e0c3c3d::t_79d9df9721928a 3,5-6,23-24,55-75
+src/main/java/ua/kpi/project/compatme/application/dto/CreateOrUpdateProfileCommand.java
+  s_be03567e0c3c3d::t_616aee5a436a93 22-24,43-45,54-64
+src/main/java/ua/kpi/project/compatme/application/service/ProfileManagementService.java
+  s_be03567e0c3c3d::t_2f8f7ac4beae88 67-68,78-79,90-91
+src/main/java/ua/kpi/project/compatme/application/service/RecommendationService.java
+  s_be03567e0c3c3d::t_beb3e41a349387 105-106,109-111
+src/main/java/ua/kpi/project/compatme/bootstrap/OkCupidProfileDataLoader.java
+  s_be03567e0c3c3d::t_9444b395fb977e 133-134
+src/main/java/ua/kpi/project/compatme/domain/model/AgeRange.java
+  s_be03567e0c3c3d::t_7db649e1bcc383 1-20
+src/main/java/ua/kpi/project/compatme/domain/model/Profile.java
+  s_be03567e0c3c3d::t_379a358f233187 37,68-72,173-174,205-208,247-248,285-286
+src/main/resources/okcupid_profiles.csv
+  s_be03567e0c3c3d::t_aecd667b071e7d 1-10001
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandlerTest.java
+  s_be03567e0c3c3d::t_2ceeaf7e333373 88-89,105-106,254,260,268,282-310,325-326
+src/test/java/ua/kpi/project/compatme/application/service/RecommendationServiceTest.java
+  s_be03567e0c3c3d::t_f559a02b67f553 26-27,116-127,137-141,148
+src/test/java/ua/kpi/project/compatme/domain/model/AgeRangeTest.java
+  s_be03567e0c3c3d::t_a524f94b5ecf9a 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bab5647ea669ad018ac8f260b17cfb67b9c5bdec",
+  "prompts": {},
+  "sessions": {
+    "s_be03567e0c3c3d": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ef92c3a03ffeJasDOGHrg6uXqZ",
+        "model": "claude-sonnet-5.5"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
