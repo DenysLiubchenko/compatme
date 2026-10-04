@@ -151,6 +151,8 @@ public class ConversationFlowHandler {
             case AGE -> handleAgeInput(chatId, state, text);
             case LOCATION_MANUAL_COUNTRY -> handleManualCountryInput(chatId, state, text);
             case LOCATION_MANUAL_CITY -> handleManualCityInput(chatId, state, text);
+            case AGE_RANGE -> handleAgeRangeInput(chatId, state, text);
+            case SETTINGS_AGE_RANGE -> handleSettingsAgeRangeInput(chatId, state, text);
             case SELF_DESCRIPTION -> handleSelfDescriptionInput(chatId, state, text);
             case PREFERENCE_DESCRIPTION -> handlePreferenceDescriptionInput(chatId, state, text);
             case PHOTOS -> handlePhotoUrlInput(chatId, state, text);
@@ -197,6 +199,9 @@ public class ConversationFlowHandler {
                 case "loc:manual" -> { ackSilently(callbackQueryId); handleLocationManualChoice(chatId, messageId, state); }
                 case "loc:confirm_yes" -> { ackSilently(callbackQueryId); handleLocationConfirmYes(chatId, messageId, state); }
                 case "loc:confirm_no" -> { ackSilently(callbackQueryId); handleLocationConfirmNo(chatId, messageId, state); }
+                case "settings:agerange" -> { ackSilently(callbackQueryId); promptSettingsAgeRange(chatId, state); }
+                case "review:edit_agerange" -> { ackSilently(callbackQueryId); jumpToEditAgeRange(chatId, messageId, state); }
+                case "agerange:default" -> { ackSilently(callbackQueryId); handleAgeRangeDefault(chatId, messageId, state); }
                 case "settings:scope" -> { ackSilently(callbackQueryId); showSettingsScopeMenu(chatId); }
                 case "review:edit_scope" -> { ackSilently(callbackQueryId); jumpToEditScope(chatId, messageId, state); }
                 case "seek:continue" -> handleSeekingGendersContinue(chatId, messageId, callbackQueryId, state);
@@ -695,6 +700,81 @@ public class ConversationFlowHandler {
         };
     }
 
+    // ─────────────────────────────── step 5c: preferred age range ───────────────────────────────
+
+    private static int[] defaultAgeRange(Integer age) {
+        int base = age == null ? 25 : age;
+        return new int[] {Math.max(18, base - 3), Math.min(99, base + 3)};
+    }
+
+    private InlineKeyboardMarkup ageRangeKeyboard(Integer age) {
+        int[] range = defaultAgeRange(age);
+        return InlineKeyboardMarkup.builder()
+                .keyboardRow(List.of(button("Use my age \u00b13 (" + range[0] + "-" + range[1] + ")", "agerange:default")))
+                .build();
+    }
+
+    private void promptAgeRange(long chatId, ConversationState state) {
+        sendNew(chatId, "What age range should your matches be in? Send it like 25-35, or use the default below.",
+                ageRangeKeyboard(state.age()));
+    }
+
+    private void handleAgeRangeInput(long chatId, ConversationState state, String text) {
+        var range = ProfileInputValidator.parseAgeRange(text);
+        if (range.isEmpty()) {
+            send(SendMessage.builder().chatId(chatId)
+                    .text("Please send a range like 25-35 (ages 18-99, minimum not above maximum).").build());
+            return;
+        }
+        state.setPreferredAgeRange(range.get()[0], range.get()[1]);
+        send(SendMessage.builder().chatId(chatId)
+                .text("Preferred age range: " + range.get()[0] + "-" + range.get()[1] + " \u2705").build());
+        advanceAfter(chatId, state, ConversationStep.AGE_RANGE);
+    }
+
+    private void handleAgeRangeDefault(long chatId, Integer messageId, ConversationState state) {
+        int[] range = defaultAgeRange(state.age());
+        state.setPreferredAgeRange(range[0], range[1]);
+        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
+                .text("Preferred age range: " + range[0] + "-" + range[1] + " \u2705").build());
+        advanceAfter(chatId, state, ConversationStep.AGE_RANGE);
+    }
+
+    private void jumpToEditAgeRange(long chatId, Integer messageId, ConversationState state) {
+        state.setReturnToReview(true);
+        state.setStep(ConversationStep.AGE_RANGE);
+        stateStore.save(state);
+        removeKeyboard(chatId, messageId);
+        promptAgeRange(chatId, state);
+    }
+
+    private void promptSettingsAgeRange(long chatId, ConversationState state) {
+        state.setStep(ConversationStep.SETTINGS_AGE_RANGE);
+        stateStore.save(state);
+        send(SendMessage.builder().chatId(chatId)
+                .text("\ud83c\udfaf Send your new preferred match age range, like 25-35.").build());
+    }
+
+    private void handleSettingsAgeRangeInput(long chatId, ConversationState state, String text) {
+        var range = ProfileInputValidator.parseAgeRange(text);
+        if (range.isEmpty()) {
+            send(SendMessage.builder().chatId(chatId)
+                    .text("Please send a range like 25-35 (ages 18-99, minimum not above maximum).").build());
+            return;
+        }
+        try {
+            Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(state.telegramUserId());
+            backendApiClient.updateAgeRange(String.valueOf(profile.get("id")), range.get()[0], range.get()[1]);
+            state.setStep(ConversationStep.SETTINGS_MENU);
+            stateStore.save(state);
+            send(SendMessage.builder().chatId(chatId)
+                    .text("Preferred age range updated: " + range.get()[0] + "-" + range.get()[1] + " \u2705").build());
+        } catch (Exception e) {
+            log.warn("Failed to update age range for chat {}: {}", chatId, e.getMessage());
+            send(SendMessage.builder().chatId(chatId).text("Couldn't update your age range. Try again shortly.").build());
+        }
+    }
+
     // ─────────────────────────────── step 8: review & confirm ───────────────────────────────
 
     private void showReview(long chatId, ConversationState state) {
@@ -714,6 +794,7 @@ public class ConversationFlowHandler {
                 👤 %s, %d, %s (%s)
                 📍 %s, %s
                 🌍 Search scope: %s
+                🎯 Match ages: %s
                 🔍 Looking for: %s
                 %s
 
@@ -724,6 +805,7 @@ public class ConversationFlowHandler {
                 state.name(), state.age(), humanize(state.gender()), humanize(state.orientation()),
                 state.city(), state.country(),
                 humanizeScope(state.searchScope()),
+                state.minPreferredAge() == null ? "not set" : state.minPreferredAge() + "-" + state.maxPreferredAge(),
                 joinHumanized(state.seekingGenders()),
                 photoLine,
                 state.selfDescription(),
@@ -737,6 +819,7 @@ public class ConversationFlowHandler {
                 .keyboardRow(List.of(button("✏️ Edit Sex", "review:edit_gender"), button("✏️ Edit Orientation", "review:edit_orientation")))
                 .keyboardRow(List.of(button("✏️ Edit Location", "review:edit_location"), button("✏️ Edit Descriptions", "review:edit_desc")))
                 .keyboardRow(List.of(button("✏️ Edit Photos", "review:edit_photos"), button("✏️ Edit Search Scope", "review:edit_scope")))
+                .keyboardRow(List.of(button("✏️ Edit Age Range", "review:edit_agerange")))
                 .keyboardRow(List.of(button("⬅️ Back", "back")))
                 .build();
     }
@@ -791,7 +874,9 @@ public class ConversationFlowHandler {
                 state.selfDescription(),
                 state.preferenceDescription(),
                 state.photoUrns(),
-                state.searchScope());
+                state.searchScope(),
+                state.minPreferredAge(),
+                state.maxPreferredAge());
         String profileId = String.valueOf(saved.get("id"));
         backendApiClient.generateEmbeddings(profileId);
         stateStore.clear(telegramUserId);
@@ -1024,6 +1109,7 @@ public class ConversationFlowHandler {
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(List.of(button("✏️ Edit My Profile", "settings:edit")))
                 .keyboardRow(List.of(button("🌍 Search Scope", "settings:scope")))
+                .keyboardRow(List.of(button("🎯 Match Age Range", "settings:agerange")))
                 .keyboardRow(List.of(button("🔕 Pause Matching", "settings:pause")))
                 .keyboardRow(List.of(button("🗑 Delete My Account", "settings:delete")))
                 .build();
@@ -1055,6 +1141,9 @@ public class ConversationFlowHandler {
         state.setCountry((String) profile.get("country"));
         state.setCity((String) profile.get("city"));
         state.setSearchScope((String) profile.get("searchScope"));
+        Number minAge = (Number) profile.get("minPreferredAge");
+        Number maxAge = (Number) profile.get("maxPreferredAge");
+        state.setPreferredAgeRange(minAge == null ? null : minAge.intValue(), maxAge == null ? null : maxAge.intValue());
         state.setSelfDescription(String.valueOf(profile.get("selfDescription")));
         state.setPreferenceDescription(String.valueOf(profile.get("preferenceDescription")));
         return state;
@@ -1167,7 +1256,7 @@ public class ConversationFlowHandler {
      */
     private void advanceAfter(long chatId, ConversationState state, ConversationStep justCompleted) {
         boolean isGroupTerminal = switch (justCompleted) {
-            case NAME, AGE, SEEKING_GENDERS, LOCATION_MANUAL_CITY, LOCATION_CONFIRM, SEARCH_SCOPE,
+            case NAME, AGE, SEEKING_GENDERS, LOCATION_MANUAL_CITY, LOCATION_CONFIRM, SEARCH_SCOPE, AGE_RANGE,
                     PREFERENCE_DESCRIPTION -> true;
             default -> false;
         };
@@ -1189,6 +1278,11 @@ public class ConversationFlowHandler {
                 promptSearchScope(chatId);
             }
             case SEARCH_SCOPE -> {
+                state.setStep(ConversationStep.AGE_RANGE);
+                stateStore.save(state);
+                promptAgeRange(chatId, state);
+            }
+            case AGE_RANGE -> {
                 state.setStep(ConversationStep.SELF_DESCRIPTION);
                 stateStore.save(state);
                 promptSelfDescription(chatId);

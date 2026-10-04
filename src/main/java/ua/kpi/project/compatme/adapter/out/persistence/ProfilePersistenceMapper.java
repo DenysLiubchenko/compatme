@@ -27,6 +27,8 @@ public class ProfilePersistenceMapper {
         document.setCountry(profile.country());
         document.setCity(profile.city());
         document.setSearchScope(profile.searchScope().name());
+        document.setMinPreferredAge(profile.minPreferredAge());
+        document.setMaxPreferredAge(profile.maxPreferredAge());
         document.setSeekingGenders(profile.seekingGenders().stream().map(Enum::name).collect(Collectors.toSet()));
         document.setSelfDescription(profile.selfDescription());
         document.setPreferenceDescription(profile.preferenceDescription());
@@ -72,6 +74,8 @@ public class ProfilePersistenceMapper {
                 .orientation(document.getOrientation())
                 .country(document.getCountry())
                 .city(document.getCity())
+                .minPreferredAge(document.getMinPreferredAge())
+                .maxPreferredAge(document.getMaxPreferredAge())
                 .searchScope(document.getSearchScope() == null ? null
                         : ua.kpi.project.compatme.domain.model.LocationScope.valueOf(document.getSearchScope()))
                 .seekingGenders(seekingGenders)

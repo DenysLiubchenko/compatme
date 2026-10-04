@@ -37,6 +37,8 @@ public class ProfileDocument {
     private String country;
     private String city;
     private String searchScope;
+    private Integer minPreferredAge;
+    private Integer maxPreferredAge;
 
     @Field("seekingGenders")
     private Set<String> seekingGenders;
@@ -128,6 +130,10 @@ public class ProfileDocument {
     public void setCountry(String country) { this.country = country; }
     public String getCity() { return city; }
     public void setCity(String city) { this.city = city; }
+    public Integer getMinPreferredAge() { return minPreferredAge; }
+    public void setMinPreferredAge(Integer v) { this.minPreferredAge = v; }
+    public Integer getMaxPreferredAge() { return maxPreferredAge; }
+    public void setMaxPreferredAge(Integer v) { this.maxPreferredAge = v; }
     public String getSearchScope() { return searchScope; }
     public void setSearchScope(String searchScope) { this.searchScope = searchScope; }
 

@@ -34,6 +34,7 @@ public final class Profile {
     private final List<Integer> archetypeIds;
     private final Location location;
     private final LocationScope searchScope;
+    private final AgeRange ageRange;
     private final List<String> photoUrls;
     private final RelationshipStatus status;
     private final String bodyType;
@@ -64,6 +65,11 @@ public final class Profile {
                 ? builder.location
                 : new Location(builder.city, builder.country);
         searchScope = builder.searchScope == null ? LocationScope.WORLDWIDE : builder.searchScope;
+        if ((builder.minPreferredAge == null) != (builder.maxPreferredAge == null)) {
+            throw new InvalidProfileDataException("minPreferredAge and maxPreferredAge must be provided together");
+        }
+        ageRange = builder.minPreferredAge == null
+                ? null : new AgeRange(builder.minPreferredAge, builder.maxPreferredAge);
         selfDescription = requireNonBlank(builder.selfDescription, "selfDescription");
         preferenceDescription = requireNonBlank(builder.preferenceDescription, "preferenceDescription");
         telegramUserId = builder.telegramUserId;
@@ -164,7 +170,8 @@ public final class Profile {
                 .orientation(orientation).seekingGenders(seekingGenders)
                 .selfDescription(selfDescription).preferenceDescription(preferenceDescription)
                 .embeddings(embeddings).createdAt(createdAt).updatedAt(updatedAt).archetypeIds(archetypeIds)
-                .location(location).searchScope(searchScope).photoUrls(photoUrls).status(status)
+                .location(location).searchScope(searchScope)
+                .minPreferredAge(minPreferredAge()).maxPreferredAge(maxPreferredAge()).photoUrls(photoUrls).status(status)
                 .bodyType(bodyType).diet(diet).drinks(drinks).drugs(drugs).education(education)
                 .ethnicity(ethnicity).height(height).income(income).job(job).lastOnline(lastOnline)
                 .offspring(offspring).pets(pets).religion(religion).sign(sign).smokes(smokes)
@@ -195,6 +202,10 @@ public final class Profile {
     public Location location() { return location; }
     /** Per-user default search scope; may be overridden per search request. */
     public LocationScope searchScope() { return searchScope; }
+    /** Preferred age range of matches; {@code null} when the user hasn't set one. */
+    public AgeRange ageRange() { return ageRange; }
+    public Integer minPreferredAge() { return ageRange == null ? null : ageRange.min(); }
+    public Integer maxPreferredAge() { return ageRange == null ? null : ageRange.max(); }
     public String country() { return location.country(); }
     public String city() { return location.city(); }
     public List<String> photoUrls() { return photoUrls; }
@@ -233,6 +244,8 @@ public final class Profile {
         private List<Integer> archetypeIds;
         private Location location;
         private LocationScope searchScope;
+        private Integer minPreferredAge;
+        private Integer maxPreferredAge;
         private String country;
         private String city;
         private List<String> photoUrls;
@@ -269,6 +282,8 @@ public final class Profile {
         public Builder createdAt(Instant v) { createdAt = v; return this; }
         public Builder updatedAt(Instant v) { updatedAt = v; return this; }
         public Builder archetypeIds(List<Integer> v) { archetypeIds = v; return this; }
+        public Builder minPreferredAge(Integer v) { minPreferredAge = v; return this; }
+        public Builder maxPreferredAge(Integer v) { maxPreferredAge = v; return this; }
         public Builder searchScope(LocationScope v) { searchScope = v; return this; }
         public Builder location(Location v) { location = v; return this; }
         public Builder country(String v) { country = v; location = null; return this; }

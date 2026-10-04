@@ -64,6 +64,8 @@ public class ProfileManagementService implements ProfileManagementUseCase {
                 .selfDescription(updated.selfDescription())
                 .preferenceDescription(updated.preferenceDescription())
                 .searchScope(command.searchScope() != null ? command.searchScope() : existing.searchScope())
+                .minPreferredAge(command.minPreferredAge() != null ? command.minPreferredAge() : existing.minPreferredAge())
+                .maxPreferredAge(command.maxPreferredAge() != null ? command.maxPreferredAge() : existing.maxPreferredAge())
                 .build();
         return profileRepository.save(rebuilt);
     }
@@ -73,7 +75,8 @@ public class ProfileManagementService implements ProfileManagementUseCase {
         return new CreateOrUpdateProfileCommand(command.profileId(), command.telegramUserId(), command.displayName(),
                 command.age(), command.gender(), command.orientation(), command.seekingGenders(), command.selfDescription(),
                 command.preferenceDescription(), command.archetypeIds(), command.country(), command.city(), command.photoUrls(),
-                optionalFields, command.searchScope());
+                optionalFields, command.searchScope(),
+                command.minPreferredAge(), command.maxPreferredAge());
     }
 
     private Profile.Builder toProfileBuilder(
@@ -84,7 +87,8 @@ public class ProfileManagementService implements ProfileManagementUseCase {
         return Profile.builder()
                 .id(id).telegramUserId(command.telegramUserId()).displayName(command.displayName())
                 .age(command.age()).gender(command.gender()).orientation(command.orientation())
-                .country(command.country()).city(command.city()).searchScope(command.searchScope()).seekingGenders(command.seekingGenders())
+                .country(command.country()).city(command.city()).searchScope(command.searchScope())
+                .minPreferredAge(command.minPreferredAge()).maxPreferredAge(command.maxPreferredAge()).seekingGenders(command.seekingGenders())
                 .selfDescription(command.selfDescription()).preferenceDescription(command.preferenceDescription())
                 .embeddings(embeddings).createdAt(createdAt).updatedAt(updatedAt)
                 .archetypeIds(command.archetypeIds()).photoUrls(command.photoUrls())

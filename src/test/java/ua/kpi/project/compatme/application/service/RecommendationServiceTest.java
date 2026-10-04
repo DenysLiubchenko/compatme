@@ -23,6 +23,8 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -111,6 +113,18 @@ class RecommendationServiceTest {
                 .containsExactly(sameCountry.id());
     }
 
+    @Test
+    void recommend_usesRequesterPreferredAgeRangeAsCandidateFilter() {
+        RecommendationService service = new RecommendationService(profileRepository, scorer);
+        Profile requester = located("requester", "Kyiv", "Ukraine", null, 25, 31);
+        when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
+        when(profileRepository.findCandidates(any(), eq(new ProfileRepositoryPort.CandidateFilter(25, 31))))
+                .thenReturn(List.of());
+
+        assertThat(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10))).isEmpty();
+        verify(profileRepository).findCandidates(any(), eq(new ProfileRepositoryPort.CandidateFilter(25, 31)));
+    }
+
     private static List<ProfileId> ids(List<RecommendationResult> results) {
         return results.stream().map(r -> r.candidateProfile().id()).toList();
     }
@@ -120,13 +134,18 @@ class RecommendationServiceTest {
     }
 
     private static Profile located(String name, String city, String country, LocationScope defaultScope) {
+        return located(name, city, country, defaultScope, null, null);
+    }
+
+    private static Profile located(
+            String name, String city, String country, LocationScope defaultScope, Integer minAge, Integer maxAge) {
         Instant now = Instant.now();
         boolean requester = name.equals("requester");
         return Profile.builder().id(ProfileId.generate()).displayName(name).age(28)
                 .gender(requester ? Gender.MALE : Gender.FEMALE)
                 .orientation(ua.kpi.project.compatme.domain.model.Orientation.STRAIGHT)
                 .location(new ua.kpi.project.compatme.domain.model.Location(city, country))
-                .searchScope(defaultScope)
+                .searchScope(defaultScope).minPreferredAge(minAge).maxPreferredAge(maxAge)
                 .seekingGenders(requester ? Set.of(Gender.FEMALE) : Set.of(Gender.MALE))
                 .selfDescription("self description").preferenceDescription("preference description")
                 .embeddings(new ProfileEmbeddings(embedding(new float[]{1f, 0f}), embedding(new float[]{0f, 1f})))

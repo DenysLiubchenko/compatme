@@ -41,7 +41,9 @@ public class ProfileWebMapper {
                 request.city(),
                 request.photoUrns(),
                 request.optionalFields(),
-                request.searchScope());
+                request.searchScope(),
+                request.minPreferredAge(),
+                request.maxPreferredAge());
     }
 
     public ProfileResponse toResponse(Profile profile) {
@@ -55,6 +57,8 @@ public class ProfileWebMapper {
                 profile.country(),
                 profile.city(),
                 profile.searchScope(),
+                profile.minPreferredAge(),
+                profile.maxPreferredAge(),
                 profile.seekingGenders(),
                 profile.selfDescription(),
                 profile.preferenceDescription(),

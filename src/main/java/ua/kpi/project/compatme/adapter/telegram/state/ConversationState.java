@@ -29,6 +29,9 @@ public class ConversationState {
     private String country;
     private String city;
 
+    private Integer minPreferredAge;
+    private Integer maxPreferredAge;
+
     /** Default location search scope name (CITY, COUNTRY or WORLDWIDE). */
     private String searchScope = "WORLDWIDE";
 
@@ -119,6 +122,14 @@ public class ConversationState {
 
     public void setCity(String city) {
         this.city = city;
+    }
+
+    public Integer minPreferredAge() { return minPreferredAge; }
+    public Integer maxPreferredAge() { return maxPreferredAge; }
+
+    public void setPreferredAgeRange(Integer min, Integer max) {
+        this.minPreferredAge = min;
+        this.maxPreferredAge = max;
     }
 
     public String searchScope() {

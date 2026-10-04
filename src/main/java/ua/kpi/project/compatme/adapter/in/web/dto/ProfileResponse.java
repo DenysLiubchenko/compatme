@@ -27,6 +27,8 @@ public record ProfileResponse(
         String country,
         String city,
         ua.kpi.project.compatme.domain.model.LocationScope searchScope,
+        Integer minPreferredAge,
+        Integer maxPreferredAge,
         Set<Gender> seekingGenders,
         String selfDescription,
         String preferenceDescription,

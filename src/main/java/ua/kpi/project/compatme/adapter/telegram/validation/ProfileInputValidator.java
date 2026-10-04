@@ -1,6 +1,9 @@
 package ua.kpi.project.compatme.adapter.telegram.validation;
 
+import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Free-text input validation for the onboarding conversation flow (see
@@ -16,6 +19,8 @@ public final class ProfileInputValidator {
     private static final int MIN_DESCRIPTION_LENGTH = 10;
     private static final int MAX_DESCRIPTION_LENGTH = 2000;
     private static final int MAX_PHOTO_URL_LENGTH = 2048;
+
+    private static final Pattern AGE_RANGE = Pattern.compile("^(\\d{1,3})\\s*[-\u2013\\s]\\s*(\\d{1,3})$");
 
     private ProfileInputValidator() {
     }
@@ -45,6 +50,27 @@ public final class ProfileInputValidator {
         } catch (NumberFormatException e) {
             return OptionalInt.empty();
         }
+    }
+
+    /**
+     * Parses a preferred age range such as {@code 25-35} (also accepts an en dash or whitespace
+     * as separator). Both bounds must be in {@code [18, 99]} and min must not exceed max.
+     * Returns {@code {min, max}}, or empty when invalid.
+     */
+    public static Optional<int[]> parseAgeRange(String text) {
+        if (text == null) {
+            return Optional.empty();
+        }
+        Matcher matcher = AGE_RANGE.matcher(text.trim());
+        if (!matcher.matches()) {
+            return Optional.empty();
+        }
+        int min = Integer.parseInt(matcher.group(1));
+        int max = Integer.parseInt(matcher.group(2));
+        if (min < MIN_AGE || max > MAX_AGE || min > max) {
+            return Optional.empty();
+        }
+        return Optional.of(new int[] {min, max});
     }
 
     /** Non-blank, at most {@value #MAX_LOCATION_LENGTH} characters after trimming — used for manual country/city entry. */

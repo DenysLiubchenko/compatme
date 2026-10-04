@@ -108,6 +108,12 @@ on the port interfaces, never on the concrete adapters.
   is omitted, the requester's stored default `searchScope` (set at profile creation and editable via
   Telegram Settings -> Search Scope; defaults to `WORLDWIDE`) is used. No re-ordering is applied:
   within the chosen scope, candidates are ranked by compatibility score only.
+- **Preferred match age range (`minPreferredAge`/`maxPreferredAge`)**: optional pair (18-120, min <= max)
+  on each profile, asked during Telegram onboarding and editable in Settings -> Match Age Range. It is
+  used as the candidate age filter for recommendations; profiles without one fall back to the
+  legacy band of +/-15 years around their own age. Seed CSV rows carry `age +/- 3`
+  (`scripts/add_okcupid_age_ranges.py`); existing DB profiles are backfilled with
+  `scripts/update_profile_age_ranges.py`.
 - **`archetypeIds`** (`List<Integer>`, optional): a thesis-evaluation-only tag on `Profile`
   recording which synthetic personality archetype(s) a profile blends, set by the synthetic
   dataset generator. It is carried through the domain model, MongoDB document, seed-loader JSON,

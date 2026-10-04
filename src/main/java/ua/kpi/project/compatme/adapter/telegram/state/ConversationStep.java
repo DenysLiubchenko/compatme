@@ -21,6 +21,9 @@ public enum ConversationStep {
 
     /** Choose the default search scope (CITY / COUNTRY / WORLDWIDE), right after location. */
     SEARCH_SCOPE,
+
+    /** Preferred age range of matches (text input like "25-35"), right after the search scope. */
+    AGE_RANGE,
     SELF_DESCRIPTION,
     PREFERENCE_DESCRIPTION,
 
@@ -35,6 +38,9 @@ public enum ConversationStep {
 
     /** Entered via {@code /settings}, independent of the onboarding step order above. */
     SETTINGS_MENU,
+
+    /** Settings sub-flow: waiting for a new preferred age range as text. */
+    SETTINGS_AGE_RANGE,
 
     /** "Are you sure?" step before {@code deleteProfile} is actually called. */
     DELETE_CONFIRM

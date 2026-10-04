@@ -31,6 +31,8 @@ public class ConversationStateDocument {
     private String country;
     private String city;
     private String searchScope;
+    private Integer minPreferredAge;
+    private Integer maxPreferredAge;
     private String pendingCountry;
     private String pendingCity;
     private String selfDescription;
@@ -42,6 +44,10 @@ public class ConversationStateDocument {
     public ConversationStateDocument() {
     }
 
+    public Integer getMinPreferredAge() { return minPreferredAge; }
+    public void setMinPreferredAge(Integer v) { this.minPreferredAge = v; }
+    public Integer getMaxPreferredAge() { return maxPreferredAge; }
+    public void setMaxPreferredAge(Integer v) { this.maxPreferredAge = v; }
     public String getSearchScope() { return searchScope; }
     public void setSearchScope(String searchScope) { this.searchScope = searchScope; }
 

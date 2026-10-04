@@ -49,7 +49,7 @@ public class BackendApiClient {
             String preferenceDescription,
             List<String> photoUrns) {
         return createProfile(telegramUserId, displayName, age, gender, orientation, seekingGenders, country, city,
-                selfDescription, preferenceDescription, photoUrns, null);
+                selfDescription, preferenceDescription, photoUrns, null, null, null);
     }
 
     /** Same as above, additionally sending the user's default location search scope (CITY/COUNTRY/WORLDWIDE). */
@@ -65,7 +65,9 @@ public class BackendApiClient {
             String selfDescription,
             String preferenceDescription,
             List<String> photoUrns,
-            String searchScope) {
+            String searchScope,
+            Integer minPreferredAge,
+            Integer maxPreferredAge) {
         Map<String, Object> body = new HashMap<>();
         body.put("telegramUserId", telegramUserId);
         body.put("displayName", displayName);
@@ -80,6 +82,10 @@ public class BackendApiClient {
         body.put("photoUrns", photoUrns);
         if (searchScope != null) {
             body.put("searchScope", searchScope);
+        }
+        if (minPreferredAge != null && maxPreferredAge != null) {
+            body.put("minPreferredAge", minPreferredAge);
+            body.put("maxPreferredAge", maxPreferredAge);
         }
         return postJson("/api/v1/profiles", body);
     }
@@ -143,8 +149,17 @@ public class BackendApiClient {
      */
     @SuppressWarnings("unchecked")
     public void updateSearchScope(String profileId, String searchScope) {
+        putProfileOverrides(profileId, Map.of("searchScope", searchScope));
+    }
+
+    /** Updates only the preferred match age range of an existing profile (same GET + PUT approach). */
+    public void updateAgeRange(String profileId, int minAge, int maxAge) {
+        putProfileOverrides(profileId, Map.of("minPreferredAge", minAge, "maxPreferredAge", maxAge));
+    }
+
+    private void putProfileOverrides(String profileId, Map<String, Object> overrides) {
         Map<String, Object> body = new HashMap<>(getProfile(profileId));
-        body.put("searchScope", searchScope);
+        body.putAll(overrides);
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/api/v1/profiles/" + profileId))

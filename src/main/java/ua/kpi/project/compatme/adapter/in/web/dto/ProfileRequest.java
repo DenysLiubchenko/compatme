@@ -44,6 +44,15 @@ public record ProfileRequest(
         /** Optional default search scope (CITY, COUNTRY, WORLDWIDE); omitted keeps the current one. */
         ua.kpi.project.compatme.domain.model.LocationScope searchScope,
 
+        /** Optional preferred match age range; must be provided together. */
+        @Min(value = 18, message = "minPreferredAge must be at least 18")
+        @Max(value = 120, message = "minPreferredAge must be at most 120")
+        Integer minPreferredAge,
+
+        @Min(value = 18, message = "maxPreferredAge must be at least 18")
+        @Max(value = 120, message = "maxPreferredAge must be at most 120")
+        Integer maxPreferredAge,
+
         Set<Gender> seekingGenders,
 
         @NotBlank(message = "selfDescription must not be blank")

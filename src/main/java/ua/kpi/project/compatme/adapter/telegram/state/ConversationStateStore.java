@@ -54,6 +54,8 @@ public class ConversationStateStore {
         document.setCountry(state.country());
         document.setCity(state.city());
         document.setSearchScope(state.searchScope());
+        document.setMinPreferredAge(state.minPreferredAge());
+        document.setMaxPreferredAge(state.maxPreferredAge());
         document.setPendingCountry(state.pendingCountry());
         document.setPendingCity(state.pendingCity());
         document.setSelfDescription(state.selfDescription());
@@ -77,6 +79,7 @@ public class ConversationStateStore {
         state.setCountry(document.getCountry());
         state.setCity(document.getCity());
         state.setSearchScope(document.getSearchScope());
+        state.setPreferredAgeRange(document.getMinPreferredAge(), document.getMaxPreferredAge());
         state.setPendingCountry(document.getPendingCountry());
         state.setPendingCity(document.getPendingCity());
         state.setSelfDescription(document.getSelfDescription());

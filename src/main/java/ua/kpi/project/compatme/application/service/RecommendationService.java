@@ -102,10 +102,13 @@ public class RecommendationService implements RecommendationUseCase {
     }
 
     /**
-     * A permissive, non-restrictive default age band around the requester. Kept simple for
-     * thesis-prototype scope; could be replaced with an explicit user-configured range.
+     * Candidate age window: the requester's own preferred age range when set; otherwise a
+     * permissive legacy band of +/-15 years around the requester's age.
      */
     private ProfileRepositoryPort.CandidateFilter ageFilterCenteredOn(Profile requester) {
+        if (requester.ageRange() != null) {
+            return new ProfileRepositoryPort.CandidateFilter(requester.ageRange().min(), requester.ageRange().max());
+        }
         if (requester.age() == null) {
             return ProfileRepositoryPort.CandidateFilter.none();
         }
