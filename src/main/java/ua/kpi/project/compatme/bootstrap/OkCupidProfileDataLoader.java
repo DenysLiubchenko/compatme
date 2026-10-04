@@ -130,12 +130,22 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
             return new CreateOrUpdateProfileCommand(
                     deterministicId(sampleKey), null, name, integer(get("age")), gender, orientation,
                     seeking, get("essay0"), get("essay9"), List.of(), location.country(), location.city(),
-                    List.of(), optional);
+                    List.of(), optional, parseSearchScope(get("search_scope")));
         }
     }
 
     static String deterministicId(String key) {
         return UUID.nameUUIDFromBytes(("compatme-okcupid:" + key).getBytes(StandardCharsets.UTF_8)).toString();
+    }
+
+    /** Optional {@code search_scope} CSV column; blank/unknown values fall back to the profile default. */
+    static ua.kpi.project.compatme.domain.model.LocationScope parseSearchScope(String value) {
+        if (blank(value)) return null;
+        try {
+            return ua.kpi.project.compatme.domain.model.LocationScope.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     static LocationParts parseLocation(String country, String city) {
