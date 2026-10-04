@@ -96,18 +96,18 @@ on the port interfaces, never on the concrete adapters.
   DTOs and the response DTO), so a profile can seek multiple genders simultaneously; the mutual
   match check (`Profile.mutuallyMatchesSeekingGender`) is a set-membership check on both sides,
   not an exact single-value comparison.
-- **Location filtering (`country`/`city`, `LocationScope`)**: each profile optionally carries a
-  free-text `country` and `city`. Recommendation requests accept a `scope` query parameter:
-  - `GLOBAL` (default) — no location filtering, candidates from anywhere are considered
-  - `COUNTRY` — only candidates in the same country as the requester
-  - `CITY` — only candidates in the same city (and therefore country) as the requester
+- **Location filtering (`Location`, `LocationScope`)**: every profile has a mandatory
+  `Location(city, country)` (both required). Recommendation requests accept an explicit `scope`
+  chosen by the user for that search (never automatic, never a fallback):
+  - `CITY` — only candidates with the same city AND country as the requester
+  - `COUNTRY` — only candidates in the same country (city may differ)
+  - `WORLDWIDE` — no location filtering
 
-  The filter is **relative to the requester's own profile**, not an arbitrary search parameter —
-  `GET /api/v1/profiles/{id}/recommendations?scope=CITY` means "find me people in my own city".
-  Comparisons are case-insensitive exact-string matches (no geocoding/normalization). If the
-  requester hasn't set the field(s) the requested scope needs, the filter is permissive (matches
-  everyone) rather than excluding every candidate — consistent with how `seekingGenders` behaves
-  when unset.
+  Matching is a trimmed, case-insensitive exact comparison (`domain.service.LocationMatcher`), applied
+  in `RecommendationService` alongside the age and mutual gender filters, before scoring. If `scope`
+  is omitted, the requester's stored default `searchScope` (set at profile creation and editable via
+  Telegram Settings -> Search Scope; defaults to `WORLDWIDE`) is used. No re-ordering is applied:
+  within the chosen scope, candidates are ranked by compatibility score only.
 - **`archetypeIds`** (`List<Integer>`, optional): a thesis-evaluation-only tag on `Profile`
   recording which synthetic personality archetype(s) a profile blends, set by the synthetic
   dataset generator. It is carried through the domain model, MongoDB document, seed-loader JSON,
@@ -337,7 +337,7 @@ details from the two descriptions. Example:
 
 All recommendations/refinements are scored via the app's single compatibility-scoring method
 (reciprocal harmonic mean) — there is no `strategy` parameter to select between alternatives.
-`scope` accepts `GLOBAL` (default), `COUNTRY`, or `CITY` — see "Location filtering" above.
+`scope` accepts `CITY`, `COUNTRY`, or `WORLDWIDE` (default: the profile's stored `searchScope`) — see "Location filtering" above.
 
 ## Running locally
 

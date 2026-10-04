@@ -18,6 +18,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -82,6 +83,8 @@ class ConversationFlowHandlerTest {
         flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 4, "cb5", "loc:manual");
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "Ukraine");
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "Kyiv");
+        assertThat(currentState().step()).isEqualTo(ConversationStep.SEARCH_SCOPE);
+        flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 6, "cbs", "scope:COUNTRY");
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "I love hiking and reading books on weekends.");
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "Someone calm who enjoys deep conversations.");
         assertThat(currentState().step()).isEqualTo(ConversationStep.PHOTOS);
@@ -96,6 +99,7 @@ class ConversationFlowHandlerTest {
         assertThat(state.seekingGenders()).containsExactly("MALE");
         assertThat(state.country()).isEqualTo("Ukraine");
         assertThat(state.city()).isEqualTo("Kyiv");
+        assertThat(state.searchScope()).isEqualTo("COUNTRY");
         assertThat(state.selfDescription()).isEqualTo("I love hiking and reading books on weekends.");
         assertThat(state.preferenceDescription()).isEqualTo("Someone calm who enjoys deep conversations.");
     }
@@ -229,7 +233,7 @@ class ConversationFlowHandlerTest {
         // THEN the pending values become final
         assertThat(currentState().country()).isEqualTo("Ukraine");
         assertThat(currentState().city()).isEqualTo("Kyiv");
-        assertThat(currentState().step()).isEqualTo(ConversationStep.SELF_DESCRIPTION);
+        assertThat(currentState().step()).isEqualTo(ConversationStep.SEARCH_SCOPE);
     }
 
     @Test
@@ -242,12 +246,13 @@ class ConversationFlowHandlerTest {
         state.toggleSeekingGender("MALE");
         state.setCountry("Ukraine");
         state.setCity("Kyiv");
+        state.setSearchScope("CITY");
         state.setSelfDescription("Original self description text.");
         state.setPreferenceDescription("Original preference description text.");
         statesByUser.put(TELEGRAM_USER_ID, state);
 
         when(backendApiClient.createProfile(
-                anyString(), anyString(), any(), anyString(), nullable(String.class), any(), anyString(), anyString(), anyString(), anyString(), any()))
+                anyString(), anyString(), any(), anyString(), nullable(String.class), any(), anyString(), anyString(), anyString(), anyString(), any(), anyString()))
                 .thenReturn(Map.of("id", "profile-123"));
 
         // WHEN the user confirms save
@@ -255,9 +260,18 @@ class ConversationFlowHandlerTest {
 
         // THEN the existing create + embeddings endpoints were called (no duplicated save logic here)
         verify(backendApiClient).createProfile(
-                anyString(), anyString(), any(), anyString(), nullable(String.class), any(), anyString(), anyString(), anyString(), anyString(), any());
+                anyString(), anyString(), any(), anyString(), nullable(String.class), any(), anyString(), anyString(), anyString(), anyString(), any(), eq("CITY"));
         verify(backendApiClient).generateEmbeddings("profile-123");
         verify(stateStore).clear(TELEGRAM_USER_ID);
+    }
+
+    @Test
+    void settingsScope_updatesSearchScopeOnExistingProfile() {
+        when(backendApiClient.getProfileByTelegramUserId(TELEGRAM_USER_ID)).thenReturn(Map.of("id", "profile-123"));
+
+        flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 10, "cb1", "setscope:CITY");
+
+        verify(backendApiClient).updateSearchScope("profile-123", "CITY");
     }
 
     @Test
@@ -272,6 +286,8 @@ class ConversationFlowHandlerTest {
         flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 4, "cb5", "loc:manual");
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "Ukraine");
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "Kyiv");
+        assertThat(currentState().step()).isEqualTo(ConversationStep.SEARCH_SCOPE);
+        flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 6, "cbs", "scope:COUNTRY");
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "I love hiking and reading books on weekends.");
         flowHandler.onTextMessage(CHAT_ID, TELEGRAM_USER_ID, "Someone calm who enjoys deep conversations.");
         assertThat(currentState().step()).isEqualTo(ConversationStep.PHOTOS);

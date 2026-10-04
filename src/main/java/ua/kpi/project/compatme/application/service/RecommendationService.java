@@ -13,6 +13,7 @@ import ua.kpi.project.compatme.domain.model.LocationScope;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileId;
 import ua.kpi.project.compatme.domain.service.CompatibilityScorer;
+import ua.kpi.project.compatme.domain.service.LocationMatcher;
 
 import java.util.Comparator;
 import java.util.List;
@@ -65,8 +66,9 @@ public class RecommendationService implements RecommendationUseCase {
         List<Profile> candidates = profileRepository.findCandidates(requesterId, filter);
         List<Profile> genderMatches = candidates.stream()
                 .filter(candidate -> mutuallyMatchesGenderPreference(requester, candidate)).toList();
+        LocationScope scope = query.locationScope() != null ? query.locationScope() : requester.searchScope();
         List<Profile> locationMatches = genderMatches.stream()
-                .filter(candidate -> matchesLocationScope(requester, candidate, query.locationScope())).toList();
+                .filter(candidate -> LocationMatcher.matches(requester.location(), candidate.location(), scope)).toList();
         List<Profile> scorableCandidates = locationMatches.stream()
                 .filter(candidate -> hasScorableEmbeddings(requester, candidate)).toList();
 
@@ -88,10 +90,6 @@ public class RecommendationService implements RecommendationUseCase {
 
     private boolean mutuallyMatchesGenderPreference(Profile requester, Profile candidate) {
         return requester.mutuallyMatchesSeekingGender(candidate);
-    }
-
-    private boolean matchesLocationScope(Profile requester, Profile candidate, LocationScope scope) {
-        return requester.matchesLocationScope(candidate, scope);
     }
 
     private boolean hasScorableEmbeddings(Profile requester, Profile candidate) {

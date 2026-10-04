@@ -30,6 +30,7 @@ public class ConversationStateDocument {
     private List<String> seekingGenders;
     private String country;
     private String city;
+    private String searchScope;
     private String pendingCountry;
     private String pendingCity;
     private String selfDescription;
@@ -40,6 +41,9 @@ public class ConversationStateDocument {
 
     public ConversationStateDocument() {
     }
+
+    public String getSearchScope() { return searchScope; }
+    public void setSearchScope(String searchScope) { this.searchScope = searchScope; }
 
     public String getTelegramUserId() {
         return telegramUserId;

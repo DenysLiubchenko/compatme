@@ -48,6 +48,24 @@ public class BackendApiClient {
             String selfDescription,
             String preferenceDescription,
             List<String> photoUrns) {
+        return createProfile(telegramUserId, displayName, age, gender, orientation, seekingGenders, country, city,
+                selfDescription, preferenceDescription, photoUrns, null);
+    }
+
+    /** Same as above, additionally sending the user's default location search scope (CITY/COUNTRY/WORLDWIDE). */
+    public Map<String, Object> createProfile(
+            String telegramUserId,
+            String displayName,
+            Integer age,
+            String gender,
+            String orientation,
+            Set<String> seekingGenders,
+            String country,
+            String city,
+            String selfDescription,
+            String preferenceDescription,
+            List<String> photoUrns,
+            String searchScope) {
         Map<String, Object> body = new HashMap<>();
         body.put("telegramUserId", telegramUserId);
         body.put("displayName", displayName);
@@ -60,6 +78,9 @@ public class BackendApiClient {
         body.put("selfDescription", selfDescription);
         body.put("preferenceDescription", preferenceDescription);
         body.put("photoUrns", photoUrns);
+        if (searchScope != null) {
+            body.put("searchScope", searchScope);
+        }
         return postJson("/api/v1/profiles", body);
     }
 
@@ -114,6 +135,30 @@ public class BackendApiClient {
     /** Reuses the existing {@code GET /api/v1/profiles/{id}/liked-by} endpoint for "Who Liked Me". */
     public List<Map<String, Object>> getProfilesWhoLikedMe(String profileId) {
         return getJsonList("/api/v1/profiles/%s/liked-by".formatted(profileId));
+    }
+
+    /**
+     * Updates only the default search scope of an existing profile: reads it via {@code GET} and
+     * re-submits it through the existing {@code PUT /api/v1/profiles/{id}} with the new scope.
+     */
+    @SuppressWarnings("unchecked")
+    public void updateSearchScope(String profileId, String searchScope) {
+        Map<String, Object> body = new HashMap<>(getProfile(profileId));
+        body.put("searchScope", searchScope);
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/v1/profiles/" + profileId))
+                    .header("Content-Type", "application/json; charset=utf-8")
+                    .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
+                    .timeout(Duration.ofSeconds(30))
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 400) {
+                throw new IllegalStateException("Backend returned HTTP " + response.statusCode());
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to call backend API: PUT /api/v1/profiles/" + profileId, e);
+        }
     }
 
     private Map<String, Object> postJson(String path, Map<String, Object> body) {

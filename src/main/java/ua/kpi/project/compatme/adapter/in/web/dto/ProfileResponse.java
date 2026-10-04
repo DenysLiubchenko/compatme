@@ -26,6 +26,7 @@ public record ProfileResponse(
         Orientation orientation,
         String country,
         String city,
+        ua.kpi.project.compatme.domain.model.LocationScope searchScope,
         Set<Gender> seekingGenders,
         String selfDescription,
         String preferenceDescription,

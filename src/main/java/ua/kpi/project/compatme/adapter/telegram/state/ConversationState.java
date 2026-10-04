@@ -29,6 +29,9 @@ public class ConversationState {
     private String country;
     private String city;
 
+    /** Default location search scope name (CITY, COUNTRY or WORLDWIDE). */
+    private String searchScope = "WORLDWIDE";
+
     /** Reverse-geocode (or manual-entry) candidate awaiting the "is this correct?" confirmation. */
     private String pendingCountry;
     private String pendingCity;
@@ -116,6 +119,14 @@ public class ConversationState {
 
     public void setCity(String city) {
         this.city = city;
+    }
+
+    public String searchScope() {
+        return searchScope;
+    }
+
+    public void setSearchScope(String searchScope) {
+        this.searchScope = searchScope == null ? "WORLDWIDE" : searchScope;
     }
 
     public String pendingCountry() {

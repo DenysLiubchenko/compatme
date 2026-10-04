@@ -7,7 +7,8 @@ import ua.kpi.project.compatme.domain.model.LocationScope;
  * compatibility-scoring method (reciprocal harmonic mean — see {@code CompatibilityScorer}).
  *
  * @param locationScope how broadly to scope the candidate pool geographically, relative to the
- *     requester's own {@code country}/{@code city}; see {@link LocationScope}.
+ *     requester's own location; see {@link LocationScope}. May be {@code null}, in which case
+ *     the requester's stored default scope is used.
  */
 public record GetRecommendationsQuery(String requesterId, int topN, LocationScope locationScope) {
 
@@ -15,13 +16,10 @@ public record GetRecommendationsQuery(String requesterId, int topN, LocationScop
         if (topN <= 0) {
             throw new IllegalArgumentException("topN must be positive, was: " + topN);
         }
-        if (locationScope == null) {
-            locationScope = LocationScope.GLOBAL;
-        }
     }
 
-    /** Defaults {@code locationScope} to {@link LocationScope#GLOBAL} for callers that don't care. */
+    /** No explicit scope: the requester's stored default {@code searchScope} is used. */
     public GetRecommendationsQuery(String requesterId, int topN) {
-        this(requesterId, topN, LocationScope.GLOBAL);
+        this(requesterId, topN, null);
     }
 }

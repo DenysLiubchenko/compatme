@@ -41,6 +41,9 @@ public record ProfileRequest(
         @NotBlank(message = "city must not be blank")
         String city,
 
+        /** Optional default search scope (CITY, COUNTRY, WORLDWIDE); omitted keeps the current one. */
+        ua.kpi.project.compatme.domain.model.LocationScope searchScope,
+
         Set<Gender> seekingGenders,
 
         @NotBlank(message = "selfDescription must not be blank")

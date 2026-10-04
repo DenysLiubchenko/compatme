@@ -21,8 +21,4 @@ public record RefinePreferenceRequest(
     public int topNOrDefault() {
         return topN != null ? topN : 10;
     }
-
-    public LocationScope scopeOrDefault() {
-        return scope != null ? scope : LocationScope.GLOBAL;
-    }
 }

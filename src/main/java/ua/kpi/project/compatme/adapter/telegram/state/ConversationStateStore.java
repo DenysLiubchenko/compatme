@@ -53,6 +53,7 @@ public class ConversationStateStore {
         document.setSeekingGenders(new ArrayList<>(state.seekingGenders()));
         document.setCountry(state.country());
         document.setCity(state.city());
+        document.setSearchScope(state.searchScope());
         document.setPendingCountry(state.pendingCountry());
         document.setPendingCity(state.pendingCity());
         document.setSelfDescription(state.selfDescription());
@@ -75,6 +76,7 @@ public class ConversationStateStore {
         }
         state.setCountry(document.getCountry());
         state.setCity(document.getCity());
+        state.setSearchScope(document.getSearchScope());
         state.setPendingCountry(document.getPendingCountry());
         state.setPendingCity(document.getPendingCity());
         state.setSelfDescription(document.getSelfDescription());

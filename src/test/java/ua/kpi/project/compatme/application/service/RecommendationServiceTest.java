@@ -9,6 +9,7 @@ import ua.kpi.project.compatme.application.dto.RecommendationResult;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
 import ua.kpi.project.compatme.domain.model.EmbeddingVector;
 import ua.kpi.project.compatme.domain.model.Gender;
+import ua.kpi.project.compatme.domain.model.LocationScope;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileEmbeddings;
 import ua.kpi.project.compatme.domain.model.ProfileId;
@@ -75,6 +76,61 @@ class RecommendationServiceTest {
 
         // THEN
         assertThat(results).hasSize(2);
+    }
+
+    @Test
+    void recommend_scopeIsThreadedThroughAndChangesCandidatePool() {
+        // GIVEN requester in Kyiv, Ukraine and three otherwise identical candidates
+        RecommendationService service = new RecommendationService(profileRepository, scorer);
+        Profile requester = located("requester", "Kyiv", "Ukraine");
+        Profile sameCity = located("same-city", "Kyiv", "Ukraine");
+        Profile sameCountry = located("same-country", "Lviv", "Ukraine");
+        Profile abroad = located("abroad", "Berlin", "Germany");
+        when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
+        when(profileRepository.findCandidates(any(), any())).thenReturn(List.of(sameCity, sameCountry, abroad));
+
+        // WHEN / THEN
+        assertThat(ids(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10, LocationScope.CITY))))
+                .containsExactly(sameCity.id());
+        assertThat(ids(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10, LocationScope.COUNTRY))))
+                .containsExactlyInAnyOrder(sameCity.id(), sameCountry.id());
+        assertThat(ids(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10, LocationScope.WORLDWIDE))))
+                .containsExactlyInAnyOrder(sameCity.id(), sameCountry.id(), abroad.id());
+    }
+
+    @Test
+    void recommend_withoutExplicitScope_usesRequesterDefaultSearchScope() {
+        RecommendationService service = new RecommendationService(profileRepository, scorer);
+        Profile requester = located("requester", "Kyiv", "Ukraine", LocationScope.COUNTRY);
+        Profile sameCountry = located("same-country", "Lviv", "Ukraine");
+        Profile abroad = located("abroad", "Berlin", "Germany");
+        when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
+        when(profileRepository.findCandidates(any(), any())).thenReturn(List.of(sameCountry, abroad));
+
+        assertThat(ids(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10))))
+                .containsExactly(sameCountry.id());
+    }
+
+    private static List<ProfileId> ids(List<RecommendationResult> results) {
+        return results.stream().map(r -> r.candidateProfile().id()).toList();
+    }
+
+    private static Profile located(String name, String city, String country) {
+        return located(name, city, country, null);
+    }
+
+    private static Profile located(String name, String city, String country, LocationScope defaultScope) {
+        Instant now = Instant.now();
+        boolean requester = name.equals("requester");
+        return Profile.builder().id(ProfileId.generate()).displayName(name).age(28)
+                .gender(requester ? Gender.MALE : Gender.FEMALE)
+                .orientation(ua.kpi.project.compatme.domain.model.Orientation.STRAIGHT)
+                .location(new ua.kpi.project.compatme.domain.model.Location(city, country))
+                .searchScope(defaultScope)
+                .seekingGenders(requester ? Set.of(Gender.FEMALE) : Set.of(Gender.MALE))
+                .selfDescription("self description").preferenceDescription("preference description")
+                .embeddings(new ProfileEmbeddings(embedding(new float[]{1f, 0f}), embedding(new float[]{0f, 1f})))
+                .createdAt(now).updatedAt(now).build();
     }
 
     private static Profile profileWith(String name, int age, EmbeddingVector selfEmbedding, EmbeddingVector prefEmbedding) {

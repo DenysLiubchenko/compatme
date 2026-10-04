@@ -18,6 +18,9 @@ public enum ConversationStep {
     LOCATION_MANUAL_COUNTRY,
     LOCATION_MANUAL_CITY,
     LOCATION_CONFIRM,
+
+    /** Choose the default search scope (CITY / COUNTRY / WORLDWIDE), right after location. */
+    SEARCH_SCOPE,
     SELF_DESCRIPTION,
     PREFERENCE_DESCRIPTION,
 

@@ -36,6 +36,7 @@ public class ProfileDocument {
     private Orientation orientation;
     private String country;
     private String city;
+    private String searchScope;
 
     @Field("seekingGenders")
     private Set<String> seekingGenders;
@@ -127,6 +128,8 @@ public class ProfileDocument {
     public void setCountry(String country) { this.country = country; }
     public String getCity() { return city; }
     public void setCity(String city) { this.city = city; }
+    public String getSearchScope() { return searchScope; }
+    public void setSearchScope(String searchScope) { this.searchScope = searchScope; }
 
     public Set<String> getSeekingGenders() {
         return seekingGenders;

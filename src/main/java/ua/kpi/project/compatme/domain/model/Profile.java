@@ -32,8 +32,8 @@ public final class Profile {
     private final Instant createdAt;
     private final Instant updatedAt;
     private final List<Integer> archetypeIds;
-    private final String country;
-    private final String city;
+    private final Location location;
+    private final LocationScope searchScope;
     private final List<String> photoUrls;
     private final RelationshipStatus status;
     private final String bodyType;
@@ -60,8 +60,10 @@ public final class Profile {
         age = requireValidAge(builder.age);
         gender = Objects.requireNonNull(builder.gender, "sex must not be null");
         orientation = Objects.requireNonNull(builder.orientation, "orientation must not be null");
-        country = requireNonBlank(builder.country, "country");
-        city = requireNonBlank(builder.city, "city");
+        location = builder.location != null
+                ? builder.location
+                : new Location(builder.city, builder.country);
+        searchScope = builder.searchScope == null ? LocationScope.WORLDWIDE : builder.searchScope;
         selfDescription = requireNonBlank(builder.selfDescription, "selfDescription");
         preferenceDescription = requireNonBlank(builder.preferenceDescription, "preferenceDescription");
         telegramUserId = builder.telegramUserId;
@@ -162,7 +164,7 @@ public final class Profile {
                 .orientation(orientation).seekingGenders(seekingGenders)
                 .selfDescription(selfDescription).preferenceDescription(preferenceDescription)
                 .embeddings(embeddings).createdAt(createdAt).updatedAt(updatedAt).archetypeIds(archetypeIds)
-                .country(country).city(city).photoUrls(photoUrls).status(status)
+                .location(location).searchScope(searchScope).photoUrls(photoUrls).status(status)
                 .bodyType(bodyType).diet(diet).drinks(drinks).drugs(drugs).education(education)
                 .ethnicity(ethnicity).height(height).income(income).job(job).lastOnline(lastOnline)
                 .offspring(offspring).pets(pets).religion(religion).sign(sign).smokes(smokes)
@@ -175,18 +177,6 @@ public final class Profile {
 
     public boolean mutuallyMatchesSeekingGender(Profile other) {
         return matchesSeekingGender(other) && other.matchesSeekingGender(this);
-    }
-
-    public boolean matchesLocationScope(Profile candidate, LocationScope scope) {
-        return switch (scope) {
-            case GLOBAL -> true;
-            case COUNTRY -> matchesLocationField(country, candidate.country);
-            case CITY -> matchesLocationField(country, candidate.country) && matchesLocationField(city, candidate.city);
-        };
-    }
-
-    private static boolean matchesLocationField(String requesterValue, String candidateValue) {
-        return requesterValue == null || requesterValue.isBlank() || requesterValue.equalsIgnoreCase(candidateValue);
     }
 
     public ProfileId id() { return id; }
@@ -202,8 +192,11 @@ public final class Profile {
     public Instant createdAt() { return createdAt; }
     public Instant updatedAt() { return updatedAt; }
     public List<Integer> archetypeIds() { return archetypeIds; }
-    public String country() { return country; }
-    public String city() { return city; }
+    public Location location() { return location; }
+    /** Per-user default search scope; may be overridden per search request. */
+    public LocationScope searchScope() { return searchScope; }
+    public String country() { return location.country(); }
+    public String city() { return location.city(); }
     public List<String> photoUrls() { return photoUrls; }
     public RelationshipStatus status() { return status; }
     public String bodyType() { return bodyType; }
@@ -238,6 +231,8 @@ public final class Profile {
         private Instant createdAt;
         private Instant updatedAt;
         private List<Integer> archetypeIds;
+        private Location location;
+        private LocationScope searchScope;
         private String country;
         private String city;
         private List<String> photoUrls;
@@ -274,8 +269,10 @@ public final class Profile {
         public Builder createdAt(Instant v) { createdAt = v; return this; }
         public Builder updatedAt(Instant v) { updatedAt = v; return this; }
         public Builder archetypeIds(List<Integer> v) { archetypeIds = v; return this; }
-        public Builder country(String v) { country = v; return this; }
-        public Builder city(String v) { city = v; return this; }
+        public Builder searchScope(LocationScope v) { searchScope = v; return this; }
+        public Builder location(Location v) { location = v; return this; }
+        public Builder country(String v) { country = v; location = null; return this; }
+        public Builder city(String v) { city = v; location = null; return this; }
         public Builder photoUrls(List<String> v) { photoUrls = v; return this; }
         public Builder status(RelationshipStatus v) { status = v; return this; }
         public Builder bodyType(String v) { bodyType = v; return this; }

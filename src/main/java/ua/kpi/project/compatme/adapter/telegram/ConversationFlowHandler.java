@@ -197,6 +197,8 @@ public class ConversationFlowHandler {
                 case "loc:manual" -> { ackSilently(callbackQueryId); handleLocationManualChoice(chatId, messageId, state); }
                 case "loc:confirm_yes" -> { ackSilently(callbackQueryId); handleLocationConfirmYes(chatId, messageId, state); }
                 case "loc:confirm_no" -> { ackSilently(callbackQueryId); handleLocationConfirmNo(chatId, messageId, state); }
+                case "settings:scope" -> { ackSilently(callbackQueryId); showSettingsScopeMenu(chatId); }
+                case "review:edit_scope" -> { ackSilently(callbackQueryId); jumpToEditScope(chatId, messageId, state); }
                 case "seek:continue" -> handleSeekingGendersContinue(chatId, messageId, callbackQueryId, state);
                 case "review:save" -> { ackSilently(callbackQueryId); handleReviewSave(chatId, messageId, telegramUserId, state); }
                 case "review:edit_name" -> { ackSilently(callbackQueryId); jumpToEdit(chatId, messageId, state, ConversationStep.NAME); }
@@ -326,6 +328,12 @@ public class ConversationFlowHandler {
         } else if (callbackData.startsWith("gender:")) {
             ackSilently(callbackQueryId);
             handleGenderChoice(chatId, messageId, state, callbackData.substring("gender:".length()));
+        } else if (callbackData.startsWith("scope:")) {
+            ackSilently(callbackQueryId);
+            handleScopeChoice(chatId, messageId, state, callbackData.substring("scope:".length()));
+        } else if (callbackData.startsWith("setscope:")) {
+            ackSilently(callbackQueryId);
+            handleSettingsScopeChoice(chatId, messageId, state.telegramUserId(), callbackData.substring("setscope:".length()));
         } else if (callbackData.startsWith("seek:")) {
             handleSeekingGenderToggle(chatId, messageId, callbackQueryId, state, callbackData.substring("seek:".length()));
         } else if (callbackData.startsWith("photo_manage:remove:")) {
@@ -623,6 +631,70 @@ public class ConversationFlowHandler {
         renderPhotoManageView(chatId, state);
     }
 
+    // ─────────────────────────────── step 5b: default search scope ───────────────────────────────
+
+    private InlineKeyboardMarkup scopeKeyboard(String prefix) {
+        return InlineKeyboardMarkup.builder()
+                .keyboardRow(List.of(button("🏙 My city", prefix + "CITY")))
+                .keyboardRow(List.of(button("🌍 My country", prefix + "COUNTRY")))
+                .keyboardRow(List.of(button("🌐 Worldwide", prefix + "WORLDWIDE")))
+                .build();
+    }
+
+    private void promptSearchScope(long chatId) {
+        sendNew(chatId, "Where should I look for matches? You can change this later in Settings.",
+                scopeKeyboard("scope:"));
+    }
+
+    private void handleScopeChoice(long chatId, Integer messageId, ConversationState state, String scope) {
+        if (!isValidScope(scope)) {
+            return;
+        }
+        state.setSearchScope(scope);
+        send(EditMessageText.builder().chatId(chatId).messageId(messageId)
+                .text("Search scope: " + humanizeScope(scope) + " ✅").build());
+        advanceAfter(chatId, state, ConversationStep.SEARCH_SCOPE);
+    }
+
+    private void jumpToEditScope(long chatId, Integer messageId, ConversationState state) {
+        state.setReturnToReview(true);
+        state.setStep(ConversationStep.SEARCH_SCOPE);
+        stateStore.save(state);
+        removeKeyboard(chatId, messageId);
+        promptSearchScope(chatId);
+    }
+
+    private void showSettingsScopeMenu(long chatId) {
+        sendNew(chatId, "🌍 Choose your default search scope:", scopeKeyboard("setscope:"));
+    }
+
+    private void handleSettingsScopeChoice(long chatId, Integer messageId, String telegramUserId, String scope) {
+        if (!isValidScope(scope)) {
+            return;
+        }
+        try {
+            Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(telegramUserId);
+            backendApiClient.updateSearchScope(String.valueOf(profile.get("id")), scope);
+            send(EditMessageText.builder().chatId(chatId).messageId(messageId)
+                    .text("Search scope updated: " + humanizeScope(scope) + " ✅").build());
+        } catch (Exception e) {
+            log.warn("Failed to update search scope for chat {}: {}", chatId, e.getMessage());
+            send(SendMessage.builder().chatId(chatId).text("Couldn't update your search scope. Try again shortly.").build());
+        }
+    }
+
+    private static boolean isValidScope(String scope) {
+        return "CITY".equals(scope) || "COUNTRY".equals(scope) || "WORLDWIDE".equals(scope);
+    }
+
+    private static String humanizeScope(String scope) {
+        return switch (scope) {
+            case "CITY" -> "My city";
+            case "COUNTRY" -> "My country";
+            default -> "Worldwide";
+        };
+    }
+
     // ─────────────────────────────── step 8: review & confirm ───────────────────────────────
 
     private void showReview(long chatId, ConversationState state) {
@@ -641,6 +713,7 @@ public class ConversationFlowHandler {
                 ━━━━━━━━━━━━━━━
                 👤 %s, %d, %s (%s)
                 📍 %s, %s
+                🌍 Search scope: %s
                 🔍 Looking for: %s
                 %s
 
@@ -650,6 +723,7 @@ public class ConversationFlowHandler {
                 ━━━━━━━━━━━━━━━""".formatted(
                 state.name(), state.age(), humanize(state.gender()), humanize(state.orientation()),
                 state.city(), state.country(),
+                humanizeScope(state.searchScope()),
                 joinHumanized(state.seekingGenders()),
                 photoLine,
                 state.selfDescription(),
@@ -662,7 +736,7 @@ public class ConversationFlowHandler {
                 .keyboardRow(List.of(button("✏️ Edit Name", "review:edit_name"), button("✏️ Edit Age", "review:edit_age")))
                 .keyboardRow(List.of(button("✏️ Edit Sex", "review:edit_gender"), button("✏️ Edit Orientation", "review:edit_orientation")))
                 .keyboardRow(List.of(button("✏️ Edit Location", "review:edit_location"), button("✏️ Edit Descriptions", "review:edit_desc")))
-                .keyboardRow(List.of(button("✏️ Edit Photos", "review:edit_photos")))
+                .keyboardRow(List.of(button("✏️ Edit Photos", "review:edit_photos"), button("✏️ Edit Search Scope", "review:edit_scope")))
                 .keyboardRow(List.of(button("⬅️ Back", "back")))
                 .build();
     }
@@ -716,7 +790,8 @@ public class ConversationFlowHandler {
                 state.city(),
                 state.selfDescription(),
                 state.preferenceDescription(),
-                state.photoUrns());
+                state.photoUrns(),
+                state.searchScope());
         String profileId = String.valueOf(saved.get("id"));
         backendApiClient.generateEmbeddings(profileId);
         stateStore.clear(telegramUserId);
@@ -948,6 +1023,7 @@ public class ConversationFlowHandler {
     private InlineKeyboardMarkup settingsKeyboard() {
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(List.of(button("✏️ Edit My Profile", "settings:edit")))
+                .keyboardRow(List.of(button("🌍 Search Scope", "settings:scope")))
                 .keyboardRow(List.of(button("🔕 Pause Matching", "settings:pause")))
                 .keyboardRow(List.of(button("🗑 Delete My Account", "settings:delete")))
                 .build();
@@ -978,6 +1054,7 @@ public class ConversationFlowHandler {
         }
         state.setCountry((String) profile.get("country"));
         state.setCity((String) profile.get("city"));
+        state.setSearchScope((String) profile.get("searchScope"));
         state.setSelfDescription(String.valueOf(profile.get("selfDescription")));
         state.setPreferenceDescription(String.valueOf(profile.get("preferenceDescription")));
         return state;
@@ -1090,7 +1167,8 @@ public class ConversationFlowHandler {
      */
     private void advanceAfter(long chatId, ConversationState state, ConversationStep justCompleted) {
         boolean isGroupTerminal = switch (justCompleted) {
-            case NAME, AGE, SEEKING_GENDERS, LOCATION_MANUAL_CITY, LOCATION_CONFIRM, PREFERENCE_DESCRIPTION -> true;
+            case NAME, AGE, SEEKING_GENDERS, LOCATION_MANUAL_CITY, LOCATION_CONFIRM, SEARCH_SCOPE,
+                    PREFERENCE_DESCRIPTION -> true;
             default -> false;
         };
         if (state.isReturnToReview() && isGroupTerminal) {
@@ -1106,6 +1184,11 @@ public class ConversationFlowHandler {
             case ORIENTATION -> { state.setStep(ConversationStep.SEEKING_GENDERS); stateStore.save(state); promptSeekingGenders(chatId, state); }
             case SEEKING_GENDERS -> { state.setStep(ConversationStep.LOCATION_CHOICE); stateStore.save(state); promptLocationChoice(chatId); }
             case LOCATION_MANUAL_CITY, LOCATION_CONFIRM -> {
+                state.setStep(ConversationStep.SEARCH_SCOPE);
+                stateStore.save(state);
+                promptSearchScope(chatId);
+            }
+            case SEARCH_SCOPE -> {
                 state.setStep(ConversationStep.SELF_DESCRIPTION);
                 stateStore.save(state);
                 promptSelfDescription(chatId);

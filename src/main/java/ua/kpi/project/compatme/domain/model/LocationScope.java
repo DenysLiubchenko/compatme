@@ -1,19 +1,18 @@
 package ua.kpi.project.compatme.domain.model;
 
 /**
- * Selects how broadly the recommendation candidate pool is scoped geographically, relative to
- * the requesting profile's own {@code country}/{@code city}. Purely a pre-filter applied before
- * any NLP compatibility scoring runs — it never influences {@code CompatibilityScorer} or any
- * {@code CompatibilityAggregationStrategy}.
+ * Explicit, user-chosen search scope for a recommendation request, relative to the requester's
+ * own {@link Location}. It is a hard pre-filter applied before NLP compatibility scoring; it is
+ * never inferred automatically and never acts as a fallback or ranking boost.
  */
 public enum LocationScope {
 
-    /** No location filtering — candidates from anywhere are considered. */
-    GLOBAL,
+    /** Only candidates with the same city AND country as the requester. */
+    CITY,
 
-    /** Only candidates in the same country as the requester. */
+    /** Only candidates in the same country as the requester (city may differ). */
     COUNTRY,
 
-    /** Only candidates in the same city (and therefore same country) as the requester. */
-    CITY
+    /** No location filtering at all. */
+    WORLDWIDE
 }

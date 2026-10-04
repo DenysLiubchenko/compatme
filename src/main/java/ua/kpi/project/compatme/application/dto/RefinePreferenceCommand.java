@@ -13,8 +13,5 @@ public record RefinePreferenceCommand(
         if (topN <= 0) {
             throw new IllegalArgumentException("topN must be positive, was: " + topN);
         }
-        if (locationScope == null) {
-            locationScope = LocationScope.GLOBAL;
-        }
     }
 }

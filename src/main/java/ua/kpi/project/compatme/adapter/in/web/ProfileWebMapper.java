@@ -40,7 +40,8 @@ public class ProfileWebMapper {
                 request.country(),
                 request.city(),
                 request.photoUrns(),
-                request.optionalFields());
+                request.optionalFields(),
+                request.searchScope());
     }
 
     public ProfileResponse toResponse(Profile profile) {
@@ -53,6 +54,7 @@ public class ProfileWebMapper {
                 profile.orientation(),
                 profile.country(),
                 profile.city(),
+                profile.searchScope(),
                 profile.seekingGenders(),
                 profile.selfDescription(),
                 profile.preferenceDescription(),

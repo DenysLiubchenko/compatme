@@ -117,7 +117,7 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
         private CreateOrUpdateProfileCommand toCommand(String sampleKey) {
             Gender gender = parseGender(get("sex"));
             Orientation orientation = parseOrientation(get("orientation"));
-            LocationParts location = parseLocation(get("city"));
+            LocationParts location = parseLocation(get("country"), get("city"));
             String name = "OkCupid " + sampleKey;
             OptionalProfileFields optional = new OptionalProfileFields(
                     relationship(get("status")), get("body_type"), blankToNull(get("diet")),
@@ -138,6 +138,18 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
         return UUID.nameUUIDFromBytes(("compatme-okcupid:" + key).getBytes(StandardCharsets.UTF_8)).toString();
     }
 
+    static LocationParts parseLocation(String country, String city) {
+        if (!blank(country) && !blank(city)) return new LocationParts(country.trim(), city.trim());
+        LocationParts fallback = parseLocation(city);
+        return blank(country) ? fallback : new LocationParts(country.trim(), fallback.city());
+    }
+
+    /**
+     * Fallback for rows lacking a country column: the original OkCupid dataset's location column
+     * looks like "san francisco, california" (city + US state, no country) and is entirely
+     * US-based, so the part before the comma becomes the city and the country defaults to
+     * "United States" for those rows.
+     */
     static LocationParts parseLocation(String source) {
         if (blank(source)) return new LocationParts("United States", "Unknown");
         String city = source.split(",", 2)[0].trim().toLowerCase(Locale.ROOT);

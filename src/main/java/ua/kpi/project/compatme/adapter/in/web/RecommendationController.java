@@ -15,8 +15,8 @@ import ua.kpi.project.compatme.domain.model.LocationScope;
  * Inbound REST adapter for retrieving top-N recommendations. Every candidate is scored via the
  * app's single compatibility-scoring method (reciprocal harmonic mean of bidirectional cosine
  * similarity) — there is no strategy-selection parameter. {@code scope} narrows the candidate
- * pool to the requester's own country/city (defaults to {@code GLOBAL}, i.e. no location
- * filtering).
+ * pool to the requester's own country/city (CITY, COUNTRY or WORLDWIDE); when omitted, the requester's
+ * stored default search scope is used.
  */
 @RestController
 @RequestMapping("/api/v1/profiles")
@@ -34,7 +34,7 @@ public class RecommendationController {
     public ResponseEntity<RecommendationsResponse> getRecommendations(
             @PathVariable String profileId,
             @RequestParam(defaultValue = "10") int topN,
-            @RequestParam(defaultValue = "GLOBAL") LocationScope scope) {
+            @RequestParam(required = false) LocationScope scope) {
         var results = recommendationUseCase.recommend(new GetRecommendationsQuery(profileId, topN, scope));
         var items = results.stream().map(mapper::toRecommendationItem).toList();
         return ResponseEntity.ok(new RecommendationsResponse(items));
