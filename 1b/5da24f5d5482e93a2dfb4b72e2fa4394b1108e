@@ -1,0 +1,39 @@
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandler.java
+  s_7401d0addb4cac::t_d3de124bab9a1d 84,106
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/MenuFlow.java
+  s_7401d0addb4cac::t_e72de84ed7ab63 46-47,50,106,115
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/OnboardingFlow.java
+  s_7401d0addb4cac::t_c91b1504ea3031 599-608,613
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/SettingsFlow.java
+  s_7401d0addb4cac::t_458731aec2ac25 106,132-133
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/MainMenuKeyboard.java
+  s_7401d0addb4cac::t_4b869170a699d6 14-15,20,37,41,55
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/MenuAction.java
+  s_7401d0addb4cac::t_bc0195c1c57eb8 3,6
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/ReplyButtons.java
+  s_7401d0addb4cac::t_1cf0714787745c 56,62
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/ReplyKeyboards.java
+  s_7401d0addb4cac::t_d42e7c2bc8df2e 63-64,67,181,183-186
+src/test/java/ua/kpi/project/compatme/adapter/telegram/BrowsingAndMenuFlowTest.java
+  s_7401d0addb4cac::t_001162a040b20c 195
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ReplyKeyboardFlowTest.java
+  s_7401d0addb4cac::t_b9bd34cb6d6c57 138-157,159,167-170,174-207,214
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ui/MainMenuKeyboardTest.java
+  s_7401d0addb4cac::t_1e8f840dd28261 18-19,26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1b5da24f5d5482e93a2dfb4b72e2fa4394b1108e",
+  "prompts": {},
+  "sessions": {
+    "s_7401d0addb4cac": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ef8bd64a6ffeN8vqFr5O26NYxZ",
+        "model": "claude-sonnet-5.5"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
