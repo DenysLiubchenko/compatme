@@ -47,15 +47,18 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
     private final ProfileManagementUseCase profileManagement;
     private final GenerateEmbeddingsUseCase embeddingGeneration;
     private final Resource csv;
+    private final String csvResource;
     private final int maxProfiles;
 
     public OkCupidProfileDataLoader(ProfileManagementUseCase profileManagement,
-                                    GenerateEmbeddingsUseCase embeddingGeneration,
-                                    ResourceLoader resources,
-                                    @Value("${app.okcupid.max-profiles:1000}") int maxProfiles) {
+                                     GenerateEmbeddingsUseCase embeddingGeneration,
+                                     ResourceLoader resources,
+                                     @Value("${app.okcupid.csv-resource:classpath:okcupid_profiles.csv}") String csvResource,
+                                     @Value("${app.okcupid.max-profiles:1000}") int maxProfiles) {
         this.profileManagement = profileManagement;
         this.embeddingGeneration = embeddingGeneration;
-        this.csv = resources.getResource("classpath:okcupid_profiles.csv");
+        this.csv = resources.getResource(csvResource);
+        this.csvResource = csvResource;
         this.maxProfiles = effectiveLimit(maxProfiles);
     }
 
@@ -73,7 +76,7 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
         int invalidRequired = 0;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(csv.getInputStream(), StandardCharsets.UTF_8))) {
             String headerLine = readCsvRecord(reader);
-            if (headerLine == null) throw new IllegalStateException("okcupid_profiles.csv is empty");
+            if (headerLine == null) throw new IllegalStateException(csvResource + " is empty");
             List<String> header = parseCsvLine(headerLine);
             String line;
             long lineNumber = 1;
@@ -118,7 +121,7 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
             Gender gender = parseGender(get("sex"));
             Orientation orientation = parseOrientation(get("orientation"));
             LocationParts location = parseLocation(get("country"), get("city"));
-            String name = "OkCupid " + sampleKey;
+            String name = blank(get("name")) ? "OkCupid " + sampleKey : get("name");
             OptionalProfileFields optional = new OptionalProfileFields(
                     relationship(get("status")), get("body_type"), blankToNull(get("diet")),
                     drinking(get("drinks")), drugs(get("drugs")), blankToNull(get("education")),

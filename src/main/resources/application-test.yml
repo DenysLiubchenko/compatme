@@ -1,0 +1,9 @@
+spring:
+  data:
+    mongodb:
+      uri: ${TEST_MONGODB_URI:mongodb://localhost:27017/test}
+
+app:
+  okcupid:
+    enabled: true
+    csv-resource: classpath:test_users.csv

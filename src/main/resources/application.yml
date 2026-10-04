@@ -52,6 +52,7 @@ nominatim:
 app:
   okcupid:
     enabled: ${OKCUPID_IMPORT_ENABLED:false}
+    csv-resource: ${OKCUPID_CSV_RESOURCE:classpath:okcupid_profiles.csv}
     max-profiles: ${OKCUPID_MAX_PROFILES:1000}
 
 springdoc:
