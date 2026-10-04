@@ -1,0 +1,47 @@
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandler.java
+  s_7401d0addb4cac::t_267c4a4ef0df10 17,56,58-59,98,105-106,111-114,117-129,139,146-149,153,163-174,176-177
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/BrowsingFlow.java
+  s_7401d0addb4cac::t_cddef01b92bbd6 80,92,101,143
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/MenuFlow.java
+  s_7401d0addb4cac::t_a503e370d68a5f 6-7,9-10,14,20,22-25,29,39-40,45-46,50,55,57-64,68,84-88,90-91,93-103,106,109-111,114-118,121-140,147-152,156-159
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/OnboardingFlow.java
+  s_7401d0addb4cac::t_46fc1a43b74935 12,61-63,83,86-87,99-100,160,187,193,197,203-204,207,211,219-221,227,231,237,246,249,253,259,264,268,298-299,307,311,318,331,341,373-377,383,388,395,398,417-418,425,435-436,444,461,464,466,485,500,532,540,581,586,588,591,596,603-607,682-686,696,700-704
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/PreferencesFlow.java
+  s_7401d0addb4cac::t_765694dff83f43 26-32,36,39-40,42
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/SettingsFlow.java
+  s_7401d0addb4cac::t_e1e973db235ec5 6,12,30,37-39,61,80,83,85,88-92,102-107,117-118,131,133-134,184,196-199,203,205,212
+src/main/java/ua/kpi/project/compatme/adapter/telegram/session/BrowsingSession.java
+  s_7401d0addb4cac::t_c88645de0c188d 21,65-73
+src/main/java/ua/kpi/project/compatme/adapter/telegram/state/ConversationStep.java
+  s_7401d0addb4cac::t_c29ab015ef6b77 45-47
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/Keyboards.java
+  s_7401d0addb4cac::t_aca1cea3f19935 8-11,29
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/MainMenuKeyboard.java
+  s_7401d0addb4cac::t_f4b741cb88d32d 4,7,14-15,28-57
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/ReplyButtons.java
+  s_7401d0addb4cac::t_abce30a1d0865e 1-136
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/ReplyKeyboards.java
+  s_7401d0addb4cac::t_dadcbdd0293b30 1-199
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/TelegramSender.java
+  s_7401d0addb4cac::t_58d846522c1e0d 13,15-16,96,104-126,128-130,141-143
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandlerTest.java
+  s_7401d0addb4cac::t_dddd4259b74cf2 310
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ReplyKeyboardFlowTest.java
+  s_7401d0addb4cac::t_835b3ce58b28c8 1-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "06e9259fb0567fe4beec9fadc4b532e9385e5182",
+  "prompts": {},
+  "sessions": {
+    "s_7401d0addb4cac": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ef8bd64a6ffeN8vqFr5O26NYxZ",
+        "model": "claude-sonnet-5.5"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
