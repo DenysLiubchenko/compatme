@@ -1,0 +1,62 @@
+.env.example
+  h_9cec5b0d0295d7 30
+README.md
+  h_9cec5b0d0295d7 124-126,167-168,216-217,222-223,282-285,439-440
+docker-compose.yml
+  h_9cec5b0d0295d7 22,26-27,32
+src/main/java/ua/kpi/project/compatme/adapter/in/web/dto/ProfileRequest.java
+  h_9cec5b0d0295d7 73
+src/main/java/ua/kpi/project/compatme/adapter/in/web/dto/ProfileResponse.java
+  h_9cec5b0d0295d7 42,46-47
+src/main/java/ua/kpi/project/compatme/adapter/out/storage/MinioClientConfig.java
+  h_9cec5b0d0295d7 14-17,23-26
+src/main/java/ua/kpi/project/compatme/adapter/out/storage/MinioProperties.java
+  h_9cec5b0d0295d7 9
+src/main/java/ua/kpi/project/compatme/adapter/telegram/BackendApiClient.java
+  h_9cec5b0d0295d7 62,64,263-264,282-283,301-302
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/MenuFlow.java
+  h_9cec5b0d0295d7 130
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/OnboardingFlow.java
+  h_9cec5b0d0295d7 75,123,167,424-425,444,458-463,542-543,692-695,703-713,715-721
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/SettingsFlow.java
+  h_9cec5b0d0295d7 160-163,175-178
+src/main/java/ua/kpi/project/compatme/adapter/telegram/state/ConversationState.java
+  h_9cec5b0d0295d7 46,49-51,218-225
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/Card.java
+  h_9cec5b0d0295d7 7,9,12,16
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/CardMessenger.java
+  h_9cec5b0d0295d7 126-127,129-134
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/ProfileCardFormatter.java
+  h_9cec5b0d0295d7 34,40
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/ReplyKeyboards.java
+  h_9cec5b0d0295d7 38,42,44
+src/main/java/ua/kpi/project/compatme/application/dto/CreateOrUpdateProfileCommand.java
+  h_9cec5b0d0295d7 49,51,59,61
+src/main/java/ua/kpi/project/compatme/application/service/ProfileManagementService.java
+  h_9cec5b0d0295d7 88,105
+src/main/java/ua/kpi/project/compatme/bootstrap/OkCupidProfileDataLoader.java
+  h_9cec5b0d0295d7 136
+src/main/java/ua/kpi/project/compatme/domain/model/Profile.java
+  h_9cec5b0d0295d7 152
+src/main/resources/application.yml
+  h_9cec5b0d0295d7 42-45
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandlerTest.java
+  h_9cec5b0d0295d7 250,261,269,276-296,336,355,357,362,364,368,389-390,392,399-400,411
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ReplyKeyboardFlowTest.java
+  h_9cec5b0d0295d7 189-190,192,201-202,210-230
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ui/CardMessengerTest.java
+  h_9cec5b0d0295d7 18,36-38,44,106,108-109,111,113-114,121,124,136
+src/test/java/ua/kpi/project/compatme/application/service/ProfileManagementServiceTest.java
+  h_9cec5b0d0295d7 147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d26ef314c5b641be24cbf5eb2b0f73a54e0367ce",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
