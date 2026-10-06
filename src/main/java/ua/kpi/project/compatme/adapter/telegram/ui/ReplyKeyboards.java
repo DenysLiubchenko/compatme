@@ -35,13 +35,13 @@ public final class ReplyKeyboards {
     public static final String CONFIRM_YES = "✅ Yes";
     public static final String CONFIRM_NO = "✍️ No, enter manually";
 
-    public static final String ADD_PHOTO = "🔗 Add Photo URL";
+    public static final String ADD_PHOTO = "📷 Add Photo";
     public static final String SKIP_PHOTOS = "⏭ Skip for now";
     public static final String ADD_ANOTHER = "➕ Add Another";
     public static final String DONE_PHOTOS = "✅ Done Adding Photos";
-    public static final String MANAGE_ADD = "➕ Add URL";
+    public static final String MANAGE_ADD = "➕ Add Photo";
     public static final String MANAGE_DONE = "✅ Done";
-    public static final String REMOVE_URL_PREFIX = "🗑 Remove URL ";
+    public static final String REMOVE_URL_PREFIX = "🗑 Remove Photo ";
 
     public static final String SCOPE_CITY = "🏙 My city";
     public static final String SCOPE_COUNTRY = "🌍 My country";

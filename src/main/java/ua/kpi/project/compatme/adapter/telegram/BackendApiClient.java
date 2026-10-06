@@ -59,10 +59,9 @@ public class BackendApiClient {
             String country,
             String city,
             String selfDescription,
-            String preferenceDescription,
-            List<String> photoUrns) {
+            String preferenceDescription) {
         return createProfile(telegramUserId, displayName, age, gender, orientation, seekingGenders, country, city,
-                selfDescription, preferenceDescription, photoUrns, null, null, null);
+                selfDescription, preferenceDescription, null, null, null);
     }
 
     /** Same as above, additionally sending the user's default location search scope (CITY/COUNTRY/WORLDWIDE). */
@@ -77,7 +76,6 @@ public class BackendApiClient {
             String city,
             String selfDescription,
             String preferenceDescription,
-            List<String> photoUrns,
             String searchScope,
             Integer minPreferredAge,
             Integer maxPreferredAge) {
@@ -92,7 +90,6 @@ public class BackendApiClient {
         body.put("city", city);
         body.put("selfDescription", selfDescription);
         body.put("preferenceDescription", preferenceDescription);
-        body.put("photoUrns", photoUrns);
         if (searchScope != null) {
             body.put("searchScope", searchScope);
         }
@@ -263,6 +260,8 @@ public class BackendApiClient {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             ensureSuccess(response);
             return objectMapper.readValue(response.body(), Map.class);
+        } catch (BackendApiException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalStateException("Failed to call backend API: " + path, e);
         }
@@ -280,6 +279,8 @@ public class BackendApiClient {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             ensureSuccess(response);
             return objectMapper.readValue(response.body(), Map.class);
+        } catch (BackendApiException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalStateException("Failed to call backend API: " + path, e);
         }
@@ -297,6 +298,8 @@ public class BackendApiClient {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             ensureSuccess(response);
             return objectMapper.readValue(response.body(), List.class);
+        } catch (BackendApiException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalStateException("Failed to call backend API: " + path, e);
         }

@@ -157,6 +157,10 @@ public class SettingsFlow {
         state.setName(String.valueOf(profile.get("displayName")));
         state.setAge(((Number) profile.get("age")).intValue());
         state.setGender(String.valueOf(profile.get("gender")));
+        Object orientation = profile.get("orientation");
+        if (orientation != null) {
+            state.setOrientation(String.valueOf(orientation));
+        }
         for (Object gender : (List<Object>) profile.getOrDefault("seekingGenders", List.of())) {
             state.toggleSeekingGender(String.valueOf(gender));
         }
@@ -168,6 +172,10 @@ public class SettingsFlow {
         state.setPreferredAgeRange(minAge == null ? null : minAge.intValue(), maxAge == null ? null : maxAge.intValue());
         state.setSelfDescription(String.valueOf(profile.get("selfDescription")));
         state.setPreferenceDescription(String.valueOf(profile.get("preferenceDescription")));
+        for (Object photoUrn : (List<Object>) profile.getOrDefault("photoUrns", List.of())) {
+            state.addPhotoUrn(String.valueOf(photoUrn));
+        }
+        state.setProfileUpdate(true);
         return state;
     }
 

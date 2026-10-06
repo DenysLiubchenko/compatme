@@ -125,17 +125,9 @@ public class MenuFlow {
             telegram.deleteQuietly(chatId, session.profileMessageId());
 
             String text = ProfileCardFormatter.formatProfileCard(profile, true);
-            String photoUrl = ProfileCardFormatter.firstPhotoUrl(profile);
             String photoUrn = ProfileCardFormatter.firstPhotoUrn(profile);
             Integer sent = null;
-            if (photoUrl != null) {
-                sent = telegram.sendPhoto(SendPhoto.builder().chatId(chatId)
-                        .photo(new InputFile(photoUrl))
-                        .caption(truncate(text))
-                        .replyMarkup(ReplyKeyboards.profileMenu())
-                        .build());
-            }
-            if (sent == null && photoUrn != null) {
+            if (photoUrn != null) {
                 byte[] bytes = backendApiClient.downloadPhoto(String.valueOf(profile.get("id")), photoUrn);
                 sent = telegram.sendPhoto(SendPhoto.builder().chatId(chatId)
                         .photo(new InputFile(new java.io.ByteArrayInputStream(bytes), "profile-photo"))

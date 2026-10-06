@@ -70,8 +70,5 @@ public record ProfileRequest(
         List<Integer> archetypeIds,
 
         /** Optional structured attributes; unspecified fields remain empty. */
-        OptionalProfileFields optionalFields,
-
-        /** Explicit URN/key references only; never fetched, analyzed, or processed. */
-        List<String> photoUrns) {
+        OptionalProfileFields optionalFields) {
 }

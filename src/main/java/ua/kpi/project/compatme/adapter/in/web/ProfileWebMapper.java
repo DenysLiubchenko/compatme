@@ -9,8 +9,6 @@ import ua.kpi.project.compatme.application.dto.RecommendationResult;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
 
-import java.util.List;
-
 /**
  * Translates between {@code adapter.in.web} request/response DTOs and the framework-agnostic
  * application-layer commands/domain model. This is the only place web-layer types and domain
@@ -41,23 +39,10 @@ public class ProfileWebMapper {
                 request.archetypeIds(),
                 request.country(),
                 request.city(),
-                // Legacy clients used photoUrns for external URLs. Opaque storage URNs are owned
-                // exclusively by ProfilePhotoUseCase and must not be writable through profile PUT.
-                externalPhotoUrls(request.photoUrns()),
                 request.optionalFields(),
                 request.searchScope(),
                 request.minPreferredAge(),
                 request.maxPreferredAge());
-    }
-
-    private static List<String> externalPhotoUrls(List<String> references) {
-        if (references == null) {
-            return List.of();
-        }
-        return references.stream()
-                .filter(value -> value != null
-                        && (value.startsWith("http://") || value.startsWith("https://")))
-                .toList();
     }
 
     public ProfileResponse toResponse(Profile profile) {
@@ -81,7 +66,6 @@ public class ProfileWebMapper {
                 profile.createdAt(),
                 profile.updatedAt(),
                 profile.archetypeIds(),
-                profile.photoUrls(),
                 new OptionalProfileFields(profile.status(), profile.bodyType(), profile.diet(), profile.drinks(),
                         profile.drugs(), profile.education(), profile.ethnicity(), profile.height(), profile.income(),
                         profile.job(), profile.lastOnline(), profile.offspring(), profile.pets(), profile.religion(),
@@ -95,7 +79,6 @@ public class ProfileWebMapper {
                 candidate.id().value(),
                 candidate.displayName(),
                 candidate.age(),
-                candidate.photoUrls().isEmpty() ? null : candidate.photoUrls().get(0),
                 candidate.photoUrns(),
                 candidate.country(),
                 candidate.city(),

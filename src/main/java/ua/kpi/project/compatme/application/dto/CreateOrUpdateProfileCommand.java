@@ -22,8 +22,6 @@ import java.util.Set;
  * @param minPreferredAge optional lower bound of the preferred match age; must be paired with
  *     {@code maxPreferredAge}. When both are {@code null} the existing range is kept.
  * @param maxPreferredAge optional upper bound of the preferred match age.
- * @param photoUrls optional set of photo URLs/URNs; each must start with {@code http://} or 
- *     {@code https://} when present (enforced by the domain {@code Profile} constructor).
  */
 public record CreateOrUpdateProfileCommand(
         String profileId,
@@ -38,7 +36,6 @@ public record CreateOrUpdateProfileCommand(
         List<Integer> archetypeIds,
         String country,
         String city,
-        List<String> photoUrls,
         OptionalProfileFields optionalFields,
         LocationScope searchScope,
         Integer minPreferredAge,
@@ -49,9 +46,9 @@ public record CreateOrUpdateProfileCommand(
             String profileId, String telegramUserId, String displayName, Integer age, Gender gender,
             Orientation orientation, Set<Gender> seekingGenders, String selfDescription,
             String preferenceDescription, List<Integer> archetypeIds, String country, String city,
-            List<String> photoUrls, OptionalProfileFields optionalFields) {
+            OptionalProfileFields optionalFields) {
         this(profileId, telegramUserId, displayName, age, gender, orientation, seekingGenders, selfDescription,
-                preferenceDescription, archetypeIds, country, city, photoUrls, optionalFields, null, null, null);
+                preferenceDescription, archetypeIds, country, city, optionalFields, null, null, null);
     }
 
     /** Convenience constructor without a preferred age range (keeps the existing one on update). */
@@ -59,8 +56,8 @@ public record CreateOrUpdateProfileCommand(
             String profileId, String telegramUserId, String displayName, Integer age, Gender gender,
             Orientation orientation, Set<Gender> seekingGenders, String selfDescription,
             String preferenceDescription, List<Integer> archetypeIds, String country, String city,
-            List<String> photoUrls, OptionalProfileFields optionalFields, LocationScope searchScope) {
+            OptionalProfileFields optionalFields, LocationScope searchScope) {
         this(profileId, telegramUserId, displayName, age, gender, orientation, seekingGenders, selfDescription,
-                preferenceDescription, archetypeIds, country, city, photoUrls, optionalFields, searchScope, null, null);
+                preferenceDescription, archetypeIds, country, city, optionalFields, searchScope, null, null);
     }
 }

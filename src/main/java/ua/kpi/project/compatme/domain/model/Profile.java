@@ -35,7 +35,6 @@ public final class Profile {
     private final Location location;
     private final LocationScope searchScope;
     private final AgeRange ageRange;
-    private final List<String> photoUrls;
     private final RelationshipStatus status;
     private final String bodyType;
     private final String diet;
@@ -80,7 +79,6 @@ public final class Profile {
         createdAt = Objects.requireNonNull(builder.createdAt, "createdAt must not be null");
         updatedAt = Objects.requireNonNull(builder.updatedAt, "updatedAt must not be null");
         archetypeIds = immutableList(builder.archetypeIds);
-        photoUrls = validateAndCopyPhotoUrls(builder.photoUrls);
         status = builder.status;
         bodyType = builder.bodyType;
         diet = builder.diet;
@@ -123,30 +121,6 @@ public final class Profile {
         return age;
     }
 
-    private static String requireValidPhotoUrlOrNull(String photoUrl) {
-        if (photoUrl == null || photoUrl.isBlank()) {
-            return null;
-        }
-        if (!photoUrl.startsWith("http://") && !photoUrl.startsWith("https://")) {
-            throw new InvalidProfileDataException("photoUrl must start with http:// or https://");
-        }
-        return photoUrl;
-    }
-
-    private static List<String> validateAndCopyPhotoUrls(List<String> photoUrls) {
-        if (photoUrls == null || photoUrls.isEmpty()) {
-            return List.of();
-        }
-        for (String url : photoUrls) {
-            if (url != null && !url.isBlank()) {
-                if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                    throw new InvalidProfileDataException("Each photoUrl must start with http:// or https://");
-                }
-            }
-        }
-        return Collections.unmodifiableList(new ArrayList<>(photoUrls));
-    }
-
     public Profile withSelfDescription(String newSelfDescription, Instant now) {
         ProfileEmbeddings next = selfDescription.equals(newSelfDescription)
                 ? embeddings
@@ -175,7 +149,7 @@ public final class Profile {
                 .selfDescription(selfDescription).preferenceDescription(preferenceDescription)
                 .embeddings(embeddings).createdAt(createdAt).updatedAt(updatedAt).archetypeIds(archetypeIds)
                 .location(location).searchScope(searchScope)
-                .minPreferredAge(minPreferredAge()).maxPreferredAge(maxPreferredAge()).photoUrls(photoUrls).status(status)
+                .minPreferredAge(minPreferredAge()).maxPreferredAge(maxPreferredAge()).status(status)
                 .bodyType(bodyType).diet(diet).drinks(drinks).drugs(drugs).education(education)
                 .ethnicity(ethnicity).height(height).income(income).job(job).lastOnline(lastOnline)
                 .offspring(offspring).pets(pets).religion(religion).sign(sign).smokes(smokes)
@@ -212,7 +186,6 @@ public final class Profile {
     public Integer maxPreferredAge() { return ageRange == null ? null : ageRange.max(); }
     public String country() { return location.country(); }
     public String city() { return location.city(); }
-    public List<String> photoUrls() { return photoUrls; }
     public RelationshipStatus status() { return status; }
     public String bodyType() { return bodyType; }
     public String diet() { return diet; }
@@ -252,7 +225,6 @@ public final class Profile {
         private Integer maxPreferredAge;
         private String country;
         private String city;
-        private List<String> photoUrls;
         private RelationshipStatus status;
         private String bodyType;
         private String diet;
@@ -292,7 +264,6 @@ public final class Profile {
         public Builder location(Location v) { location = v; return this; }
         public Builder country(String v) { country = v; location = null; return this; }
         public Builder city(String v) { city = v; location = null; return this; }
-        public Builder photoUrls(List<String> v) { photoUrls = v; return this; }
         public Builder status(RelationshipStatus v) { status = v; return this; }
         public Builder bodyType(String v) { bodyType = v; return this; }
         public Builder diet(String v) { diet = v; return this; }

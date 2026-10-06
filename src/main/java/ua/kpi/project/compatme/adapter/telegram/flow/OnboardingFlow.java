@@ -72,7 +72,7 @@ public class OnboardingFlow {
             case AGE_RANGE -> handleAgeRangeInput(chatId, state, text);
             case SELF_DESCRIPTION -> handleSelfDescriptionInput(chatId, state, text);
             case PREFERENCE_DESCRIPTION -> handlePreferenceDescriptionInput(chatId, state, text);
-            case PHOTOS -> handlePhotoUrlInput(chatId, state, text);
+            case PHOTOS -> handlePhotoTextInput(chatId, state);
             default -> { return false; }
         }
         return true;
@@ -120,7 +120,7 @@ public class OnboardingFlow {
                 profile = backendApiClient.createProfile(
                         telegramUserId, state.name(), state.age(), state.gender(), state.orientation(),
                         state.seekingGenders(), state.country(), state.city(), state.selfDescription(),
-                        state.preferenceDescription(), List.of(), state.searchScope(),
+                        state.preferenceDescription(), state.searchScope(),
                         state.minPreferredAge(), state.maxPreferredAge());
             }
             Map<String, Object> result = backendApiClient.uploadPhoto(
@@ -164,7 +164,7 @@ public class OnboardingFlow {
             case "photo:add", "photo:add_another" -> { ackSilently(callbackQueryId); handlePhotoAddPrompt(chatId, state); }
             case "photo:skip", "photo:done" -> { ackSilently(callbackQueryId); handlePhotosDone(chatId, state); }
             case "photo_manage:add" -> { ackSilently(callbackQueryId); handlePhotoManageAdd(chatId, state); }
-            case "photo_manage:done" -> { ackSilently(callbackQueryId); showReview(chatId, state); }
+            case "photo_manage:done" -> { ackSilently(callbackQueryId); finishPhotoEditing(chatId, state); }
             default -> { return onPrefixedCallback(chatId, messageId, callbackQueryId, state, data); }
         }
         return true;
@@ -421,21 +421,8 @@ public class OnboardingFlow {
         promptText(chatId, "Send a photo now (JPEG, PNG, or WebP; maximum 5 MB).");
     }
 
-    private void handlePhotoUrlInput(long chatId, ConversationState state, String value) {
-        // Keep the pre-existing external-URL option; actual uploads still use the shared REST use case.
-        if (!ProfileInputValidator.isValidPhotoUrl(value)) {
-            sendNew(chatId, "Please send an actual photo, a valid photo URL, or choose Done/Skip.",
-                    photosKeyboard(state));
-            return;
-        }
-        boolean added = state.addPhotoUrn(value.trim());
-        stateStore.save(state);
-        if (!added) {
-            sendNew(chatId, "You've reached the " + MAX_PHOTOS + "-photo limit.", photosKeyboard(state));
-            return;
-        }
-        sendNew(chatId, "Photo URL added (" + state.photoUrns().size() + "/" + MAX_PHOTOS + ").",
-                photosKeyboard(state));
+    private void handlePhotoTextInput(long chatId, ConversationState state) {
+        sendNew(chatId, "Please send a photo file, or choose Done/Skip.", photosKeyboard(state));
     }
 
     private void handlePhotosDone(long chatId, ConversationState state) {
@@ -454,7 +441,7 @@ public class OnboardingFlow {
     private void renderPhotoManageView(long chatId, ConversationState state) {
         List<String> photos = state.photoUrns();
         String text = photos.isEmpty() ? "You haven't added any photos yet."
-                : "Manage stored photos:\n" + Labels.numbered(photos);
+                : "Manage stored photos: " + photos.size() + "/" + MAX_PHOTOS + " added.";
         sendNew(chatId, text, ReplyKeyboards.photoManage(photos.size(), MAX_PHOTOS));
     }
 
@@ -468,14 +455,12 @@ public class OnboardingFlow {
     private void handlePhotoManageRemove(long chatId, ConversationState state, int index) {
         if (index >= 0 && index < state.photoUrns().size()) {
             String urn = state.photoUrns().get(index);
-            if (!urn.startsWith("http://") && !urn.startsWith("https://")) {
-                try {
-                    Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(state.telegramUserId());
-                    backendApiClient.deletePhoto(String.valueOf(profile.get("id")), urn);
-                } catch (BackendApiClient.BackendApiException e) {
-                    sendNew(chatId, e.getMessage(), ReplyKeyboards.photoManage(state.photoUrns().size(), MAX_PHOTOS));
-                    return;
-                }
+            try {
+                Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(state.telegramUserId());
+                backendApiClient.deletePhoto(String.valueOf(profile.get("id")), urn);
+            } catch (BackendApiClient.BackendApiException e) {
+                sendNew(chatId, e.getMessage(), ReplyKeyboards.photoManage(state.photoUrns().size(), MAX_PHOTOS));
+                return;
             }
         }
         state.removePhotoUrnAt(index);
@@ -554,8 +539,8 @@ public class OnboardingFlow {
 
     private String formatReview(ConversationState state) {
         String photoLine = state.photoUrns().isEmpty()
-                ? "📷 Photo URLs: none added"
-                : "📷 Photo URLs: " + state.photoUrns().size() + "/" + MAX_PHOTOS + " added";
+                ? "📷 Photos: none added"
+                : "📷 Photos: " + state.photoUrns().size() + "/" + MAX_PHOTOS + " added";
         return """
                 Here's your profile — take a look:
 
@@ -704,8 +689,10 @@ public class OnboardingFlow {
             case SELF_DESCRIPTION -> { state.setStep(ConversationStep.PREFERENCE_DESCRIPTION); stateStore.save(state); promptPreferenceDescription(chatId); }
             case PREFERENCE_DESCRIPTION -> promptPhotos(chatId, state);
             case PHOTOS -> {
-                // Destination is REVIEW either way (normal linear completion or returning from an
-                // edit-photos sub-loop), so no special-casing is needed here beyond resetting the flag.
+                if (state.isProfileUpdate()) {
+                    finishPhotoEditing(chatId, state);
+                    return;
+                }
                 state.setReturnToReview(false);
                 showReview(chatId, state);
             }
@@ -713,7 +700,25 @@ public class OnboardingFlow {
         }
     }
 
+    /** Photo uploads and removals are persisted immediately for an existing profile. */
+    private void finishPhotoEditing(long chatId, ConversationState state) {
+        if (state.isProfileUpdate()) {
+            state.setStep(ConversationStep.DONE);
+            stateStore.save(state);
+            menuFlow.showOwnProfile(chatId, state.telegramUserId());
+            return;
+        }
+        showReview(chatId, state);
+    }
+
     private void handleReviewSave(long chatId, Integer messageId, String telegramUserId, ConversationState state) {
+        if (!state.isProfileUpdate() && (state.orientation() == null || state.orientation().isBlank())) {
+            state.setStep(ConversationStep.ORIENTATION);
+            stateStore.save(state);
+            telegram.editIfPresent(chatId, messageId, "Please select your orientation before saving.");
+            promptOrientation(chatId);
+            return;
+        }
         Map<String, Object> saved = backendApiClient.createProfile(
                 telegramUserId,
                 state.name(),
@@ -725,7 +730,6 @@ public class OnboardingFlow {
                 state.city(),
                 state.selfDescription(),
                 state.preferenceDescription(),
-                state.photoUrns(),
                 state.searchScope(),
                 state.minPreferredAge(),
                 state.maxPreferredAge());

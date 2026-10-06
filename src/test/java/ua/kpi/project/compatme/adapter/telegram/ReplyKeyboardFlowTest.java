@@ -186,8 +186,10 @@ class ReplyKeyboardFlowTest {
     @Test
     void editProfile_opensTheFieldEditingViewAndBackReturnsToProfileView() {
         Map<String, Object> profile = new HashMap<>(Map.of("id", "me", "displayName", "Maria", "age", 27,
-                "gender", "FEMALE", "selfDescription", "Hi there friend", "preferenceDescription", "Someone kind"));
+                "gender", "FEMALE", "orientation", "STRAIGHT", "selfDescription", "Hi there friend",
+                "preferenceDescription", "Someone kind", "photoUrns", List.of("profile-photos/maria.jpg")));
         when(backendApiClient.getProfileByTelegramUserId(USER)).thenReturn(profile);
+        when(backendApiClient.downloadPhoto("me", "profile-photos/maria.jpg")).thenReturn(new byte[] {1});
         ConversationState idle = new ConversationState(USER);
         idle.setStep(ConversationStep.DONE);
         states.put(USER, idle);
@@ -196,11 +198,34 @@ class ReplyKeyboardFlowTest {
         assertThat(state().step()).isEqualTo(ConversationStep.REVIEW);
         assertThat(labels((ReplyKeyboardMarkup) sent.get(sent.size() - 1).getReplyMarkup()))
                 .contains(ReplyKeyboards.EDIT_NAME, ReplyKeyboards.EDIT_SCOPE, ReplyKeyboards.EDIT_AGE_RANGE);
+        assertThat(state().orientation()).isEqualTo("STRAIGHT");
+        assertThat(state().photoUrns()).containsExactly("profile-photos/maria.jpg");
 
         typeAs(ReplyKeyboards.BACK);
         assertThat(state().step()).isEqualTo(ConversationStep.DONE);
         assertThat(labels((ReplyKeyboardMarkup) sent.get(sent.size() - 1).getReplyMarkup()))
                 .contains(ReplyKeyboards.MAIN_MENU);
+    }
+
+    @Test
+    void editingPhotosOnAnExistingProfile_returnsToTheProfileWithoutSavingTheCreationForm() {
+        Map<String, Object> profile = new HashMap<>(Map.of("id", "me", "displayName", "Maria", "age", 27,
+                "gender", "FEMALE", "orientation", "STRAIGHT", "selfDescription", "Hi there friend",
+                "preferenceDescription", "Someone kind", "photoUrns", List.of("profile-photos/maria.jpg")));
+        when(backendApiClient.getProfileByTelegramUserId(USER)).thenReturn(profile);
+        when(backendApiClient.downloadPhoto("me", "profile-photos/maria.jpg")).thenReturn(new byte[] {1});
+        ConversationState idle = new ConversationState(USER);
+        idle.setStep(ConversationStep.DONE);
+        states.put(USER, idle);
+
+        typeAs(ReplyKeyboards.EDIT_PROFILE);
+        typeAs(ReplyKeyboards.EDIT_PHOTOS);
+        typeAs(ReplyKeyboards.MANAGE_DONE);
+
+        assertThat(state().step()).isEqualTo(ConversationStep.DONE);
+        org.mockito.Mockito.verify(backendApiClient, org.mockito.Mockito.never()).createProfile(
+                anyString(), anyString(), any(), anyString(), org.mockito.ArgumentMatchers.nullable(String.class), any(),
+                anyString(), anyString(), anyString(), anyString(), anyString(), any(), any());
     }
 
     @Test

@@ -85,7 +85,7 @@ public class ProfileManagementService implements ProfileManagementUseCase {
             CreateOrUpdateProfileCommand command, OptionalProfileFields optionalFields) {
         return new CreateOrUpdateProfileCommand(command.profileId(), command.telegramUserId(), command.displayName(),
                 command.age(), command.gender(), command.orientation(), command.seekingGenders(), command.selfDescription(),
-                command.preferenceDescription(), command.archetypeIds(), command.country(), command.city(), command.photoUrls(),
+                command.preferenceDescription(), command.archetypeIds(), command.country(), command.city(),
                 optionalFields, command.searchScope(),
                 command.minPreferredAge(), command.maxPreferredAge());
     }
@@ -102,7 +102,7 @@ public class ProfileManagementService implements ProfileManagementUseCase {
                 .minPreferredAge(command.minPreferredAge()).maxPreferredAge(command.maxPreferredAge()).seekingGenders(command.seekingGenders())
                 .selfDescription(command.selfDescription()).preferenceDescription(command.preferenceDescription())
                 .embeddings(embeddings).createdAt(createdAt).updatedAt(updatedAt)
-                .archetypeIds(command.archetypeIds()).photoUrls(command.photoUrls())
+                .archetypeIds(command.archetypeIds())
                 .status(fields.status()).bodyType(fields.bodyType())
                 .diet(fields.diet()).drinks(fields.drinks()).drugs(fields.drugs()).education(fields.education())
                 .ethnicity(fields.ethnicity()).height(fields.height()).income(fields.income()).job(fields.job())

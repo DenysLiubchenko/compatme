@@ -144,6 +144,6 @@ class ProfileManagementServiceTest {
     private static CreateOrUpdateProfileCommand command(String id, String telegramId, String name, Gender gender) {
         return new CreateOrUpdateProfileCommand(id, telegramId, name, 25, gender, Orientation.STRAIGHT,
                 Set.of(Gender.FEMALE), "self description text", "preference description text", null,
-                "United States", "New York", List.of(), OptionalProfileFields.empty());
+                "United States", "New York", OptionalProfileFields.empty());
     }
 }

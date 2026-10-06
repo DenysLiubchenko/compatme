@@ -133,7 +133,7 @@ public class OkCupidProfileDataLoader implements CommandLineRunner {
             return new CreateOrUpdateProfileCommand(
                     deterministicId(sampleKey), null, name, integer(get("age")), gender, orientation,
                     seeking, get("essay0"), get("essay9"), List.of(), location.country(), location.city(),
-                    List.of(), optional, parseSearchScope(get("search_scope")),
+                    optional, parseSearchScope(get("search_scope")),
                     integer(get("min_preferred_age")), integer(get("max_preferred_age")));
         }
     }

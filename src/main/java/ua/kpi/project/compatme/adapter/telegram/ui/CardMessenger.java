@@ -2,10 +2,8 @@ package ua.kpi.project.compatme.adapter.telegram.ui;
 
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
 import ua.kpi.project.compatme.adapter.telegram.BackendApiClient;
 import ua.kpi.project.compatme.adapter.telegram.session.BrowsingSession;
 import ua.kpi.project.compatme.adapter.telegram.ui.TelegramSender.Outcome;
@@ -107,9 +105,6 @@ public class CardMessenger {
     }
 
     private InputFile inputFile(Card card) {
-        if (card.photoUrl() != null && !card.photoUrl().isBlank()) {
-            return new InputFile(card.photoUrl());
-        }
         if (backend == null || card.profileId() == null || card.photoUrn() == null) {
             return null;
         }
@@ -128,28 +123,15 @@ public class CardMessenger {
         }
         Outcome outcome;
         if (card.hasPhoto()) {
-            // Telegram can edit media by URL/file-id, but a fresh byte stream is an upload. Replace
-            // the message instead so stored photos are sent reliably.
-            if (card.photoUrn() != null) {
-                return false;
-            }
-            outcome = telegram.editMedia(EditMessageMedia.builder()
-                    .chatId(chatId)
-                    .messageId(messageId)
-                    .media(InputMediaPhoto.builder()
-                            .media(card.photoUrl())
-                            .caption(truncate(card.text(), CAPTION_LIMIT))
-                            .build())
-                    .replyMarkup(card.keyboard())
-                    .build());
-        } else {
-            outcome = telegram.tryExecute(EditMessageText.builder()
-                    .chatId(chatId)
-                    .messageId(messageId)
-                    .text(truncate(card.text(), TEXT_LIMIT))
-                    .replyMarkup(card.keyboard())
-                    .build());
+            // Stored photos are uploaded as bytes, which Telegram cannot use for media edits.
+            return false;
         }
+        outcome = telegram.tryExecute(EditMessageText.builder()
+                .chatId(chatId)
+                .messageId(messageId)
+                .text(truncate(card.text(), TEXT_LIMIT))
+                .replyMarkup(card.keyboard())
+                .build());
         return outcome != Outcome.FAILED;
     }
 

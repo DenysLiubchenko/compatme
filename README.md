@@ -121,10 +121,9 @@ on the port interfaces, never on the concrete adapters.
   `CompatibilityAggregationStrategy`** — it exists purely so evaluation results can be
   sliced/inspected by archetype after the fact. Every place it appears in code is commented to
   make this explicit.
-- **`photoUrns`** (optional, max 5): user-entered URL/URN/key references stored as strings only.
-  No image bytes are stored and the backend never fetches, renders, moderates, analyzes, or sends
-  them to a vision API. Legacy `photoUrl` is retained for existing records/API clients but is also
-  a stored-only reference and is not fetched or analyzed.
+- **`photoUrns`** (optional, max 6): opaque keys for photos stored in the configured bucket. Photo
+  bytes are uploaded through the profile-photo endpoint, limited to JPEG, PNG, or WebP files of up
+  to 5 MB. The backend does not analyze photos or send them to a vision API.
 
 ## OkCupid CSV import
 
@@ -165,8 +164,8 @@ from the two descriptions only when directly and unambiguously stated. It must n
 traits or guess; missing/ambiguous values stay null or empty, and extraction failure does not
 block profile creation. Only `selfDescription` and `preferenceDescription` are embedded or scored.
 
-`photoUrns` is an optional list of plain URN/key references. The backend never fetches, analyzes,
-moderates, or processes referenced photos and makes no vision API calls.
+`photoUrns` is an optional list of bucket object keys. Photos are uploaded separately and are never
+included in profile creation or update payloads.
 
 ## Telegram user ids
 
@@ -214,15 +213,14 @@ and free text only where buttons don't make sense.
    (lifestyle, education/work, pets, languages, family plans, habits/preferences). Optional
    attributes are only extracted when directly stated; Gemini is instructed not to infer and
    leaves unstated/ambiguous values empty.
-9. **Photo URL (optional, up to 5)** — inline choice "🔗 Add Photo URL" or "⏭ Skip for now". The
-   user enters an HTTP(S) URL; only the reference string is stored. The backend never requests or
-   analyzes the URL or image.
+9. **Photos (optional, up to 6)** — the user sends a JPEG, PNG, or WebP Telegram photo or image
+   document. It is uploaded to bucket storage and must not exceed 5 MB.
 10. **Review & confirm** — formatted summary with a "✅ Looks good, save it!" button plus separate
    "✏️ Edit ..." buttons per field group (Name, Age, Sex, Orientation, Location, Descriptions,
    Photos). Editing a field group jumps back to its first step and, on completion, returns directly
    to Review — every other already-collected field is left untouched. "✏️ Edit Photos" opens a
-   small management view showing the current URL references, "🗑 Remove URL N" per reference,
-   "➕ Add URL" (re-enters the same free-text URL step), and "✅ Done" back to Review.
+   small management view with a remove action per photo, "➕ Add Photo", and "✅ Done" back to
+   Review.
 11. **Save** — maps the collected fields onto the existing `POST /api/v1/profiles` +
     `POST /api/v1/profiles/{id}/embeddings` calls (no persistence logic duplicated in the bot
     adapter), shows "🎉 Your profile is live!", then opens the persistent main menu (see below).
@@ -281,10 +279,10 @@ no notion of "conversation steps," only of the final, complete profile once Revi
 (The My Matches/Who Liked Me browsing queue is deliberately NOT part of this persisted state —
 see above.)
 
-**`photoUrns`** (`List<String>`, optional, max 5): plain URL/URN/key references entered by the
-user. The backend only stores and returns these strings. It does not dereference URLs, download
-bytes, render remote images, moderate or analyze photos, or call any vision API. Telegram shows a
-count of references on text cards; it does not send media.
+**`photoUrns`** (`List<String>`, optional, max 6): bucket object keys written only by the photo
+upload endpoint. Telegram retrieves the stored bytes through that endpoint and sends them with
+profile and recommendation cards. The 5 MB size limit and supported image types are enforced by
+the backend before storage.
 
 **Reverse geocoding** (`adapter/out/geocoding/`) implements a new outbound port,
 `ReverseGeocodingPort`, via the free [Nominatim](https://nominatim.openstreetmap.org)
@@ -438,8 +436,8 @@ Profile photos are stored in MinIO rather than MongoDB. Start the local infrastr
 docker compose up -d mongodb minio
 ```
 
-The MinIO S3 API is available at `http://localhost:9000`. Open the web console at
-`http://localhost:9001` and sign in with `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` from `.env`
+The MinIO S3 API is available at `http://localhost:19000`. Open the web console at
+`http://localhost:19001` and sign in with `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` from `.env`
 (the local defaults in `.env.example` are `minioadmin` / `minioadmin`). The application creates
 the configured `MINIO_BUCKET` automatically.
 

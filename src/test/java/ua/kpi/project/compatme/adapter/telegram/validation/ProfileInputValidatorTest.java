@@ -54,13 +54,4 @@ class ProfileInputValidatorTest {
         assertThat(ProfileInputValidator.isValidDescription("   ")).isFalse();
     }
 
-    @Test
-    void isValidPhotoUrl_acceptsOnlyBoundedHttpUrls() {
-        assertThat(ProfileInputValidator.isValidPhotoUrl("https://example.com/profile.jpg")).isTrue();
-        assertThat(ProfileInputValidator.isValidPhotoUrl("http://example.com/p.png")).isTrue();
-        assertThat(ProfileInputValidator.isValidPhotoUrl("javascript:alert(1)")).isFalse();
-        assertThat(ProfileInputValidator.isValidPhotoUrl("example.com/p.png")).isFalse();
-        assertThat(ProfileInputValidator.isValidPhotoUrl("https://bad url/image.png")).isFalse();
-        assertThat(ProfileInputValidator.isValidPhotoUrl("https://x/" + "a".repeat(2050))).isFalse();
-    }
 }

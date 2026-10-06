@@ -11,11 +11,11 @@ import org.mockito.quality.Strictness;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ua.kpi.project.compatme.adapter.telegram.BackendApiClient;
 import ua.kpi.project.compatme.adapter.telegram.session.BrowsingSession;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,12 +33,15 @@ class CardMessengerTest {
     @Mock
     private AbsSender sender;
 
+    @Mock
+    private BackendApiClient backend;
+
     private CardMessenger cards;
     private BrowsingSession session;
 
     @BeforeEach
     void setUp() {
-        cards = new CardMessenger(new TelegramSender(sender));
+        cards = new CardMessenger(new TelegramSender(sender), backend);
         session = new BrowsingSession();
     }
 
@@ -100,22 +103,25 @@ class CardMessengerTest {
     }
 
     @Test
-    void show_photoToPhoto_usesEditMessageMedia() throws Exception {
+    void show_photoToPhoto_replacesTheMessageBecauseStoredBytesCannotBeEditedAsMedia() throws Exception {
         session.trackCard(100, true);
+        when(backend.downloadPhoto("profile-1", "profile-photos/a.jpg")).thenReturn(new byte[] {1});
+        when(sender.execute(any(SendPhoto.class))).thenReturn(message(101));
 
-        cards.show(CHAT_ID, session, new Card("caption", "https://example.com/a.jpg", null));
+        cards.show(CHAT_ID, session, new Card("caption", "profile-1", "profile-photos/a.jpg", null));
 
-        verify(sender).execute(any(EditMessageMedia.class));
-        assertThat(session.cardMessageId()).isEqualTo(100);
+        verify(sender).execute(any(DeleteMessage.class));
+        assertThat(session.cardMessageId()).isEqualTo(101);
         assertThat(session.cardHasPhoto()).isTrue();
     }
 
     @Test
     void show_textToPhoto_cannotEditInPlace_soDeletesAndSendsPhoto() throws Exception {
         session.trackCard(100, false);
+        when(backend.downloadPhoto("profile-1", "profile-photos/a.jpg")).thenReturn(new byte[] {1});
         when(sender.execute(any(SendPhoto.class))).thenReturn(message(102));
 
-        cards.show(CHAT_ID, session, new Card("caption", "https://example.com/a.jpg", null));
+        cards.show(CHAT_ID, session, new Card("caption", "profile-1", "profile-photos/a.jpg", null));
 
         verify(sender).execute(any(DeleteMessage.class));
         assertThat(session.cardMessageId()).isEqualTo(102);
@@ -127,7 +133,7 @@ class CardMessengerTest {
         when(sender.execute(any(SendPhoto.class))).thenThrow(new TelegramApiException("wrong file identifier/HTTP URL"));
         when(sender.execute(any(SendMessage.class))).thenReturn(message(103));
 
-        cards.show(CHAT_ID, session, new Card("caption", "https://bad.example/x", null));
+        cards.show(CHAT_ID, session, new Card("caption", "profile-1", "profile-photos/a.jpg", null));
 
         assertThat(session.cardMessageId()).isEqualTo(103);
         assertThat(session.cardHasPhoto()).isFalse();

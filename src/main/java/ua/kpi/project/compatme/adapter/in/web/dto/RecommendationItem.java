@@ -10,9 +10,6 @@ public record RecommendationItem(
         String displayName,
         Integer age,
 
-        /** Optional photo URL of the candidate — only the URL, never image bytes. */
-        String photoUrl,
-
         /** Stored photo references; bytes remain behind the profile-photo endpoint. */
         List<String> photoUrns,
 

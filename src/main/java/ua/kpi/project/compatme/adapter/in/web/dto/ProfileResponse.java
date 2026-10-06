@@ -5,7 +5,6 @@ import ua.kpi.project.compatme.domain.model.Orientation;
 import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -40,13 +39,10 @@ public record ProfileResponse(
         /** Thesis-evaluation-only metadata: synthetic personality archetype tags. Purely
          * descriptive — never read by the compatibility scoring/recommendation logic.
          */
-        List<Integer> archetypeIds,
-
-        /** Photo URLs — only URLs are stored/returned, never image bytes. */
-        List<String> photoUrls,
+        java.util.List<Integer> archetypeIds,
 
         OptionalProfileFields optionalFields,
 
-        /** Photo URNs are stored as references only; no fetch, analysis, or processing. */
-        List<String> photoUrns) {
+        /** Photo URNs identify objects in bucket storage; bytes are served by the photo endpoint. */
+        java.util.List<String> photoUrns) {
 }

@@ -43,8 +43,11 @@ public class ConversationState {
     private String preferenceDescription;
     private OptionalProfileFields optionalFields = OptionalProfileFields.empty();
 
-    /** User-provided photo URL/URN references (max five); never fetched or analyzed. */
+    /** Bucket object keys for uploaded profile photos (max six). */
     private final List<String> photoUrns = new ArrayList<>();
+
+    /** True when this state was populated from an existing profile rather than a new signup. */
+    private boolean profileUpdate;
 
     /**
      * When {@code true}, the current sub-flow was entered via a Review "Edit ..." button: on
@@ -211,5 +214,13 @@ public class ConversationState {
         }
         photoUrns.remove(index);
         return true;
+    }
+
+    public boolean isProfileUpdate() {
+        return profileUpdate;
+    }
+
+    public void setProfileUpdate(boolean profileUpdate) {
+        this.profileUpdate = profileUpdate;
     }
 }
