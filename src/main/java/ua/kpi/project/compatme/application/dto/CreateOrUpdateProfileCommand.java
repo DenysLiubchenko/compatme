@@ -1,6 +1,7 @@
 package ua.kpi.project.compatme.application.dto;
 
 import ua.kpi.project.compatme.domain.model.Gender;
+import ua.kpi.project.compatme.domain.model.DealBreakers;
 import ua.kpi.project.compatme.domain.model.LocationScope;
 import ua.kpi.project.compatme.domain.model.Orientation;
 import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
@@ -39,7 +40,8 @@ public record CreateOrUpdateProfileCommand(
         OptionalProfileFields optionalFields,
         LocationScope searchScope,
         Integer minPreferredAge,
-        Integer maxPreferredAge) {
+        Integer maxPreferredAge,
+        DealBreakers dealBreakers) {
 
     /** Convenience constructor: no explicit default scope (new profiles get WORLDWIDE, updates keep theirs). */
     public CreateOrUpdateProfileCommand(
@@ -48,7 +50,7 @@ public record CreateOrUpdateProfileCommand(
             String preferenceDescription, List<Integer> archetypeIds, String country, String city,
             OptionalProfileFields optionalFields) {
         this(profileId, telegramUserId, displayName, age, gender, orientation, seekingGenders, selfDescription,
-                preferenceDescription, archetypeIds, country, city, optionalFields, null, null, null);
+                preferenceDescription, archetypeIds, country, city, optionalFields, null, null, null, null);
     }
 
     /** Convenience constructor without a preferred age range (keeps the existing one on update). */
@@ -58,6 +60,6 @@ public record CreateOrUpdateProfileCommand(
             String preferenceDescription, List<Integer> archetypeIds, String country, String city,
             OptionalProfileFields optionalFields, LocationScope searchScope) {
         this(profileId, telegramUserId, displayName, age, gender, orientation, seekingGenders, selfDescription,
-                preferenceDescription, archetypeIds, country, city, optionalFields, searchScope, null, null);
+                preferenceDescription, archetypeIds, country, city, optionalFields, searchScope, null, null, null);
     }
 }

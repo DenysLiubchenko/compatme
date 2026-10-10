@@ -9,6 +9,7 @@ import ua.kpi.project.compatme.application.exception.ProfileNotFoundException;
 import ua.kpi.project.compatme.application.port.in.RecommendationUseCase;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
 import ua.kpi.project.compatme.domain.model.CandidateMatch;
+import ua.kpi.project.compatme.domain.model.AgeRange;
 import ua.kpi.project.compatme.domain.model.LocationScope;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileId;
@@ -66,8 +67,12 @@ public class RecommendationService implements RecommendationUseCase {
         List<Profile> candidates = profileRepository.findCandidates(requesterId, filter);
         List<Profile> genderMatches = candidates.stream()
                 .filter(candidate -> mutuallyMatchesGenderPreference(requester, candidate)).toList();
+        List<Profile> mutuallyAgeMatched = genderMatches.stream()
+                .filter(candidate -> mutuallyMatchesAgePreference(requester, candidate)).toList();
+        List<Profile> dealBreakerMatches = mutuallyAgeMatched.stream()
+                .filter(candidate -> mutuallyMatchesDealBreakers(requester, candidate)).toList();
         LocationScope scope = query.locationScope() != null ? query.locationScope() : requester.searchScope();
-        List<Profile> locationMatches = genderMatches.stream()
+        List<Profile> locationMatches = dealBreakerMatches.stream()
                 .filter(candidate -> LocationMatcher.matches(requester.location(), candidate.location(), scope)).toList();
         List<Profile> scorableCandidates = locationMatches.stream()
                 .filter(candidate -> hasScorableEmbeddings(requester, candidate)).toList();
@@ -81,15 +86,28 @@ public class RecommendationService implements RecommendationUseCase {
                 .limit(query.topN())
                 .toList();
 
-        log.info("Recommendation search completed for profile {}: candidates={}, genderMatches={}, "
+        log.info("Recommendation search completed for profile {}: candidates={}, genderMatches={}, ageMatches={}, dealBreakerMatches={}, "
                         + "locationMatches={}, scorable={}, returned={}, durationMs={}",
-                requesterId, candidates.size(), genderMatches.size(), locationMatches.size(),
+                requesterId, candidates.size(), genderMatches.size(), mutuallyAgeMatched.size(), dealBreakerMatches.size(), locationMatches.size(),
                 scorableCandidates.size(), results.size(), Duration.between(startedAt, Instant.now()).toMillis());
         return results;
     }
 
     private boolean mutuallyMatchesGenderPreference(Profile requester, Profile candidate) {
         return requester.mutuallyMatchesSeekingGender(candidate);
+    }
+
+    private boolean mutuallyMatchesAgePreference(Profile requester, Profile candidate) {
+        return matchesAgeRange(requester.age(), candidate.ageRange())
+                && matchesAgeRange(candidate.age(), requester.ageRange());
+    }
+
+    private boolean matchesAgeRange(Integer age, AgeRange ageRange) {
+        return age == null || ageRange == null || (age >= ageRange.min() && age <= ageRange.max());
+    }
+
+    private boolean mutuallyMatchesDealBreakers(Profile requester, Profile candidate) {
+        return !requester.dealBreakers().rejects(candidate) && !candidate.dealBreakers().rejects(requester);
     }
 
     private boolean hasScorableEmbeddings(Profile requester, Profile candidate) {

@@ -8,6 +8,7 @@ import ua.kpi.project.compatme.application.dto.GetRecommendationsQuery;
 import ua.kpi.project.compatme.application.dto.RecommendationResult;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
 import ua.kpi.project.compatme.domain.model.EmbeddingVector;
+import ua.kpi.project.compatme.domain.model.DealBreakers;
 import ua.kpi.project.compatme.domain.model.Gender;
 import ua.kpi.project.compatme.domain.model.LocationScope;
 import ua.kpi.project.compatme.domain.model.Profile;
@@ -125,6 +126,37 @@ class RecommendationServiceTest {
         verify(profileRepository).findCandidates(any(), eq(new ProfileRepositoryPort.CandidateFilter(25, 31)));
     }
 
+    @Test
+    void recommend_excludesCandidateWhosePreferredAgeRangeExcludesRequester() {
+        RecommendationService service = new RecommendationService(profileRepository, scorer);
+        Profile requester = located("requester", "Kyiv", "Ukraine", null, 25, 34);
+        Profile candidate = located("candidate", "Kyiv", "Ukraine", null, 35, 45);
+        when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
+        when(profileRepository.findCandidates(any(), any())).thenReturn(List.of(candidate));
+
+        assertThat(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10))).isEmpty();
+    }
+
+    @Test
+    void recommend_excludesCandidateRejectedByEitherProfileDealBreaker() {
+        RecommendationService service = new RecommendationService(profileRepository, scorer);
+        DealBreakers rejectsSmokers = new DealBreakers(
+                Set.of(), Set.of(ua.kpi.project.compatme.domain.model.SmokingStatus.YES), Set.of(), Set.of(),
+                List.of(), List.of(), List.of(), List.of(), List.of());
+        Profile requester = located("requester", "Kyiv", "Ukraine", null, null, null, rejectsSmokers);
+        Profile smoker = located("smoker", "Kyiv", "Ukraine", null, null, null, DealBreakers.empty());
+        smoker = Profile.builder().id(smoker.id()).displayName(smoker.displayName()).age(smoker.age())
+                .gender(smoker.gender()).orientation(smoker.orientation()).country(smoker.country()).city(smoker.city())
+                .seekingGenders(smoker.seekingGenders()).selfDescription(smoker.selfDescription())
+                .preferenceDescription(smoker.preferenceDescription()).embeddings(smoker.embeddings())
+                .createdAt(smoker.createdAt()).updatedAt(smoker.updatedAt())
+                .smokes(ua.kpi.project.compatme.domain.model.SmokingStatus.YES).build();
+        when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
+        when(profileRepository.findCandidates(any(), any())).thenReturn(List.of(smoker));
+
+        assertThat(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10))).isEmpty();
+    }
+
     private static List<ProfileId> ids(List<RecommendationResult> results) {
         return results.stream().map(r -> r.candidateProfile().id()).toList();
     }
@@ -139,6 +171,12 @@ class RecommendationServiceTest {
 
     private static Profile located(
             String name, String city, String country, LocationScope defaultScope, Integer minAge, Integer maxAge) {
+        return located(name, city, country, defaultScope, minAge, maxAge, null);
+    }
+
+    private static Profile located(
+            String name, String city, String country, LocationScope defaultScope, Integer minAge, Integer maxAge,
+            DealBreakers dealBreakers) {
         Instant now = Instant.now();
         boolean requester = name.equals("requester");
         return Profile.builder().id(ProfileId.generate()).displayName(name).age(28)
@@ -149,6 +187,7 @@ class RecommendationServiceTest {
                 .seekingGenders(requester ? Set.of(Gender.FEMALE) : Set.of(Gender.MALE))
                 .selfDescription("self description").preferenceDescription("preference description")
                 .embeddings(new ProfileEmbeddings(embedding(new float[]{1f, 0f}), embedding(new float[]{0f, 1f})))
+                .dealBreakers(dealBreakers)
                 .createdAt(now).updatedAt(now).build();
     }
 

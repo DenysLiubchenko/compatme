@@ -44,5 +44,7 @@ public record ProfileResponse(
         OptionalProfileFields optionalFields,
 
         /** Photo URNs identify objects in bucket storage; bytes are served by the photo endpoint. */
-        java.util.List<String> photoUrns) {
+        java.util.List<String> photoUrns,
+
+        ua.kpi.project.compatme.domain.model.DealBreakers dealBreakers) {
 }

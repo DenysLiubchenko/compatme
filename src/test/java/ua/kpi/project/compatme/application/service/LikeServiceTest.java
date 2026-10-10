@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ua.kpi.project.compatme.application.dto.RecordLikeResult;
+import ua.kpi.project.compatme.application.exception.ProfileNotFoundException;
 import ua.kpi.project.compatme.application.port.out.LikeRepositoryPort;
 import ua.kpi.project.compatme.application.port.out.LikeNotificationPort;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
@@ -17,6 +18,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -81,8 +83,26 @@ class LikeServiceTest {
         ProfileId liked = ProfileId.generate();
         when(likeRepository.existsByLikerAndLiked(liker, liked)).thenReturn(true);
         when(likeRepository.existsByLikerAndLiked(liked, liker)).thenReturn(false);
+        when(profileRepository.findById(liker)).thenReturn(Optional.of(profile(liker, "Liker")));
+        when(profileRepository.findById(liked)).thenReturn(Optional.of(profile(liked, "Liked")));
 
         service.recordLike(liker, liked);
+
+        verify(likeRepository, never()).save(any());
+        verify(notificationPort, never()).notifyNewLike(any(), any());
+        verify(notificationPort, never()).notifyMutualMatch(any(), any());
+    }
+
+    @Test
+    void recordLike_doesNotPersistWhenLikedProfileDoesNotExist() {
+        LikeService service = new LikeService(likeRepository, profileRepository, notificationPort);
+        ProfileId liker = ProfileId.generate();
+        ProfileId missingLiked = ProfileId.generate();
+        when(profileRepository.findById(liker)).thenReturn(Optional.of(profile(liker, "Liker")));
+        when(profileRepository.findById(missingLiked)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.recordLike(liker, missingLiked))
+                .isInstanceOf(ProfileNotFoundException.class);
 
         verify(likeRepository, never()).save(any());
         verify(notificationPort, never()).notifyNewLike(any(), any());

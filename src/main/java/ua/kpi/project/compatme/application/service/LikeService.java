@@ -2,6 +2,7 @@ package ua.kpi.project.compatme.application.service;
 
 import org.springframework.stereotype.Service;
 import ua.kpi.project.compatme.application.dto.RecordLikeResult;
+import ua.kpi.project.compatme.application.exception.ProfileNotFoundException;
 import ua.kpi.project.compatme.application.port.in.GetProfilesWhoLikedMeUseCase;
 import ua.kpi.project.compatme.application.port.in.RecordLikeUseCase;
 import ua.kpi.project.compatme.application.port.out.LikeRepositoryPort;
@@ -37,17 +38,19 @@ public class LikeService implements RecordLikeUseCase, GetProfilesWhoLikedMeUseC
 
     @Override
     public RecordLikeResult recordLike(ProfileId likerId, ProfileId likedId) {
+        Profile liker = profileRepository.findById(likerId)
+                .orElseThrow(() -> new ProfileNotFoundException(likerId.value()));
+        Profile liked = profileRepository.findById(likedId)
+                .orElseThrow(() -> new ProfileNotFoundException(likedId.value()));
         boolean newLike = !likeRepository.existsByLikerAndLiked(likerId, likedId);
         if (newLike) {
             likeRepository.save(new Like(likerId, likedId, Instant.now()));
         }
         boolean mutualMatch = likeRepository.existsByLikerAndLiked(likedId, likerId);
         if (newLike) {
-            Profile liker = profileRepository.findById(likerId).orElse(null);
-            Profile liked = profileRepository.findById(likedId).orElse(null);
             if (mutualMatch) {
-                if (liker != null && liked != null) notificationPort.notifyMutualMatch(liker, liked);
-            } else if (liker != null && liked != null) {
+                notificationPort.notifyMutualMatch(liker, liked);
+            } else {
                 notificationPort.notifyNewLike(liked, liker);
             }
         }

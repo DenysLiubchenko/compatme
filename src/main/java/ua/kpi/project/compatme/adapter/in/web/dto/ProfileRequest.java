@@ -70,5 +70,8 @@ public record ProfileRequest(
         List<Integer> archetypeIds,
 
         /** Optional structured attributes; unspecified fields remain empty. */
-        OptionalProfileFields optionalFields) {
+        OptionalProfileFields optionalFields,
+
+        /** Explicit hard exclusions applied before semantic recommendation scoring. */
+        ua.kpi.project.compatme.domain.model.DealBreakers dealBreakers) {
 }

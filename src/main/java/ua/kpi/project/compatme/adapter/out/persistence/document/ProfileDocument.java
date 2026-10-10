@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import ua.kpi.project.compatme.domain.model.DrinkingFrequency;
+import ua.kpi.project.compatme.domain.model.DealBreakers;
 import ua.kpi.project.compatme.domain.model.DrugUseFrequency;
 import ua.kpi.project.compatme.domain.model.Orientation;
 import ua.kpi.project.compatme.domain.model.RelationshipStatus;
@@ -77,6 +78,7 @@ public class ProfileDocument {
     private SmokingStatus smokes;
     private List<String> speaks;
     private List<String> photoUrns;
+    private DealBreakers dealBreakers;
 
     public ProfileDocument() {
     }
@@ -234,4 +236,6 @@ public class ProfileDocument {
     public void setSpeaks(List<String> speaks) { this.speaks = speaks; }
     public List<String> getPhotoUrns() { return photoUrns; }
     public void setPhotoUrns(List<String> photoUrns) { this.photoUrns = photoUrns; }
+    public DealBreakers getDealBreakers() { return dealBreakers; }
+    public void setDealBreakers(DealBreakers dealBreakers) { this.dealBreakers = dealBreakers; }
 }

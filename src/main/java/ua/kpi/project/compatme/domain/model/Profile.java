@@ -53,6 +53,7 @@ public final class Profile {
     private final SmokingStatus smokes;
     private final List<String> speaks;
     private final List<String> photoUrns;
+    private final DealBreakers dealBreakers;
 
     private Profile(Builder builder) {
         id = Objects.requireNonNull(builder.id, "id must not be null");
@@ -97,6 +98,7 @@ public final class Profile {
         smokes = builder.smokes;
         speaks = immutableList(builder.speaks);
         photoUrns = immutableList(builder.photoUrns);
+        dealBreakers = builder.dealBreakers == null ? DealBreakers.empty() : builder.dealBreakers;
     }
 
     public static Builder builder() {
@@ -153,7 +155,7 @@ public final class Profile {
                 .bodyType(bodyType).diet(diet).drinks(drinks).drugs(drugs).education(education)
                 .ethnicity(ethnicity).height(height).income(income).job(job).lastOnline(lastOnline)
                 .offspring(offspring).pets(pets).religion(religion).sign(sign).smokes(smokes)
-                .speaks(speaks).photoUrns(photoUrns);
+                .speaks(speaks).photoUrns(photoUrns).dealBreakers(dealBreakers);
     }
 
     public boolean matchesSeekingGender(Profile candidate) {
@@ -204,6 +206,7 @@ public final class Profile {
     public SmokingStatus smokes() { return smokes; }
     public List<String> speaks() { return speaks; }
     public List<String> photoUrns() { return photoUrns; }
+    public DealBreakers dealBreakers() { return dealBreakers; }
 
     public static final class Builder {
         private ProfileId id;
@@ -243,6 +246,7 @@ public final class Profile {
         private SmokingStatus smokes;
         private List<String> speaks;
         private List<String> photoUrns;
+        private DealBreakers dealBreakers;
 
         private Builder() { }
         public Builder id(ProfileId v) { id = v; return this; }
@@ -282,6 +286,7 @@ public final class Profile {
         public Builder smokes(SmokingStatus v) { smokes = v; return this; }
         public Builder speaks(List<String> v) { speaks = v; return this; }
         public Builder photoUrns(List<String> v) { photoUrns = v; return this; }
+        public Builder dealBreakers(DealBreakers v) { dealBreakers = v; return this; }
         public Profile build() { return new Profile(this); }
     }
 }

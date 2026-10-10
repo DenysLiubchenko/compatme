@@ -42,7 +42,8 @@ public class ProfileWebMapper {
                 request.optionalFields(),
                 request.searchScope(),
                 request.minPreferredAge(),
-                request.maxPreferredAge());
+                request.maxPreferredAge(),
+                request.dealBreakers());
     }
 
     public ProfileResponse toResponse(Profile profile) {
@@ -70,7 +71,8 @@ public class ProfileWebMapper {
                         profile.drugs(), profile.education(), profile.ethnicity(), profile.height(), profile.income(),
                         profile.job(), profile.lastOnline(), profile.offspring(), profile.pets(), profile.religion(),
                         profile.sign(), profile.smokes(), profile.speaks()),
-                profile.photoUrns());
+                profile.photoUrns(),
+                profile.dealBreakers());
     }
 
     public RecommendationItem toRecommendationItem(RecommendationResult result) {

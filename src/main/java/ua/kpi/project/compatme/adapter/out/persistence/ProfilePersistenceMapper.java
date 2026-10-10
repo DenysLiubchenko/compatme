@@ -55,6 +55,7 @@ public class ProfilePersistenceMapper {
         document.setSmokes(profile.smokes());
         document.setSpeaks(profile.speaks());
         document.setPhotoUrns(profile.photoUrns());
+        document.setDealBreakers(profile.dealBreakers());
         return document;
     }
 
@@ -102,6 +103,7 @@ public class ProfilePersistenceMapper {
                 .smokes(document.getSmokes())
                 .speaks(document.getSpeaks())
                 .photoUrns(document.getPhotoUrns())
+                .dealBreakers(document.getDealBreakers())
                 .build();
     }
 

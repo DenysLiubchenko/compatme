@@ -77,6 +77,7 @@ public class ProfileManagementService implements ProfileManagementUseCase {
                 .searchScope(command.searchScope() != null ? command.searchScope() : existing.searchScope())
                 .minPreferredAge(command.minPreferredAge() != null ? command.minPreferredAge() : existing.minPreferredAge())
                 .maxPreferredAge(command.maxPreferredAge() != null ? command.maxPreferredAge() : existing.maxPreferredAge())
+                .dealBreakers(command.dealBreakers() != null ? command.dealBreakers() : existing.dealBreakers())
                 .build();
         return profileRepository.save(rebuilt);
     }
@@ -86,8 +87,8 @@ public class ProfileManagementService implements ProfileManagementUseCase {
         return new CreateOrUpdateProfileCommand(command.profileId(), command.telegramUserId(), command.displayName(),
                 command.age(), command.gender(), command.orientation(), command.seekingGenders(), command.selfDescription(),
                 command.preferenceDescription(), command.archetypeIds(), command.country(), command.city(),
-                optionalFields, command.searchScope(),
-                command.minPreferredAge(), command.maxPreferredAge());
+                 optionalFields, command.searchScope(),
+                command.minPreferredAge(), command.maxPreferredAge(), command.dealBreakers());
     }
 
     private Profile.Builder toProfileBuilder(
@@ -100,6 +101,7 @@ public class ProfileManagementService implements ProfileManagementUseCase {
                 .age(command.age()).gender(command.gender()).orientation(command.orientation())
                 .country(command.country()).city(command.city()).searchScope(command.searchScope())
                 .minPreferredAge(command.minPreferredAge()).maxPreferredAge(command.maxPreferredAge()).seekingGenders(command.seekingGenders())
+                .dealBreakers(command.dealBreakers())
                 .selfDescription(command.selfDescription()).preferenceDescription(command.preferenceDescription())
                 .embeddings(embeddings).createdAt(createdAt).updatedAt(updatedAt)
                 .archetypeIds(command.archetypeIds())

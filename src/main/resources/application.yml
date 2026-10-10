@@ -23,7 +23,7 @@ gemini:
   api-key: ${GEMINI_API_KEY:}
   embedding-model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
   embedding-dimensionality: ${GEMINI_EMBEDDING_DIMENSIONALITY:768}
-  chat-model: ${GEMINI_CHAT_MODEL:gemini-2.5-flash}
+  chat-model: ${GEMINI_CHAT_MODEL:gemini-3.8-flash}
   max-retry-attempts: ${GEMINI_MAX_RETRY_ATTEMPTS:4}
   retry-initial-backoff-millis: ${GEMINI_RETRY_INITIAL_BACKOFF_MILLIS:1000}
   retry-backoff-multiplier: ${GEMINI_RETRY_BACKOFF_MULTIPLIER:2.0}
