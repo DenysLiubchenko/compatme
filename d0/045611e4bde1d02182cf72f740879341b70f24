@@ -1,0 +1,50 @@
+.env.example
+  h_9cec5b0d0295d7 17
+scenario/E2E_SCENARIO.md
+  h_9cec5b0d0295d7 1-282
+scenario/SCENARIO.md
+  h_9cec5b0d0295d7 1-46
+src/main/java/ua/kpi/project/compatme/adapter/in/web/ProfileWebMapper.java
+  h_9cec5b0d0295d7 45-46,74-75
+src/main/java/ua/kpi/project/compatme/adapter/in/web/dto/ProfileRequest.java
+  h_9cec5b0d0295d7 73-76
+src/main/java/ua/kpi/project/compatme/adapter/in/web/dto/ProfileResponse.java
+  h_9cec5b0d0295d7 47-49
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/ProfilePersistenceMapper.java
+  h_9cec5b0d0295d7 58,106
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/document/ProfileDocument.java
+  h_9cec5b0d0295d7 12,81,239-240
+src/main/java/ua/kpi/project/compatme/application/dto/CreateOrUpdateProfileCommand.java
+  h_9cec5b0d0295d7 4,43-44,53,63
+src/main/java/ua/kpi/project/compatme/application/service/LikeService.java
+  h_9cec5b0d0295d7 5,41-44,52-53
+src/main/java/ua/kpi/project/compatme/application/service/ProfileManagementService.java
+  h_9cec5b0d0295d7 80,90-91,104
+src/main/java/ua/kpi/project/compatme/application/service/RecommendationService.java
+  h_9cec5b0d0295d7 12,70-73,75,89,91,100-112
+src/main/java/ua/kpi/project/compatme/bootstrap/OkCupidProfileDataLoader.java
+  h_9cec5b0d0295d7 137
+src/main/java/ua/kpi/project/compatme/domain/model/DealBreakers.java
+  h_9cec5b0d0295d7 1-66
+src/main/java/ua/kpi/project/compatme/domain/model/Profile.java
+  h_9cec5b0d0295d7 56,101,158,209,249,289
+src/main/resources/application.yml
+  h_9cec5b0d0295d7 26
+src/test/java/ua/kpi/project/compatme/application/service/LikeServiceTest.java
+  h_9cec5b0d0295d7 8,21,86-87,96-111
+src/test/java/ua/kpi/project/compatme/application/service/RecommendationServiceTest.java
+  h_9cec5b0d0295d7 11,129-159,174-179,190
+src/test/java/ua/kpi/project/compatme/domain/model/DealBreakersTest.java
+  h_9cec5b0d0295d7 1-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d0045611e4bde1d02182cf72f740879341b70f24",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
