@@ -216,6 +216,7 @@ Symmetry check: for pair (Anna, Max), `Anna→Max.scoreAtoB == Max→Anna.scoreB
 |---|---|
 | 6.1 | `200`; `updatedPreferenceDescription` mentions outgoing / festivals / going out; `changeSummary` non-empty |
 | 6.2 | `GET $API/{ANNA}` → `preferenceDescription` equals `updatedPreferenceDescription`; both embeddings still present |
+| 6.2a | Make a new, independent `GET $API/{ANNA}/recommendations?topN=20` after the refinement response. Its candidates, order and scores equal `recommendations` returned by the refinement response: the dialog criterion is persisted and used for every later search |
 | 6.3 | For every candidate, **`scoreBtoA` is unchanged** vs §4.1 (Anna's self text and candidates' embeddings were not touched) |
 | 6.4 | `scoreAtoB` **rises** for Bohdan and Andrii, **falls** for Max, Ivan, Dmytro |
 | 6.5 | Bohdan moves up (expected rank ≤ 3); Max stays in the list but drops below his §4.1 score |
