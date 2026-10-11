@@ -1,0 +1,14 @@
+scenario/E2E_SCENARIO.md
+  h_9cec5b0d0295d7 219
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cbc288cd5f9ee7f9cf7899ad0b3c3dd5f62c556d",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
