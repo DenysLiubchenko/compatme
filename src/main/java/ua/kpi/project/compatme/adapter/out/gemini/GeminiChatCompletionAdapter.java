@@ -8,6 +8,8 @@ import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
 import com.google.genai.types.Schema;
 import com.google.genai.types.Type;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.retry.annotation.Backoff;
@@ -63,6 +65,8 @@ public class GeminiChatCompletionAdapter implements ChatCompletionPort {
     }
 
     @Override
+    @Bulkhead(name = "gemini", type = Bulkhead.Type.SEMAPHORE)
+    @CircuitBreaker(name = "gemini")
     @Retryable(
             retryFor = RuntimeException.class,
             maxAttemptsExpression = "#{@geminiProperties.maxRetryAttempts}",

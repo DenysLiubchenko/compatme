@@ -1,6 +1,8 @@
 package ua.kpi.project.compatme.adapter.out.geocoding;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -46,6 +48,8 @@ public class NominatimReverseGeocodingAdapter implements ReverseGeocodingPort {
     }
 
     @Override
+    @Bulkhead(name = "nominatim", type = Bulkhead.Type.SEMAPHORE)
+    @CircuitBreaker(name = "nominatim")
     public LocationResult resolveLocation(double latitude, double longitude) {
         enforceMinimumInterval();
         try {

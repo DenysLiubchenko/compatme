@@ -3,7 +3,7 @@ spring:
     name: compatme
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/compatme}
+      uri: ${MONGODB_URI:mongodb://localhost:27017/compatme?retryReads=true&retryWrites=true&w=majority}
       # Without this, Spring Data MongoDB silently ignores @Indexed annotations (e.g. the unique
       # index on ProfileDocument.telegramUserId) — they'd never actually be created in MongoDB.
       auto-index-creation: true
@@ -18,6 +18,58 @@ spring:
 
 server:
   port: ${SERVER_PORT:8082}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+      group:
+        readiness:
+          include: readinessState,mongo,minio
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      gemini:
+        sliding-window-type: count_based
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 2
+      nominatim:
+        sliding-window-type: count_based
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 2
+      minio:
+        sliding-window-type: count_based
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 2
+        record-exceptions:
+          - ua.kpi.project.compatme.application.exception.PhotoStorageException
+  bulkhead:
+    instances:
+      gemini:
+        max-concurrent-calls: 10
+        max-wait-duration: 0
+      nominatim:
+        max-concurrent-calls: 2
+        max-wait-duration: 0
+      minio:
+        max-concurrent-calls: 20
+        max-wait-duration: 0
 
 gemini:
   api-key: ${GEMINI_API_KEY:}

@@ -1,5 +1,7 @@
 package ua.kpi.project.compatme.adapter.in.web;
 
+import io.github.resilience4j.bulkhead.BulkheadFullException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -105,6 +107,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleChatCompletionFailure(ChatCompletionException e, WebRequest request) {
         log.error("Chat completion failed", e);
         return build(HttpStatus.BAD_GATEWAY, "Chat model is currently unavailable. Please try again later.", request);
+    }
+
+    @ExceptionHandler({CallNotPermittedException.class, BulkheadFullException.class})
+    public ResponseEntity<ApiErrorResponse> handleDependencyOverload(RuntimeException e, WebRequest request) {
+        log.warn("Outbound dependency is temporarily unavailable: {}", e.getMessage());
+        return build(HttpStatus.SERVICE_UNAVAILABLE,
+                "This service is temporarily busy or unavailable. Please try again later.", request);
     }
 
     @ExceptionHandler(Exception.class)

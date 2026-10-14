@@ -51,6 +51,43 @@ Gemini API for a different embedding provider, only requires writing a new class
 `config/` — nothing in `domain` or `application` needs to change, because those layers only depend
 on the port interfaces, never on the concrete adapters.
 
+## Fault tolerance and availability
+
+The application treats external dependencies as failure-prone and isolates each one so a partial
+outage remains bounded to the feature that needs it:
+
+- **MongoDB durability and recovery:** profile, like, and Telegram conversation state are stored
+  in MongoDB. The default connection URI enables retryable reads/writes with majority write
+  concern. Unique indexes make Telegram profile creation and likes safe to retry without creating
+  duplicates.
+- **Gemini:** embedding and chat calls are retried up to four times by default with exponential
+  backoff. Embedding calls also honor a retry delay supplied by Gemini. A shared circuit breaker
+  opens after sustained failures and recovers by allowing two trial calls after 30 seconds; a
+  semaphore bulkhead permits at most 10 concurrent Gemini calls.
+- **Nominatim:** calls have 10-second connect and request timeouts, a policy-compliant request
+  rate limit, a circuit breaker, and a two-call bulkhead. Failure or overload switches onboarding
+  to manual country/city entry, so location lookup never blocks registration.
+- **MinIO:** photo storage has a circuit breaker and a 20-call bulkhead. Bucket creation is
+  attempted at startup but does not stop the application; it is retried lazily on use. Photo
+  operations return a clear `502` when storage is unavailable and `503` when its circuit is open
+  or capacity is exhausted.
+- **HTTP failure boundaries:** backend calls made by the Telegram adapter use 10-second connection
+  timeouts and 30-second request timeouts. The REST API translates known failures to safe error
+  responses without exposing stack traces; overload and open-circuit responses are `503`.
+- **Asynchronous work:** optional profile-field enrichment runs outside the create/update request.
+  Its failure is logged and does not roll back or reject the user profile.
+- **Health probes:** Spring Boot Actuator exposes `/actuator/health/liveness` and
+  `/actuator/health/readiness`. Readiness includes MongoDB and MinIO, so traffic is admitted only
+  when required persistent dependencies are reachable. Gemini and Nominatim are deliberately not
+  readiness dependencies because their failures have feature-level fallbacks.
+- **Container recovery:** MongoDB and MinIO use persistent volumes, health checks, and
+  `restart: unless-stopped`. The application image has a readiness-based Docker `HEALTHCHECK` and
+  runs as an unprivileged user. Stateless REST instances can be replicated behind a load balancer
+  when they share the same MongoDB and MinIO; run only one Telegram long-polling consumer.
+
+Circuit breakers use a count window of 10 calls, start evaluating after 5, and open when at least
+50% fail. These settings can be overridden under `resilience4j.*` in deployment configuration.
+
 ## Core domain logic
 
 - Each profile has two **separately embedded** free-text fields: `selfDescription` ("who I am")

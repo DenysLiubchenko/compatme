@@ -8,6 +8,8 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.errors.ErrorResponseException;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +56,8 @@ public class MinioPhotoStorageAdapter implements PhotoStoragePort {
     }
 
     @Override
+    @Bulkhead(name = "minio", type = Bulkhead.Type.SEMAPHORE)
+    @CircuitBreaker(name = "minio")
     public String store(byte[] photoBytes, String contentType) {
         String urn = KEY_PREFIX + UUID.randomUUID() + "." + extensionFor(contentType);
         try {
@@ -72,6 +76,8 @@ public class MinioPhotoStorageAdapter implements PhotoStoragePort {
     }
 
     @Override
+    @Bulkhead(name = "minio", type = Bulkhead.Type.SEMAPHORE)
+    @CircuitBreaker(name = "minio")
     public byte[] retrieve(String urn) {
         try (GetObjectResponse response = client.getObject(
                 GetObjectArgs.builder().bucket(bucket).object(urn).build())) {
@@ -87,6 +93,8 @@ public class MinioPhotoStorageAdapter implements PhotoStoragePort {
     }
 
     @Override
+    @Bulkhead(name = "minio", type = Bulkhead.Type.SEMAPHORE)
+    @CircuitBreaker(name = "minio")
     public void delete(String urn) {
         try {
             client.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(urn).build());

@@ -3,6 +3,8 @@ package ua.kpi.project.compatme.adapter.out.gemini;
 import com.google.genai.Client;
 import com.google.genai.types.EmbedContentConfig;
 import com.google.genai.types.EmbedContentResponse;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -41,6 +43,8 @@ public class GeminiEmbeddingAdapter implements EmbeddingProviderPort {
     }
 
     @Override
+    @Bulkhead(name = "gemini", type = Bulkhead.Type.SEMAPHORE)
+    @CircuitBreaker(name = "gemini")
     public EmbeddingVector embed(String text) {
         int maxAttempts = Math.max(1, properties.getMaxRetryAttempts());
         RuntimeException lastFailure = null;

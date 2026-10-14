@@ -24,11 +24,18 @@ RUN ./mvnw -B -q package -DskipTests
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-RUN addgroup --system compatme && adduser --system --ingroup compatme compatme
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && addgroup --system compatme \
+    && adduser --system --ingroup compatme compatme
 COPY --from=build /workspace/target/*.jar /app/app.jar
 RUN chown -R compatme:compatme /app
 USER compatme
 
-EXPOSE 8080
+EXPOSE 8082
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
+    CMD curl --fail --silent http://localhost:8082/actuator/health/readiness || exit 1
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

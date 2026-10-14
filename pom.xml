@@ -23,6 +23,7 @@
 		<google-genai.version>1.70.0</google-genai.version>
 		<telegrambots.version>6.9.7.1</telegrambots.version>
 		<springdoc-openapi.version>2.6.0</springdoc-openapi.version>
+		<resilience4j.version>2.2.0</resilience4j.version>
 		<!-- Static OpenAPI spec generation boots the full app (needs Mongo) -> opt-in only, via
 		     mvn verify -Dskip.openapi.generation=false -->
 		<skip.openapi.generation>true</skip.openapi.generation>
@@ -55,6 +56,17 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+
+		<!-- Operational health probes and circuit-breaker/bulkhead isolation for outbound dependencies -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot3</artifactId>
+			<version>${resilience4j.version}</version>
 		</dependency>
 
 		<!-- Google Gemini API SDK (outbound Gemini adapter) -->

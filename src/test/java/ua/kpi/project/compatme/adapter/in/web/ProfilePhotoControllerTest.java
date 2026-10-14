@@ -1,5 +1,7 @@
 package ua.kpi.project.compatme.adapter.in.web;
 
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,5 +82,17 @@ class ProfilePhotoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("image/png"))
                 .andExpect(content().bytes(new byte[] {9}));
+    }
+
+    @Test
+    void dependencyCircuitOpen_returns503WithoutImplementationDetails() throws Exception {
+        CircuitBreaker circuitBreaker = CircuitBreaker.ofDefaults("test");
+        circuitBreaker.transitionToOpenState();
+        when(useCase.addPhoto(any(), any(), any()))
+                .thenThrow(CallNotPermittedException.createCallNotPermittedException(circuitBreaker));
+
+        mvc.perform(multipart("/api/v1/profiles/p1/photos").file(file()))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("temporarily")));
     }
 }
