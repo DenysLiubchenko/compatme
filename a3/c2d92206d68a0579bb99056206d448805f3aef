@@ -1,0 +1,36 @@
+src/main/java/ua/kpi/project/compatme/CompatmeApplication.java
+  h_9cec5b0d0295d7 5,8
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/MenuFlow.java
+  h_9cec5b0d0295d7 18,48,89-112,144
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/OnboardingFlow.java
+  h_9cec5b0d0295d7 750
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/SettingsFlow.java
+  h_9cec5b0d0295d7 20
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/ReplyKeyboards.java
+  h_9cec5b0d0295d7 184
+src/main/java/ua/kpi/project/compatme/application/service/ProfileAttributeEnrichmentService.java
+  h_9cec5b0d0295d7 1-48
+src/main/java/ua/kpi/project/compatme/application/service/ProfileManagementService.java
+  h_9cec5b0d0295d7 33,36-37,41,50-53,56-60
+src/main/java/ua/kpi/project/compatme/config/AsyncConfig.java
+  h_9cec5b0d0295d7 1-22
+src/main/java/ua/kpi/project/compatme/domain/model/Profile.java
+  h_9cec5b0d0295d7 148-158
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandlerTest.java
+  h_9cec5b0d0295d7 276-301
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ReplyKeyboardFlowTest.java
+  h_9cec5b0d0295d7 169-170
+src/test/java/ua/kpi/project/compatme/application/service/ProfileManagementServiceTest.java
+  h_9cec5b0d0295d7 53,87-103,157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a3c2d92206d68a0579bb99056206d448805f3aef",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
