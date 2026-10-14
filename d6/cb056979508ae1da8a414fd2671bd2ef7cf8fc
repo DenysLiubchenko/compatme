@@ -1,0 +1,24 @@
+src/main/java/ua/kpi/project/compatme/adapter/telegram/CompatmeTelegramBot.java
+  h_9cec5b0d0295d7 26,57-58,61-62
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ConversationFlowHandler.java
+  h_9cec5b0d0295d7 22,54-62,73-74
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/PreferencesFlow.java
+  h_9cec5b0d0295d7 15,28,34-35,40,77-86,90,94
+src/main/java/ua/kpi/project/compatme/config/AsyncConfig.java
+  h_9cec5b0d0295d7 22-32
+src/main/java/ua/kpi/project/compatme/config/TelegramBotConfig.java
+  h_9cec5b0d0295d7 6-7,38-39,43
+src/test/java/ua/kpi/project/compatme/adapter/telegram/BrowsingAndMenuFlowTest.java
+  h_9cec5b0d0295d7 29,223-256
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d6cb056979508ae1da8a414fd2671bd2ef7cf8fc",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
