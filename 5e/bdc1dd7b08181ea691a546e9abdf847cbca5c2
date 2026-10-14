@@ -1,0 +1,20 @@
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/PreferencesFlow.java
+  h_9cec5b0d0295d7 77
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/ProfileCardFormatter.java
+  h_9cec5b0d0295d7 54-57
+src/test/java/ua/kpi/project/compatme/adapter/telegram/BrowsingAndMenuFlowTest.java
+  h_9cec5b0d0295d7 213,218-220
+src/test/java/ua/kpi/project/compatme/adapter/telegram/ui/ProfileCardFormatterTest.java
+  h_9cec5b0d0295d7 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5ebdc1dd7b08181ea691a546e9abdf847cbca5c2",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
