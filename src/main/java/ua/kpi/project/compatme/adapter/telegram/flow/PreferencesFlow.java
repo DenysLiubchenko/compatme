@@ -74,13 +74,7 @@ public class PreferencesFlow {
             Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(telegramUserId);
             String profileId = String.valueOf(profile.get("id"));
             Map<String, Object> result = backendApiClient.refinePreference(profileId, text, DEFAULT_TOP_N);
-            StringBuilder response = new StringBuilder();
-            response.append("Updated: ").append(result.getOrDefault("changeSummary", "")).append("\n\n");
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> recommendations =
-                    (List<Map<String, Object>>) result.getOrDefault("recommendations", List.of());
-            response.append(ProfileCardFormatter.formatRecommendations(recommendations));
-            telegram.sendText(chatId, response.toString());
+            telegram.sendText(chatId, "Your preference adjustments were applied.");
         } catch (Exception e) {
             log.warn("Failed to handle free-text refinement for chat {}: {}", chatId, e.getMessage());
             telegram.sendText(chatId, "Something went wrong. Please try again later.");

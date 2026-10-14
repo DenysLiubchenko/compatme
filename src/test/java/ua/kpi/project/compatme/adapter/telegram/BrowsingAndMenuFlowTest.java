@@ -210,10 +210,13 @@ class BrowsingAndMenuFlowTest {
     @Test
     void freeTextInDoneState_isRoutedToPreferenceRefinement() {
         when(backendApiClient.refinePreference(anyString(), anyString(), anyInt()))
-                .thenReturn(Map.of("changeSummary", "calmer", "recommendations", List.of()));
+                .thenReturn(Map.of("changeSummary", "calmer", "recommendations", List.of(candidate("c1", "Anna"))));
 
         handler.onTextMessage(CHAT_ID, USER, "I want someone calmer");
 
         verify(backendApiClient).refinePreference("me", "I want someone calmer", 5);
+        assertThat(sentMessages()).extracting(SendMessage::getText)
+                .contains("Your preference adjustments were applied.")
+                .noneMatch(text -> text.contains("Anna"));
     }
 }

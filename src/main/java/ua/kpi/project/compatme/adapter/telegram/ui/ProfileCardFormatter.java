@@ -51,7 +51,10 @@ public final class ProfileCardFormatter {
         }
         StringBuilder sb = new StringBuilder();
         for (Map<String, Object> r : recommendations) {
-            sb.append("• %s (score: %.2f)\n".formatted(r.get("displayName"), ((Number) r.get("aggregatedScore")).doubleValue()));
+            double aggregateScore = ((Number) r.get("aggregatedScore")).doubleValue();
+            double requesterScore = ((Number) r.get("scoreAtoB")).doubleValue();
+            sb.append("• %s (score: %.4f, your fit: %.4f)\n"
+                    .formatted(r.get("displayName"), aggregateScore, requesterScore));
         }
         return sb.toString().stripTrailing();
     }
