@@ -166,8 +166,8 @@ class ReplyKeyboardFlowTest {
         handler.onMenuAction(CHAT_ID, USER, MenuAction.MY_PROFILE);
 
         ReplyKeyboardMarkup markup = (ReplyKeyboardMarkup) sent.get(sent.size() - 1).getReplyMarkup();
-        assertThat(labels(markup)).containsExactly(ReplyKeyboards.EDIT_PROFILE, ReplyKeyboards.PAUSE,
-                ReplyKeyboards.DELETE_ACCOUNT, ReplyKeyboards.MAIN_MENU);
+        assertThat(labels(markup)).containsExactly(ReplyKeyboards.EDIT_PROFILE, ReplyKeyboards.DELETE_ACCOUNT,
+                ReplyKeyboards.MAIN_MENU);
     }
 
     @Test

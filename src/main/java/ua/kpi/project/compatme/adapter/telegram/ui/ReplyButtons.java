@@ -57,7 +57,6 @@ public final class ReplyButtons {
     private static Optional<String> idle(String label) {
         return switch (label) {
             case EDIT_PROFILE -> Optional.of("profile:edit");
-            case PAUSE -> Optional.of("settings:pause");
             case DELETE_ACCOUNT -> Optional.of("settings:delete");
             case MAIN_MENU -> Optional.of("menu:back");
             default -> Optional.empty();

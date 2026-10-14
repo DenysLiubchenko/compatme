@@ -7,7 +7,6 @@ import ua.kpi.project.compatme.application.port.in.ProfileManagementUseCase;
 import ua.kpi.project.compatme.application.port.out.LikeRepositoryPort;
 import ua.kpi.project.compatme.application.port.out.PhotoStoragePort;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
-import ua.kpi.project.compatme.application.port.out.ProfileAttributeExtractionPort;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileEmbeddings;
 import ua.kpi.project.compatme.domain.model.ProfileId;
@@ -30,16 +29,16 @@ public class ProfileManagementService implements ProfileManagementUseCase {
 
     private final ProfileRepositoryPort profileRepository;
     private final LikeRepositoryPort likeRepository;
-    private final ProfileAttributeExtractionPort attributeExtraction;
     private final PhotoStoragePort photoStorage;
+    private final ProfileAttributeEnrichmentService attributeEnrichmentService;
 
     public ProfileManagementService(ProfileRepositoryPort profileRepository, LikeRepositoryPort likeRepository,
-                                    ProfileAttributeExtractionPort attributeExtraction,
-                                    PhotoStoragePort photoStorage) {
+                                    PhotoStoragePort photoStorage,
+                                    ProfileAttributeEnrichmentService attributeEnrichmentService) {
         this.profileRepository = profileRepository;
         this.likeRepository = likeRepository;
-        this.attributeExtraction = attributeExtraction;
         this.photoStorage = photoStorage;
+        this.attributeEnrichmentService = attributeEnrichmentService;
     }
 
     @Override
@@ -48,13 +47,17 @@ public class ProfileManagementService implements ProfileManagementUseCase {
         Profile existing = findExisting(command);
 
         if (existing == null) {
-            var optionalFields = command.optionalFields() == null
-                    ? attributeExtraction.extract(command.selfDescription(), command.preferenceDescription())
-                    : command.optionalFields();
-            command = withOptionalFields(command, optionalFields);
+            boolean needsAttributeEnrichment = command.optionalFields() == null;
+            if (needsAttributeEnrichment) {
+                command = withOptionalFields(command, OptionalProfileFields.empty());
+            }
             ProfileId id = command.profileId() != null ? ProfileId.of(command.profileId()) : ProfileId.generate();
             Profile created = toProfileBuilder(command, id, now, now, ProfileEmbeddings.empty()).build();
-            return profileRepository.save(created);
+            Profile saved = profileRepository.save(created);
+            if (needsAttributeEnrichment) {
+                attributeEnrichmentService.enrich(saved.id(), saved.selfDescription(), saved.preferenceDescription());
+            }
+            return saved;
         }
 
         if (command.optionalFields() == null) {

@@ -17,7 +17,7 @@ import ua.kpi.project.compatme.adapter.telegram.validation.ProfileInputValidator
 import java.util.List;
 import java.util.Map;
 
-/** Settings sub-flow: search scope, match age range, profile editing, pause stub and account deletion. */
+/** Settings sub-flow: search scope, match age range, profile editing and account deletion. */
 public class SettingsFlow {
 
     private static final Logger log = LoggerFactory.getLogger(SettingsFlow.class);
@@ -60,7 +60,6 @@ public class SettingsFlow {
             case "settings:agerange" -> { ackSilently(callbackQueryId); promptSettingsAgeRange(chatId, state); }
             case "settings:scope" -> { ackSilently(callbackQueryId); showSettingsScopeMenu(chatId, telegramUserId); }
             case "settings:edit", "profile:edit" -> { ackSilently(callbackQueryId); handleSettingsEditProfile(chatId, telegramUserId); }
-            case "settings:pause" -> { ackSilently(callbackQueryId); handleSettingsPause(chatId); }
             case "settings:delete" -> { ackSilently(callbackQueryId); handleSettingsDelete(chatId, messageId, state); }
             case "delete:yes" -> { ackSilently(callbackQueryId); handleDeleteConfirmed(chatId, messageId, telegramUserId); }
             case "delete:no" -> { ackSilently(callbackQueryId); handleDeleteCancelled(chatId, messageId, state); }
@@ -177,12 +176,6 @@ public class SettingsFlow {
         }
         state.setProfileUpdate(true);
         return state;
-    }
-
-    private void handleSettingsPause(long chatId) {
-        // No pause/deactivate concept exists in the domain model yet; kept as a placeholder menu
-        // entry per the settings-menu requirement rather than adding unrequested domain scope.
-        send(SendMessage.builder().chatId(chatId).text("🔕 Pause Matching is coming soon.").build());
     }
 
     private void handleSettingsDelete(long chatId, Integer messageId, ConversationState state) {

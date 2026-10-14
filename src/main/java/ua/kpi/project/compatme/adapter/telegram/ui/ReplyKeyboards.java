@@ -62,7 +62,6 @@ public final class ReplyKeyboards {
 
     // "My Profile" menu (its own view; replaces the main menu until "Main Menu" is pressed)
     public static final String EDIT_PROFILE = "✏️ Edit Profile";
-    public static final String PAUSE = "🔕 Pause Matching";
     public static final String DELETE_ACCOUNT = "🗑 Delete My Account";
     public static final String MAIN_MENU = "⬅️ Main Menu";
 
@@ -182,7 +181,7 @@ public final class ReplyKeyboards {
     public static ReplyKeyboardMarkup profileMenu() {
         return of(List.of(
                 List.of(EDIT_PROFILE),
-                List.of(PAUSE, DELETE_ACCOUNT),
+                List.of(DELETE_ACCOUNT),
                 List.of(MAIN_MENU)));
     }
 }

@@ -274,6 +274,32 @@ class ConversationFlowHandlerTest {
     }
 
     @Test
+    void reviewSave_sendsEveryUploadedPhotoBeforeShowingTheCreatedProfile() {
+        ConversationState state = new ConversationState(TELEGRAM_USER_ID);
+        state.setStep(ConversationStep.REVIEW);
+        state.setName("Maria");
+        state.setAge(27);
+        state.setGender("FEMALE");
+        state.setOrientation("STRAIGHT");
+        state.toggleSeekingGender("MALE");
+        state.setCountry("Ukraine");
+        state.setCity("Kyiv");
+        state.setSelfDescription("Original self description text.");
+        state.setPreferenceDescription("Original preference description text.");
+        statesByUser.put(TELEGRAM_USER_ID, state);
+        when(backendApiClient.createProfile(
+                anyString(), anyString(), any(), anyString(), nullable(String.class), any(), anyString(), anyString(), anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(Map.of("id", "profile-123", "photoUrns", java.util.List.of("photos/one.jpg", "photos/two.jpg")));
+        when(backendApiClient.downloadPhoto("profile-123", "photos/one.jpg")).thenReturn(new byte[] {1});
+        when(backendApiClient.downloadPhoto("profile-123", "photos/two.jpg")).thenReturn(new byte[] {2});
+
+        flowHandler.onCallbackQuery(CHAT_ID, TELEGRAM_USER_ID, 10, "cb1", "review:save");
+
+        verify(backendApiClient).downloadPhoto("profile-123", "photos/one.jpg");
+        verify(backendApiClient).downloadPhoto("profile-123", "photos/two.jpg");
+    }
+
+    @Test
     void reviewSave_requiresOrientationForAStateCreatedBeforeTheOrientationStep() {
         ConversationState state = new ConversationState(TELEGRAM_USER_ID);
         state.setStep(ConversationStep.REVIEW);

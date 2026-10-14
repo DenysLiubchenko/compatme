@@ -145,6 +145,17 @@ public final class Profile {
         return toBuilder().photoUrns(newPhotoUrns).updatedAt(now).build();
     }
 
+    /** Applies attributes extracted from the current descriptions without changing other profile data. */
+    public Profile withOptionalFields(OptionalProfileFields fields, Instant now) {
+        OptionalProfileFields value = fields == null ? OptionalProfileFields.empty() : fields;
+        return toBuilder().status(value.status()).bodyType(value.bodyType()).diet(value.diet())
+                .drinks(value.drinks()).drugs(value.drugs()).education(value.education())
+                .ethnicity(value.ethnicity()).height(value.height()).income(value.income()).job(value.job())
+                .lastOnline(value.lastOnline()).offspring(value.offspring()).pets(value.pets())
+                .religion(value.religion()).sign(value.sign()).smokes(value.smokes()).speaks(value.speaks())
+                .updatedAt(now).build();
+    }
+
     private Builder toBuilder() {
         return builder().id(id).telegramUserId(telegramUserId).displayName(displayName).age(age).gender(gender)
                 .orientation(orientation).seekingGenders(seekingGenders)

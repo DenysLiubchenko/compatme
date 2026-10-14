@@ -747,6 +747,7 @@ public class OnboardingFlow {
         } else {
             telegram.sendText(chatId, "🎉 Your profile is live!");
         }
+        menuFlow.showCreatedProfile(chatId, saved);
         menuFlow.sendMainMenu(chatId, telegramUserId);
     }
 

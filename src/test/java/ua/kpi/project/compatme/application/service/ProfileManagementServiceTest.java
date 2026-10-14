@@ -8,7 +8,6 @@ import ua.kpi.project.compatme.application.dto.CreateOrUpdateProfileCommand;
 import ua.kpi.project.compatme.application.port.out.LikeRepositoryPort;
 import ua.kpi.project.compatme.application.port.out.PhotoStoragePort;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
-import ua.kpi.project.compatme.application.port.out.ProfileAttributeExtractionPort;
 import ua.kpi.project.compatme.domain.model.Gender;
 import ua.kpi.project.compatme.domain.model.Orientation;
 import ua.kpi.project.compatme.domain.model.OptionalProfileFields;
@@ -51,7 +50,7 @@ class ProfileManagementServiceTest {
     private LikeRepositoryPort likeRepository;
 
     @Mock
-    private ProfileAttributeExtractionPort attributeExtraction;
+    private ProfileAttributeEnrichmentService attributeEnrichmentService;
 
     @Test
     void createOrUpdateProfile_reusesExistingProfile_whenTelegramUserIdAlreadyRegistered_andNoProfileIdGiven() {
@@ -83,6 +82,23 @@ class ProfileManagementServiceTest {
 
         assertThat(result.telegramUserId()).isEqualTo("brand-new-telegram-id");
         assertThat(result.displayName()).isEqualTo("Fresh User");
+    }
+
+    @Test
+    void createOrUpdateProfile_savesNewProfileBeforeSchedulingAttributeEnrichment() {
+        ProfileManagementService service = service();
+        when(profileRepository.findByTelegramUserId("new-telegram-id")).thenReturn(Optional.empty());
+        when(profileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        CreateOrUpdateProfileCommand command = new CreateOrUpdateProfileCommand(
+                null, "new-telegram-id", "New User", 25, Gender.MALE, Orientation.STRAIGHT,
+                Set.of(Gender.FEMALE), "self description text", "preference description text", null,
+                "United States", "New York", null);
+
+        Profile result = service.createOrUpdateProfile(command);
+
+        assertThat(result.status()).isNull();
+        verify(attributeEnrichmentService).enrich(
+                result.id(), "self description text", "preference description text");
     }
 
     @Test
@@ -138,7 +154,7 @@ class ProfileManagementServiceTest {
     }
 
     private ProfileManagementService service() {
-        return new ProfileManagementService(profileRepository, likeRepository, attributeExtraction, photoStorage);
+        return new ProfileManagementService(profileRepository, likeRepository, photoStorage, attributeEnrichmentService);
     }
 
     private static CreateOrUpdateProfileCommand command(String id, String telegramId, String name, Gender gender) {

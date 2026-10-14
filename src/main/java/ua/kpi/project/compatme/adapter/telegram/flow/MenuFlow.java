@@ -15,6 +15,7 @@ import ua.kpi.project.compatme.adapter.telegram.ui.ReplyKeyboards;
 import ua.kpi.project.compatme.adapter.telegram.ui.TelegramSender;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +45,7 @@ public class MenuFlow {
 
             🔍 Browse — see people who match you and tap 👍 Like or 👎 Skip on their card.
             ❤️ Who Liked Me — people who already liked you.
-            👤 My Profile — view your profile, edit it (name, photos, search scope, age range, descriptions…), pause or delete your account.
+            👤 My Profile — view your profile, edit it (name, photos, search scope, age range, descriptions…), or delete your account.
             ❓ Help — this message.
 
             To refine who you see, just send me a message like "someone calmer". /menu shows the main menu again.""";
@@ -85,6 +86,30 @@ public class MenuFlow {
         return backendApiClient.getProfileByTelegramUserId(telegramUserId);
     }
 
+    /** Sends every uploaded photo before the newly created profile summary. */
+    public void showCreatedProfile(long chatId, Map<String, Object> profile) {
+        String profileId = String.valueOf(profile.get("id"));
+        if (profile.get("photoUrns") instanceof List<?> photoUrns) {
+            for (Object photoUrn : photoUrns) {
+                if (!(photoUrn instanceof String urn) || urn.isBlank()) {
+                    continue;
+                }
+                try {
+                    byte[] bytes = backendApiClient.downloadPhoto(profileId, urn);
+                    telegram.sendPhoto(SendPhoto.builder().chatId(chatId)
+                            .photo(new InputFile(new java.io.ByteArrayInputStream(bytes), "profile-photo"))
+                            .build());
+                } catch (RuntimeException e) {
+                    log.warn("Failed to send created-profile photo for chat {}: {}", chatId, e.getMessage());
+                }
+            }
+        }
+        telegram.sendMessage(SendMessage.builder().chatId(chatId)
+                .text(ProfileCardFormatter.formatProfileCard(profile, true))
+                .replyMarkup(ReplyKeyboards.profileMenu())
+                .build());
+    }
+
     /** The user pressed a bottom-menu button, so they evidently have the keyboard. */
     public void markMenuAttached(String telegramUserId) {
         menuAttached.add(telegramUserId);
@@ -116,7 +141,7 @@ public class MenuFlow {
     }
 
     /**
-     * Own profile with the profile view keyboard (edit / pause / delete / back to the main menu). The previous profile message is deleted first so repeated taps never stack.
+     * Own profile with the profile view keyboard (edit / delete / back to the main menu). The previous profile message is deleted first so repeated taps never stack.
      */
     public void showOwnProfile(long chatId, String telegramUserId) {
         try {
