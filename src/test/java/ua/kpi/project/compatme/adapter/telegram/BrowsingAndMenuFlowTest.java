@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -218,5 +219,39 @@ class BrowsingAndMenuFlowTest {
         assertThat(sentMessages()).extracting(SendMessage::getText)
                 .contains("Your preference adjustments were applied.")
                 .noneMatch(text -> text.contains("Anna"));
+    }
+
+    @Test
+    void freeTextInDoneState_acknowledgesBeforeTheRefinementWorkerRuns() {
+        List<Runnable> queued = new ArrayList<>();
+        Executor executor = queued::add;
+        handler = new ConversationFlowHandler(sender, backendApiClient, reverseGeocodingPort,
+                stateStore(), executor);
+        when(backendApiClient.refinePreference(anyString(), anyString(), anyInt())).thenReturn(Map.of());
+
+        handler.onTextMessage(CHAT_ID, USER, "I want someone calmer");
+
+        verify(backendApiClient, never()).refinePreference(anyString(), anyString(), anyInt());
+        assertThat(sentMessages()).extracting(SendMessage::getText)
+                .contains("Applying your preference adjustment. I'll let you know when it's ready.");
+        assertThat(queued).hasSize(1);
+
+        queued.getFirst().run();
+
+        verify(backendApiClient).refinePreference("me", "I want someone calmer", 5);
+        assertThat(sentMessages()).extracting(SendMessage::getText)
+                .contains("Your preference adjustments were applied.");
+    }
+
+    private ConversationStateStore stateStore() {
+        ConversationStateStore stateStore = mock(ConversationStateStore.class);
+        when(stateStore.loadOrCreate(anyString()))
+                .thenAnswer(inv -> states.computeIfAbsent(inv.getArgument(0), ConversationState::new));
+        org.mockito.Mockito.doAnswer(inv -> {
+            ConversationState state = inv.getArgument(0);
+            states.put(state.telegramUserId(), state);
+            return null;
+        }).when(stateStore).save(any());
+        return stateStore;
     }
 }

@@ -3,6 +3,8 @@ package ua.kpi.project.compatme.config;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
+import java.util.concurrent.Executor;
 import ua.kpi.project.compatme.adapter.telegram.BackendApiClient;
 import ua.kpi.project.compatme.adapter.telegram.CompatmeTelegramBot;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
@@ -33,11 +35,12 @@ public class TelegramBotConfig {
             TelegramBotProperties properties,
             BackendApiClient backendApiClient,
             ReverseGeocodingPort reverseGeocodingPort,
-            ConversationStateStore conversationStateStore)
+            ConversationStateStore conversationStateStore,
+            @Qualifier("preferenceRefinementExecutor") Executor preferenceRefinementExecutor)
             throws TelegramApiException {
         CompatmeTelegramBot bot = new CompatmeTelegramBot(
                 properties.getBotToken(), properties.getBotUsername(), backendApiClient,
-                reverseGeocodingPort, conversationStateStore);
+                reverseGeocodingPort, conversationStateStore, preferenceRefinementExecutor);
         TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
         botsApi.registerBot(bot);
         return bot;

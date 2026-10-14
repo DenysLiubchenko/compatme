@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * Thin Telegram bot client. Deliberately contains no domain/business logic — every user action is
@@ -53,10 +54,12 @@ public class CompatmeTelegramBot extends TelegramLongPollingBot {
             String botUsername,
             BackendApiClient backendApiClient,
             ReverseGeocodingPort reverseGeocodingPort,
-            ConversationStateStore stateStore) {
+            ConversationStateStore stateStore,
+            Executor preferenceRefinementExecutor) {
         super(botToken);
         this.botUsername = botUsername;
-        this.flowHandler = new ConversationFlowHandler(this, backendApiClient, reverseGeocodingPort, stateStore);
+        this.flowHandler = new ConversationFlowHandler(
+                this, backendApiClient, reverseGeocodingPort, stateStore, preferenceRefinementExecutor);
     }
 
     @Override

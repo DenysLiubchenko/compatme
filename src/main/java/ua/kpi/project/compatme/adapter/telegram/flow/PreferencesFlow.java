@@ -12,6 +12,7 @@ import ua.kpi.project.compatme.adapter.telegram.ui.TelegramSender;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 /** "⚙️ Preferences": natural-language preference refinement plus shortcuts to scope / age range. */
 public class PreferencesFlow {
@@ -24,16 +25,19 @@ public class PreferencesFlow {
     private final ConversationStateStore stateStore;
 
     private final MenuFlow menuFlow;
+    private final Executor preferenceRefinementExecutor;
 
     public PreferencesFlow(
             TelegramSender telegram,
             BackendApiClient backendApiClient,
             ConversationStateStore stateStore,
-            MenuFlow menuFlow) {
+            MenuFlow menuFlow,
+            Executor preferenceRefinementExecutor) {
         this.telegram = telegram;
         this.backendApiClient = backendApiClient;
         this.stateStore = stateStore;
         this.menuFlow = menuFlow;
+        this.preferenceRefinementExecutor = preferenceRefinementExecutor;
     }
 
     /** @return {@code true} if {@code data} belonged to this flow. */
@@ -70,14 +74,24 @@ public class PreferencesFlow {
 
     /** Free text from an onboarded, idle user: refine the preference description. */
     public void onFreeText(long chatId, String telegramUserId, String text) {
+        telegram.sendText(chatId, "Applying your preference adjustment. I'll let you know when it's ready.");
+        try {
+            preferenceRefinementExecutor.execute(() -> refinePreference(chatId, telegramUserId, text));
+        } catch (RuntimeException e) {
+            log.warn("Could not queue preference refinement for chat {}: {}", chatId, e.getMessage());
+            telegram.sendText(chatId, "Too many preference adjustments are in progress. Please try again shortly.");
+        }
+    }
+
+    private void refinePreference(long chatId, String telegramUserId, String text) {
         try {
             Map<String, Object> profile = backendApiClient.getProfileByTelegramUserId(telegramUserId);
             String profileId = String.valueOf(profile.get("id"));
-            Map<String, Object> result = backendApiClient.refinePreference(profileId, text, DEFAULT_TOP_N);
+            backendApiClient.refinePreference(profileId, text, DEFAULT_TOP_N);
             telegram.sendText(chatId, "Your preference adjustments were applied.");
         } catch (Exception e) {
             log.warn("Failed to handle free-text refinement for chat {}: {}", chatId, e.getMessage());
-            telegram.sendText(chatId, "Something went wrong. Please try again later.");
+            telegram.sendText(chatId, "Something went wrong while applying your preference adjustment. Please try again later.");
         }
     }
 }

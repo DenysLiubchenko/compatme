@@ -19,6 +19,7 @@ import ua.kpi.project.compatme.adapter.telegram.ui.TelegramSender;
 import ua.kpi.project.compatme.application.port.out.ReverseGeocodingPort;
 
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * Thin router of the Telegram conversation. Every incoming update (free text, persistent-menu
@@ -50,6 +51,15 @@ public class ConversationFlowHandler {
             BackendApiClient backendApiClient,
             ReverseGeocodingPort reverseGeocodingPort,
             ConversationStateStore stateStore) {
+        this(sender, backendApiClient, reverseGeocodingPort, stateStore, Runnable::run);
+    }
+
+    public ConversationFlowHandler(
+            AbsSender sender,
+            BackendApiClient backendApiClient,
+            ReverseGeocodingPort reverseGeocodingPort,
+            ConversationStateStore stateStore,
+            Executor preferenceRefinementExecutor) {
         this.telegram = new TelegramSender(sender);
         this.stateStore = stateStore;
         this.backendApiClient = backendApiClient;
@@ -60,7 +70,8 @@ public class ConversationFlowHandler {
         this.menuFlow = new MenuFlow(telegram, backendApiClient, browsingFlow, sessions);
         this.onboardingFlow = new OnboardingFlow(telegram, backendApiClient, reverseGeocodingPort, stateStore, menuFlow);
         this.settingsFlow = new SettingsFlow(telegram, backendApiClient, stateStore, sessions, onboardingFlow, menuFlow);
-        this.preferencesFlow = new PreferencesFlow(telegram, backendApiClient, stateStore, menuFlow);
+        this.preferencesFlow = new PreferencesFlow(
+                telegram, backendApiClient, stateStore, menuFlow, preferenceRefinementExecutor);
     }
 
     // ─────────────────────────────── entry points ───────────────────────────────
