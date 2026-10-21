@@ -1,0 +1,36 @@
+.env.example
+  h_9cec5b0d0295d7 22-32
+README.md
+  h_9cec5b0d0295d7 425-428,442,450-506,523-525
+atlas/profile-preference-embeddings-index.json
+  h_9cec5b0d0295d7 1-20
+atlas/profile-self-embeddings-index.json
+  h_9cec5b0d0295d7 1-20
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/AtlasVectorSearchProperties.java
+  h_9cec5b0d0295d7 1-22
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/MongoProfileRepositoryAdapter.java
+  h_9cec5b0d0295d7 4-5,13-14,28-29,31-35,38-39,62-63,70-112
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/SpringDataProfileRepository.java
+  h_9cec5b0d0295d7 4,18-19
+src/main/java/ua/kpi/project/compatme/application/port/out/ProfileRepositoryPort.java
+  h_9cec5b0d0295d7 30-36
+src/main/java/ua/kpi/project/compatme/application/service/RecommendationService.java
+  h_9cec5b0d0295d7 67,69
+src/main/java/ua/kpi/project/compatme/config/AtlasVectorSearchConfig.java
+  h_9cec5b0d0295d7 1-10
+src/main/resources/application.yml
+  h_9cec5b0d0295d7 106-112
+src/test/java/ua/kpi/project/compatme/application/service/RecommendationServiceTest.java
+  h_9cec5b0d0295d7 49,74,93,111,122,126,135,155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "509ff971dbb104b598549e0d4b0b7e260112c468",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
