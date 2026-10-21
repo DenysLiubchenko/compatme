@@ -1,0 +1,20 @@
+{
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "preferenceEmbedding": {
+        "type": "document",
+        "fields": {
+          "values": {
+            "type": "knnVector",
+            "dimensions": 768,
+            "similarity": "cosine"
+          }
+        }
+      },
+      "age": {
+        "type": "number"
+      }
+    }
+  }
+}

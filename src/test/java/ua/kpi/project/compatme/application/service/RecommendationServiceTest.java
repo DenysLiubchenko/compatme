@@ -46,7 +46,7 @@ class RecommendationServiceTest {
         Profile noEmbeddings = profileWithoutEmbeddings("no-embeddings", 27);
 
         when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
-        when(profileRepository.findCandidates(any(), any()))
+        when(profileRepository.findVectorCandidates(any(), any(), any(Integer.class)))
                 .thenReturn(List.of(weakMatch, strongMatch, noEmbeddings));
 
         // WHEN
@@ -71,7 +71,7 @@ class RecommendationServiceTest {
                 profileWith("c", 28, embedding(new float[]{0f, 1f}), embedding(new float[]{1f, 0f})));
 
         when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
-        when(profileRepository.findCandidates(any(), any())).thenReturn(manyCandidates);
+        when(profileRepository.findVectorCandidates(any(), any(), any(Integer.class))).thenReturn(manyCandidates);
 
         // WHEN
         List<RecommendationResult> results = service.recommend(
@@ -90,7 +90,7 @@ class RecommendationServiceTest {
         Profile sameCountry = located("same-country", "Lviv", "Ukraine");
         Profile abroad = located("abroad", "Berlin", "Germany");
         when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
-        when(profileRepository.findCandidates(any(), any())).thenReturn(List.of(sameCity, sameCountry, abroad));
+        when(profileRepository.findVectorCandidates(any(), any(), any(Integer.class))).thenReturn(List.of(sameCity, sameCountry, abroad));
 
         // WHEN / THEN
         assertThat(ids(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10, LocationScope.CITY))))
@@ -108,7 +108,7 @@ class RecommendationServiceTest {
         Profile sameCountry = located("same-country", "Lviv", "Ukraine");
         Profile abroad = located("abroad", "Berlin", "Germany");
         when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
-        when(profileRepository.findCandidates(any(), any())).thenReturn(List.of(sameCountry, abroad));
+        when(profileRepository.findVectorCandidates(any(), any(), any(Integer.class))).thenReturn(List.of(sameCountry, abroad));
 
         assertThat(ids(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10))))
                 .containsExactly(sameCountry.id());
@@ -119,11 +119,11 @@ class RecommendationServiceTest {
         RecommendationService service = new RecommendationService(profileRepository, scorer);
         Profile requester = located("requester", "Kyiv", "Ukraine", null, 25, 31);
         when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
-        when(profileRepository.findCandidates(any(), eq(new ProfileRepositoryPort.CandidateFilter(25, 31))))
+        when(profileRepository.findVectorCandidates(any(), eq(new ProfileRepositoryPort.CandidateFilter(25, 31)), eq(10)))
                 .thenReturn(List.of());
 
         assertThat(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10))).isEmpty();
-        verify(profileRepository).findCandidates(any(), eq(new ProfileRepositoryPort.CandidateFilter(25, 31)));
+        verify(profileRepository).findVectorCandidates(any(), eq(new ProfileRepositoryPort.CandidateFilter(25, 31)), eq(10));
     }
 
     @Test
@@ -132,7 +132,7 @@ class RecommendationServiceTest {
         Profile requester = located("requester", "Kyiv", "Ukraine", null, 25, 34);
         Profile candidate = located("candidate", "Kyiv", "Ukraine", null, 35, 45);
         when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
-        when(profileRepository.findCandidates(any(), any())).thenReturn(List.of(candidate));
+        when(profileRepository.findVectorCandidates(any(), any(), any(Integer.class))).thenReturn(List.of(candidate));
 
         assertThat(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10))).isEmpty();
     }
@@ -152,7 +152,7 @@ class RecommendationServiceTest {
                 .createdAt(smoker.createdAt()).updatedAt(smoker.updatedAt())
                 .smokes(ua.kpi.project.compatme.domain.model.SmokingStatus.YES).build();
         when(profileRepository.findById(requester.id())).thenReturn(Optional.of(requester));
-        when(profileRepository.findCandidates(any(), any())).thenReturn(List.of(smoker));
+        when(profileRepository.findVectorCandidates(any(), any(), any(Integer.class))).thenReturn(List.of(smoker));
 
         assertThat(service.recommend(new GetRecommendationsQuery(requester.id().value(), 10))).isEmpty();
     }
