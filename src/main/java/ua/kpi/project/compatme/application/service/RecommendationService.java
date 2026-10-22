@@ -64,8 +64,7 @@ public class RecommendationService implements RecommendationUseCase {
         }
 
         ProfileRepositoryPort.CandidateFilter filter = ageFilterCenteredOn(requester);
-        LocationScope scope = query.locationScope() != null ? query.locationScope() : requester.searchScope();
-        List<Profile> candidates = profileRepository.findVectorCandidates(requester, filter, scope, query.topN());
+        List<Profile> candidates = profileRepository.findVectorCandidates(requester, filter, query.topN());
         List<Profile> genderMatches = candidates.stream()
                 .filter(candidate -> !candidate.id().equals(requesterId))
                 .filter(candidate -> mutuallyMatchesGenderPreference(requester, candidate)).toList();
@@ -73,6 +72,7 @@ public class RecommendationService implements RecommendationUseCase {
                 .filter(candidate -> mutuallyMatchesAgePreference(requester, candidate)).toList();
         List<Profile> dealBreakerMatches = mutuallyAgeMatched.stream()
                 .filter(candidate -> mutuallyMatchesDealBreakers(requester, candidate)).toList();
+        LocationScope scope = query.locationScope() != null ? query.locationScope() : requester.searchScope();
         List<Profile> locationMatches = dealBreakerMatches.stream()
                 .filter(candidate -> LocationMatcher.matches(requester.location(), candidate.location(), scope)).toList();
         List<Profile> scorableCandidates = locationMatches.stream()

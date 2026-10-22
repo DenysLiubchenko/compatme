@@ -14,27 +14,6 @@
       },
       "age": {
         "type": "number"
-      },
-      "gender": {
-        "type": "string"
-      },
-      "seekingGenders": {
-        "type": "string"
-      },
-      "country": {
-        "type": "string"
-      },
-      "city": {
-        "type": "string"
-      },
-      "minPreferredAge": {
-        "type": "number"
-      },
-      "maxPreferredAge": {
-        "type": "number"
-      },
-      "searchScope": {
-        "type": "string"
       }
     }
   }
