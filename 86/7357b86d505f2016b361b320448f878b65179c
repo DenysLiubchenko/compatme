@@ -1,0 +1,20 @@
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/MongoProfileRepositoryAdapter.java
+  h_9cec5b0d0295d7 71,80,83,91,103-104
+src/main/java/ua/kpi/project/compatme/application/port/out/ProfileRepositoryPort.java
+  h_9cec5b0d0295d7 35
+src/main/java/ua/kpi/project/compatme/application/service/RecommendationService.java
+  h_9cec5b0d0295d7 67
+src/test/java/ua/kpi/project/compatme/application/service/RecommendationServiceTest.java
+  h_9cec5b0d0295d7 49,74,93,111,122,126,135,155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "867357b86d505f2016b361b320448f878b65179c",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
