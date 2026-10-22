@@ -47,7 +47,8 @@ public class MongoProfileRepositoryAdapter implements ProfileRepositoryPort {
     public List<Profile> findCandidates(ProfileId excludingId, CandidateFilter filter) {
         List<ProfileDocument> documents;
         if (filter.minAge() != null && filter.maxAge() != null) {
-            documents = springDataRepository.findByIdNotAndAgeBetween(excludingId.value(), filter.minAge(), filter.maxAge());
+            documents = springDataRepository.findByIdNotAndAgeBetweenInclusive(
+                    excludingId.value(), filter.minAge(), filter.maxAge());
         } else {
             documents = springDataRepository.findByIdNot(excludingId.value());
         }

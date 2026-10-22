@@ -1,6 +1,7 @@
 package ua.kpi.project.compatme.adapter.out.persistence;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import ua.kpi.project.compatme.adapter.out.persistence.document.ProfileDocument;
 
 import java.util.List;
@@ -14,7 +15,8 @@ public interface SpringDataProfileRepository extends MongoRepository<ProfileDocu
 
     Optional<ProfileDocument> findByTelegramUserId(String telegramUserId);
 
-    List<ProfileDocument> findByIdNotAndAgeBetween(String excludedId, int minAge, int maxAge);
+    @Query("{ '_id': { '$ne': ?0 }, 'age': { '$gte': ?1, '$lte': ?2 } }")
+    List<ProfileDocument> findByIdNotAndAgeBetweenInclusive(String excludedId, int minAge, int maxAge);
 
     List<ProfileDocument> findByIdNot(String excludedId);
 }
