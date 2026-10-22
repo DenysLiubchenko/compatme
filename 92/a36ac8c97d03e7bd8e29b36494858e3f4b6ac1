@@ -1,0 +1,16 @@
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/MongoProfileRepositoryAdapter.java
+  h_9cec5b0d0295d7 50-51
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/SpringDataProfileRepository.java
+  h_9cec5b0d0295d7 4,18-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "92a36ac8c97d03e7bd8e29b36494858e3f4b6ac1",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
