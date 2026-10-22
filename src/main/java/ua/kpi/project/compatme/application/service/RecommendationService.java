@@ -64,9 +64,8 @@ public class RecommendationService implements RecommendationUseCase {
         }
 
         ProfileRepositoryPort.CandidateFilter filter = ageFilterCenteredOn(requester);
-        List<Profile> candidates = profileRepository.findVectorCandidates(requester, filter, query.topN());
+        List<Profile> candidates = profileRepository.findCandidates(requesterId, filter);
         List<Profile> genderMatches = candidates.stream()
-                .filter(candidate -> !candidate.id().equals(requesterId))
                 .filter(candidate -> mutuallyMatchesGenderPreference(requester, candidate)).toList();
         List<Profile> mutuallyAgeMatched = genderMatches.stream()
                 .filter(candidate -> mutuallyMatchesAgePreference(requester, candidate)).toList();

@@ -103,13 +103,6 @@ nominatim:
   min-request-interval-millis: ${NOMINATIM_MIN_REQUEST_INTERVAL_MILLIS:1100}
 
 app:
-  vector-search:
-    # Set true only for MongoDB Atlas or Atlas Local with both indexes provisioned.
-    # false retains the exact full-pool algorithm for the ordinary local MongoDB container.
-    enabled: ${ATLAS_VECTOR_SEARCH_ENABLED:false}
-    self-index: ${ATLAS_VECTOR_SELF_INDEX:profile-self-embeddings}
-    preference-index: ${ATLAS_VECTOR_PREFERENCE_INDEX:profile-preference-embeddings}
-    candidates-per-result: ${ATLAS_VECTOR_CANDIDATES_PER_RESULT:20}
   okcupid:
     enabled: ${OKCUPID_IMPORT_ENABLED:false}
     csv-resource: ${OKCUPID_CSV_RESOURCE:classpath:okcupid_profiles.csv}

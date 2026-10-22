@@ -27,13 +27,6 @@ public interface ProfileRepositoryPort {
      */
     List<Profile> findCandidates(ProfileId excludingId, CandidateFilter filter);
 
-    /**
-     * Returns an ANN shortlist for reciprocal scoring when Atlas Vector Search is enabled. The
-     * shortlist contains neighbours from both semantic directions, rather than treating either
-     * one-way similarity as the final compatibility score.
-     */
-    List<Profile> findVectorCandidates(Profile requester, CandidateFilter filter, int topN);
-
     List<Profile> findAll();
 
     void deleteById(ProfileId id);

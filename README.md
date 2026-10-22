@@ -422,10 +422,6 @@ run the backend as a container too, if you'd rather): see **[STARTUP.md](STARTUP
 | `NOMINATIM_MIN_REQUEST_INTERVAL_MILLIS` | no | `1100` | Client-side guard for Nominatim's 1 req/sec limit |
 | `OKCUPID_IMPORT_ENABLED` | no | `false` | Set `true` to import CSV profiles and generate embeddings |
 | `OKCUPID_MAX_PROFILES` | no | `1000` | Number of valid CSV profiles to process per run (maximum 10000) |
-| `ATLAS_VECTOR_SEARCH_ENABLED` | no | `false` | Enables ANN candidate shortlisting through Atlas Vector Search or Atlas Local |
-| `ATLAS_VECTOR_SELF_INDEX` | no | `profile-self-embeddings` | Index for `selfEmbedding.values` |
-| `ATLAS_VECTOR_PREFERENCE_INDEX` | no | `profile-preference-embeddings` | Index for `preferenceEmbedding.values` |
-| `ATLAS_VECTOR_CANDIDATES_PER_RESULT` | no | `20` | ANN shortlist size per requested result and direction |
 
 ### Run
 
@@ -439,7 +435,7 @@ To import the first 1,000 bundled OkCupid profiles and generate embeddings, expo
 `OKCUPID_IMPORT_ENABLED=true`. Change `OKCUPID_MAX_PROFILES` to process a different batch size,
 up to 10,000.
 
-### Atlas Vector Search
+### Pointing at MongoDB Atlas
 
 Set `MONGODB_URI` to your Atlas SRV connection string, e.g.:
 
@@ -447,63 +443,8 @@ Set `MONGODB_URI` to your Atlas SRV connection string, e.g.:
 export MONGODB_URI="mongodb+srv://<user>:<password>@<cluster>.mongodb.net/compatme?retryWrites=true&w=majority"
 ```
 
-Create two Atlas Vector Search indexes on the `compatme.profiles` collection. Use the definitions
-in `atlas/profile-self-embeddings-index.json` and
-`atlas/profile-preference-embeddings-index.json`, naming them `profile-self-embeddings` and
-`profile-preference-embeddings` respectively. Both definitions assume the configured Gemini
-embedding dimensionality is `768`; update `numDimensions` if the model configuration changes.
-
-After both indexes report `READY`, enable the path:
-
-```bash
-export ATLAS_VECTOR_SEARCH_ENABLED=true
-./mvnw spring-boot:run
-```
-
-The application executes two approximate-nearest-neighbour searches: requester preference against
-candidate self-description, and requester self-description against candidate preference. It merges
-the bounded shortlists, then retains the existing exact reciprocal harmonic scoring and all mutual
-filters in Java. This avoids loading and scoring the full profile corpus, while preserving the
-meaning of the compatibility score. The `age` filter is performed by `$vectorSearch`; gender,
-location, reciprocal age bounds, and deal-breakers are evaluated on only the ANN shortlist.
-
-Keep `ATLAS_VECTOR_SEARCH_ENABLED=false` for the ordinary `mongo:7` Docker container. In that
-mode the application intentionally uses the exact, full-pool local fallback.
-
-### Lossless migration to Atlas or Atlas Local
-
-The profiles collection is BSON-dumped and restored unchanged, so it retains profile ids, both
-embedding arrays and metadata, all profile fields, and photo object keys. MinIO objects are not in
-MongoDB; keep the existing MinIO volume/bucket available because the restored `photoUrns` continue
-to reference those objects.
-
-```bash
-# Export from the current local MongoDB.
-mongodump --uri='mongodb://localhost:27017/compatme' --db=compatme --archive=compatme.archive
-
-# Restore into Atlas or Atlas Local. Replace the URI; do not commit it.
-mongorestore --uri="$MONGODB_URI" --nsInclude='compatme.*' --archive=compatme.archive
-```
-
-Alternatively, run the checked migration script. It verifies the `profiles` document count and
-never modifies the source database:
-
-```bash
-chmod +x scripts/migrate-mongodb-to-atlas-local.sh
-scripts/migrate-mongodb-to-atlas-local.sh
-```
-
-Override either URI without exposing credentials in source control:
-
-```bash
-SOURCE_MONGODB_URI='mongodb://localhost:27017/compatme?directConnection=true' \
-TARGET_MONGODB_URI="$MONGODB_URI" \
-scripts/migrate-mongodb-to-atlas-local.sh
-```
-
-Before switching the application URI, verify document counts and create the two Vector Search
-indexes above. The index is derived data and is deliberately rebuilt after restoring; it is not
-part of `mongodump`.
+No code changes are required — the connection string is the only thing that differs between
+local and Atlas.
 
 ### Tests
 
@@ -520,9 +461,10 @@ that this logic be testable in complete isolation.
 - Authentication/authorization is intentionally out of scope; endpoints take a profile id
   explicitly rather than deriving it from a session.
 - User account and dating-profile data are modeled as a single combined entity (`Profile`).
-- Local MongoDB uses the exact in-memory recommendation fallback. Atlas/Atlas Local optionally
-  uses a bounded ANN shortlist before exact reciprocal scoring, which scales candidate retrieval
-  without changing compatibility semantics.
+- Candidate scoring is done in-memory in Java rather than via MongoDB Atlas Vector Search, which
+  keeps the prototype runnable on a free-tier/local MongoDB instance; this is a deliberate,
+  documented tradeoff appropriate for a thesis prototype's expected data scale (hundreds to a few
+  thousand profiles).
 # Profile Photo Storage (MinIO)
 
 Profile photos are stored in MinIO rather than MongoDB. Start the local infrastructure with:
