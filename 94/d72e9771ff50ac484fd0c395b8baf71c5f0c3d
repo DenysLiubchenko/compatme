@@ -1,0 +1,24 @@
+atlas/profile-preference-embeddings-index.json
+  h_9cec5b0d0295d7 17-37
+atlas/profile-self-embeddings-index.json
+  h_9cec5b0d0295d7 17-37
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/MongoProfileRepositoryAdapter.java
+  h_9cec5b0d0295d7 10,72,81,84,92,103,105,107-120,128-137
+src/main/java/ua/kpi/project/compatme/application/port/out/ProfileRepositoryPort.java
+  h_9cec5b0d0295d7 5,36
+src/main/java/ua/kpi/project/compatme/application/service/RecommendationService.java
+  h_9cec5b0d0295d7 67-68
+src/test/java/ua/kpi/project/compatme/application/service/RecommendationServiceTest.java
+  h_9cec5b0d0295d7 49,74,93,111,122,126,135,155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "94d72e9771ff50ac484fd0c395b8baf71c5f0c3d",
+  "prompts": {},
+  "humans": {
+    "h_9cec5b0d0295d7": {
+      "author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
