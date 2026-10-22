@@ -2,6 +2,7 @@ package ua.kpi.project.compatme.application.port.out;
 
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileId;
+import ua.kpi.project.compatme.domain.model.LocationScope;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,7 +33,7 @@ public interface ProfileRepositoryPort {
      * shortlist contains neighbours from both semantic directions, rather than treating either
      * one-way similarity as the final compatibility score.
      */
-    List<Profile> findVectorCandidates(Profile requester, CandidateFilter filter, int topN);
+    List<Profile> findVectorCandidates(Profile requester, CandidateFilter filter, LocationScope scope, int topN);
 
     List<Profile> findAll();
 
