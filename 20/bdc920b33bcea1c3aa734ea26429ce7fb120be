@@ -1,0 +1,73 @@
+README.md
+  s_96dc373d9d7ed7::t_26bfd5dbe26372 338-350,429-433
+STARTUP.md
+  s_96dc373d9d7ed7::t_20602c8cf5fb6e 41-42
+pom.xml
+  s_96dc373d9d7ed7::t_0d0fd403ed8e05 45-54,128-132
+src/main/java/ua/kpi/project/compatme/adapter/in/web/EmbeddingController.java
+  s_96dc373d9d7ed7::t_6654c36379750c 4,28
+src/main/java/ua/kpi/project/compatme/adapter/in/web/GlobalExceptionHandler.java
+  s_96dc373d9d7ed7::t_862095a74871a5 9,17,42-54
+src/main/java/ua/kpi/project/compatme/adapter/in/web/LikeController.java
+  s_96dc373d9d7ed7::t_e2561bee52cc2a 4,45,53,56
+src/main/java/ua/kpi/project/compatme/adapter/in/web/PreferenceController.java
+  s_96dc373d9d7ed7::t_bbc744a505ec09 5,34
+src/main/java/ua/kpi/project/compatme/adapter/in/web/ProfileController.java
+  s_96dc373d9d7ed7::t_469c1218bad04e 6-7,18,35,37-38,41,44,46-50,55,57-60,65-66,68,72,78,80,87
+src/main/java/ua/kpi/project/compatme/adapter/in/web/ProfilePhotoController.java
+  s_96dc373d9d7ed7::t_415fc094e59128 7,40,66
+src/main/java/ua/kpi/project/compatme/adapter/in/web/ProfileWebMapper.java
+  s_96dc373d9d7ed7::t_eaa9de04be8d19 29-33,36,55-65,68
+src/main/java/ua/kpi/project/compatme/adapter/in/web/RecommendationController.java
+  s_96dc373d9d7ed7::t_a7e18c458caf67 4,35
+src/main/java/ua/kpi/project/compatme/adapter/in/web/dto/ProfileResponse.java
+  s_96dc373d9d7ed7::t_bc83eecec99b41 14-18
+src/main/java/ua/kpi/project/compatme/adapter/in/web/security/AuthController.java
+  s_96dc373d9d7ed7::t_e5d17d2a7cb936 1-48
+src/main/java/ua/kpi/project/compatme/adapter/in/web/security/InvalidTelegramInitDataException.java
+  s_96dc373d9d7ed7::t_ed0504ed72b5c4 1-9
+src/main/java/ua/kpi/project/compatme/adapter/in/web/security/JsonSecurityErrorHandlers.java
+  s_96dc373d9d7ed7::t_6b46bce330f2d4 1-41
+src/main/java/ua/kpi/project/compatme/adapter/in/web/security/JwtTokenService.java
+  s_96dc373d9d7ed7::t_8aa02c0b83b1d1 1-43
+src/main/java/ua/kpi/project/compatme/adapter/in/web/security/ProfileAccessPolicy.java
+  s_96dc373d9d7ed7::t_ada2d5a7d033d0 1-93
+src/main/java/ua/kpi/project/compatme/adapter/in/web/security/SecurityConfig.java
+  s_96dc373d9d7ed7::t_00ac6a2e271184 1-127
+src/main/java/ua/kpi/project/compatme/adapter/in/web/security/SecurityProperties.java
+  s_96dc373d9d7ed7::t_5b01e0744071b1 1-74
+src/main/java/ua/kpi/project/compatme/adapter/in/web/security/ServiceKeyAuthenticationFilter.java
+  s_96dc373d9d7ed7::t_9eb2a6a799f173 1-53
+src/main/java/ua/kpi/project/compatme/adapter/in/web/security/TelegramInitDataValidator.java
+  s_96dc373d9d7ed7::t_293eaf0db76785 1-133
+src/main/java/ua/kpi/project/compatme/adapter/telegram/BackendApiClient.java
+  s_96dc373d9d7ed7::t_f54b1a9d32647d 40,42-46,48-53,122,151,173,190,243,260,278,296
+src/main/java/ua/kpi/project/compatme/config/TelegramBotConfig.java
+  s_96dc373d9d7ed7::t_9f266af14e1898 8,29-30
+src/main/resources/application.yml
+  s_96dc373d9d7ed7::t_8088f4b0307d6e 89-100
+src/test/java/ua/kpi/project/compatme/CompatmeApplicationTests.java
+  s_96dc373d9d7ed7::t_82a10bf48199ee 8-10
+src/test/java/ua/kpi/project/compatme/adapter/in/web/security/ApiSecurityIntegrationTest.java
+  s_96dc373d9d7ed7::t_0efd81bf4553c3 1-273
+src/test/java/ua/kpi/project/compatme/adapter/in/web/security/ProfileAccessPolicyTest.java
+  s_96dc373d9d7ed7::t_da683d96ae69f2 1-126
+src/test/java/ua/kpi/project/compatme/adapter/in/web/security/TelegramInitDataValidatorTest.java
+  s_96dc373d9d7ed7::t_2b7f5e33a7d97f 1-112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "20bdc920b33bcea1c3aa734ea26429ce7fb120be",
+  "prompts": {},
+  "sessions": {
+    "s_96dc373d9d7ed7": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e92c1b43affeUMsEXCOhexHrlh",
+        "model": "claude-sonnet-5.5"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
