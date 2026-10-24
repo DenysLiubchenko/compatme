@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import ua.kpi.project.compatme.adapter.in.web.dto.ApiErrorResponse;
+import ua.kpi.project.compatme.adapter.in.web.security.InvalidTelegramInitDataException;
 import ua.kpi.project.compatme.application.exception.ChatCompletionException;
 import ua.kpi.project.compatme.application.exception.EmbeddingGenerationException;
 import ua.kpi.project.compatme.application.exception.PhotoNotFoundException;
@@ -36,6 +38,19 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /** Method-security denials (e.g. acting on someone else's profile). Deliberately generic. */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException e, WebRequest request) {
+        log.warn("Access denied: {}", e.getMessage());
+        return build(HttpStatus.FORBIDDEN, "Access denied.", request);
+    }
+
+    @ExceptionHandler(InvalidTelegramInitDataException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidInitData(InvalidTelegramInitDataException e, WebRequest request) {
+        log.warn("Rejected Telegram initData: {}", e.getMessage());
+        return build(HttpStatus.UNAUTHORIZED, "Invalid Telegram authentication data.", request);
+    }
 
     @ExceptionHandler(ProfileNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleProfileNotFound(ProfileNotFoundException e, WebRequest request) {

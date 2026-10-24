@@ -1,6 +1,7 @@
 package ua.kpi.project.compatme.adapter.in.web;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +25,7 @@ public class EmbeddingController {
     }
 
     @PostMapping("/{profileId}/embeddings")
+    @PreAuthorize("@profileAccess.isOwner(#profileId, authentication)")
     public ResponseEntity<EmbeddingGenerationResponse> generateEmbeddings(@PathVariable String profileId) {
         EmbeddingGenerationResult result = generateEmbeddingsUseCase.generateEmbeddings(ProfileId.of(profileId));
         return ResponseEntity.ok(new EmbeddingGenerationResponse(

@@ -335,6 +335,19 @@ Network errors or "no result found" responses throw `ReverseGeocodingException`,
 catches to fall back to manual location entry with an explanation — reverse geocoding failure
 never blocks onboarding.
 
+## REST API security
+
+Every `/api/**` call requires credentials (otherwise `401`); health, `/api/v1/auth/telegram` and Swagger UI are public.
+
+* **Users (Mini App/web):** `POST /api/v1/auth/telegram` with Telegram `initData` returns a short-lived JWT
+  (`Authorization: Bearer ...`). The signature and `auth_date` of `initData` are verified against the bot token.
+* **Telegram bot:** trusted service, sends `X-Service-Key: $SECURITY_SERVICE_KEY` on every call.
+* **Ownership:** a user may only modify/delete/like-as/upload-to/refine their *own* profile (`403` otherwise); the owner
+  is the profile whose `telegramUserId` equals the JWT subject. Other users' profiles omit `telegramUserId`.
+  Listing all profiles is service-only.
+
+Generate secrets with e.g. `openssl rand -base64 48`.
+
 ## REST API
 
 | Method | Path | Purpose |
@@ -413,6 +426,11 @@ run the backend as a container too, if you'd rather): see **[STARTUP.md](STARTUP
 | `GEMINI_MAX_RETRY_ATTEMPTS` | no | `4` | Max attempts (incl. first) for retried Gemini calls |
 | `GEMINI_RETRY_INITIAL_BACKOFF_MILLIS` | no | `1000` | Initial retry backoff delay |
 | `GEMINI_RETRY_BACKOFF_MULTIPLIER` | no | `2.0` | Exponential backoff multiplier |
+| `SECURITY_JWT_SECRET` | **yes** | — | HMAC key (>= 32 chars) signing user JWTs. The app refuses to start without it |
+| `SECURITY_SERVICE_KEY` | **yes** | — | Shared secret (>= 16 chars) the bot sends as `X-Service-Key` |
+| `SECURITY_JWT_TTL` | no | `30m` | Lifetime of issued user JWTs |
+| `SECURITY_INIT_DATA_MAX_AGE` | no | `1h` | Max age of Telegram Mini App `initData` accepted by `/api/v1/auth/telegram` |
+| `SECURITY_ALLOWED_ORIGINS` | no | — | Comma-separated CORS origins for the Mini App/web client |
 | `TELEGRAM_BOT_ENABLED` | no | `false` | Set `true` to start the Telegram bot client |
 | `TELEGRAM_BOT_TOKEN` | only if bot enabled | — | Token issued by @BotFather |
 | `TELEGRAM_BOT_USERNAME` | only if bot enabled | — | Bot username registered with @BotFather |

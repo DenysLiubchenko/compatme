@@ -37,9 +37,20 @@ public class BackendApiClient {
     private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String baseUrl;
+    private final String serviceKey;
 
-    public BackendApiClient(String baseUrl) {
+    /**
+     * @param serviceKey shared secret sent as {@code X-Service-Key} on every call; it identifies the
+     *                   bot to the backend as a trusted service (see the backend's security config)
+     */
+    public BackendApiClient(String baseUrl, String serviceKey) {
         this.baseUrl = baseUrl;
+        this.serviceKey = serviceKey;
+    }
+
+    /** Every outbound request goes through here so the service credential is never forgotten. */
+    private HttpRequest.Builder authorized(URI uri) {
+        return HttpRequest.newBuilder().uri(uri).header("X-Service-Key", serviceKey);
     }
 
     /**
@@ -108,8 +119,7 @@ public class BackendApiClient {
     /** Reuses the existing {@code DELETE /api/v1/profiles/{id}} endpoint — no new deletion logic here. */
     public void deleteProfile(String profileId) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/api/v1/profiles/" + profileId))
+            HttpRequest request = authorized(URI.create(baseUrl + "/api/v1/profiles/" + profileId))
                     .DELETE()
                     .timeout(Duration.ofSeconds(30))
                     .build();
@@ -138,8 +148,7 @@ public class BackendApiClient {
                 + "Content-Type: " + contentType + "\r\n\r\n").getBytes(StandardCharsets.UTF_8);
         byte[] suffix = ("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8);
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/api/v1/profiles/" + profileId + "/photos"))
+            HttpRequest request = authorized(URI.create(baseUrl + "/api/v1/profiles/" + profileId + "/photos"))
                     .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                     .POST(HttpRequest.BodyPublishers.concat(
                             HttpRequest.BodyPublishers.ofByteArray(prefix),
@@ -161,8 +170,7 @@ public class BackendApiClient {
     public byte[] downloadPhoto(String profileId, String urn) {
         try {
             String encodedUrn = java.net.URLEncoder.encode(urn, StandardCharsets.UTF_8).replace("%2F", "/");
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/api/v1/profiles/" + profileId + "/photos/" + encodedUrn))
+            HttpRequest request = authorized(URI.create(baseUrl + "/api/v1/profiles/" + profileId + "/photos/" + encodedUrn))
                     .GET().timeout(Duration.ofSeconds(30)).build();
             HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() >= 400) {
@@ -179,8 +187,7 @@ public class BackendApiClient {
     public void deletePhoto(String profileId, String urn) {
         try {
             String encodedUrn = java.net.URLEncoder.encode(urn, StandardCharsets.UTF_8).replace("%2F", "/");
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/api/v1/profiles/" + profileId + "/photos/" + encodedUrn))
+            HttpRequest request = authorized(URI.create(baseUrl + "/api/v1/profiles/" + profileId + "/photos/" + encodedUrn))
                     .DELETE().timeout(Duration.ofSeconds(30)).build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             ensureSuccess(response);
@@ -233,8 +240,7 @@ public class BackendApiClient {
         Map<String, Object> body = new HashMap<>(getProfile(profileId));
         body.putAll(overrides);
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/api/v1/profiles/" + profileId))
+            HttpRequest request = authorized(URI.create(baseUrl + "/api/v1/profiles/" + profileId))
                     .header("Content-Type", "application/json; charset=utf-8")
                     .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
                     .timeout(Duration.ofSeconds(30))
@@ -251,8 +257,7 @@ public class BackendApiClient {
     private Map<String, Object> postJson(String path, Map<String, Object> body) {
         try {
             String json = objectMapper.writeValueAsString(body);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + path))
+            HttpRequest request = authorized(URI.create(baseUrl + path))
                     .header("Content-Type", "application/json; charset=utf-8")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .timeout(Duration.ofSeconds(30))
@@ -270,8 +275,7 @@ public class BackendApiClient {
     @SuppressWarnings("unchecked")
     private Map<String, Object> getJson(String path) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + path))
+            HttpRequest request = authorized(URI.create(baseUrl + path))
                     .header("Accept", "application/json")
                     .GET()
                     .timeout(Duration.ofSeconds(30))
@@ -289,8 +293,7 @@ public class BackendApiClient {
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> getJsonList(String path) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + path))
+            HttpRequest request = authorized(URI.create(baseUrl + path))
                     .header("Accept", "application/json")
                     .GET()
                     .timeout(Duration.ofSeconds(30))

@@ -2,6 +2,7 @@ package ua.kpi.project.compatme.adapter.in.web;
 
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +31,7 @@ public class PreferenceController {
     }
 
     @PostMapping("/{profileId}/preference-refinements")
+    @PreAuthorize("@profileAccess.isOwner(#profileId, authentication)")
     public ResponseEntity<RefinePreferenceResponse> refinePreference(
             @PathVariable String profileId, @Valid @RequestBody RefinePreferenceRequest request) {
         RefinePreferenceResult result = preferenceRefinementUseCase.refine(new RefinePreferenceCommand(

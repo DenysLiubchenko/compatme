@@ -1,6 +1,7 @@
 package ua.kpi.project.compatme.adapter.in.web;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +32,7 @@ public class RecommendationController {
     }
 
     @GetMapping("/{profileId}/recommendations")
+    @PreAuthorize("@profileAccess.isOwner(#profileId, authentication)")
     public ResponseEntity<RecommendationsResponse> getRecommendations(
             @PathVariable String profileId,
             @RequestParam(defaultValue = "10") int topN,

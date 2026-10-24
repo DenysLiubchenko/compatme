@@ -11,10 +11,11 @@ import java.util.Set;
  * Outbound response DTO for a profile. Deliberately omits embedding vectors (large, internal
  * implementation detail) and only reports whether each embedding has been computed.
  *
- * <p>{@code telegramUserId} is never {@code null} in this response: profiles created without a
- * real Telegram account (e.g. from sample/evaluation datasets) have it mapped to a readable
- * placeholder string by {@link ua.kpi.project.compatme.adapter.in.web.ProfileWebMapper} instead
- * of being omitted, so API/Swagger consumers always see an explicit value.
+ * <p>{@code telegramUserId} is private: it is only included when the caller is the profile owner
+ * or the trusted service, and omitted when the profile is shown to other users. For owner/service
+ * responses it is never {@code null}: profiles created without a real Telegram account (e.g. from
+ * sample/evaluation datasets) have it mapped to a readable placeholder string by
+ * {@link ua.kpi.project.compatme.adapter.in.web.ProfileWebMapper}.
  */
 public record ProfileResponse(
         String id,

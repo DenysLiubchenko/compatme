@@ -1,6 +1,7 @@
 package ua.kpi.project.compatme.adapter.in.web;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,6 +42,7 @@ public class LikeController {
     }
 
     @PostMapping("/{likerId}/likes")
+    @PreAuthorize("@profileAccess.isOwner(#likerId, authentication)")
     public ResponseEntity<RecordLikeResponse> recordLike(
             @PathVariable String likerId, @RequestBody RecordLikeRequest request) {
         RecordLikeResult result = recordLikeUseCase.recordLike(ProfileId.of(likerId), ProfileId.of(request.likedProfileId()));
@@ -48,9 +50,10 @@ public class LikeController {
     }
 
     @GetMapping("/{profileId}/liked-by")
+    @PreAuthorize("@profileAccess.isOwner(#profileId, authentication)")
     public ResponseEntity<List<ProfileResponse>> getProfilesWhoLikedMe(@PathVariable String profileId) {
         List<ProfileResponse> profiles = getProfilesWhoLikedMeUseCase.getProfilesWhoLikedMe(ProfileId.of(profileId))
-                .stream().map(mapper::toResponse).toList();
+                .stream().map(mapper::toPublicResponse).toList();
         return ResponseEntity.ok(profiles);
     }
 }

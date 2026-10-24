@@ -26,9 +26,14 @@ public class ProfileWebMapper {
     static final String NO_TELEGRAM_ID_PLACEHOLDER = "N/A (no Telegram account, sample/evaluation profile)";
 
     public CreateOrUpdateProfileCommand toCommand(String profileId, ProfileRequest request) {
+        return toCommand(profileId, request.telegramUserId(), request);
+    }
+
+    /** Same as above, but with an explicit (already authorized) owner id instead of the request body's. */
+    public CreateOrUpdateProfileCommand toCommand(String profileId, String telegramUserId, ProfileRequest request) {
         return new CreateOrUpdateProfileCommand(
                 profileId,
-                request.telegramUserId(),
+                telegramUserId,
                 request.displayName(),
                 request.age(),
                 request.gender(),
@@ -47,9 +52,20 @@ public class ProfileWebMapper {
     }
 
     public ProfileResponse toResponse(Profile profile) {
+        return toResponse(profile, true);
+    }
+
+    /** Response safe to show to other users: the private {@code telegramUserId} is omitted. */
+    public ProfileResponse toPublicResponse(Profile profile) {
+        return toResponse(profile, false);
+    }
+
+    public ProfileResponse toResponse(Profile profile, boolean includeTelegramUserId) {
+        String telegramUserId = !includeTelegramUserId ? null
+                : profile.telegramUserId() == null ? NO_TELEGRAM_ID_PLACEHOLDER : profile.telegramUserId();
         return new ProfileResponse(
                 profile.id().value(),
-                profile.telegramUserId() == null ? NO_TELEGRAM_ID_PLACEHOLDER : profile.telegramUserId(),
+                telegramUserId,
                 profile.displayName(),
                 profile.age(),
                 profile.gender(),

@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import java.util.concurrent.Executor;
+import ua.kpi.project.compatme.adapter.in.web.security.SecurityProperties;
 import ua.kpi.project.compatme.adapter.telegram.BackendApiClient;
 import ua.kpi.project.compatme.adapter.telegram.CompatmeTelegramBot;
 import ua.kpi.project.compatme.adapter.telegram.state.ConversationStateStore;
@@ -25,8 +26,8 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 public class TelegramBotConfig {
 
     @Bean
-    public BackendApiClient backendApiClient(TelegramBotProperties properties) {
-        return new BackendApiClient(properties.getBackendBaseUrl());
+    public BackendApiClient backendApiClient(TelegramBotProperties properties, SecurityProperties security) {
+        return new BackendApiClient(properties.getBackendBaseUrl(), security.getServiceKey());
     }
 
     @Bean

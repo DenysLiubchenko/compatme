@@ -38,6 +38,8 @@ launch the IDE from):
 | `GEMINI_MAX_RETRY_ATTEMPTS` | No | `4` (default) | Retry attempts on Gemini 429/5xx errors. |
 | `GEMINI_RETRY_INITIAL_BACKOFF_MILLIS` | No | `1000` (default) | Initial backoff delay. |
 | `GEMINI_RETRY_BACKOFF_MULTIPLIER` | No | `2.0` (default) | Exponential backoff multiplier. |
+| `SECURITY_JWT_SECRET` | **Yes** | `openssl rand -base64 48` | HMAC key (>= 32 chars) for user JWTs. Startup fails without it. |
+| `SECURITY_SERVICE_KEY` | **Yes** | `openssl rand -base64 24` | Shared secret the bot sends as `X-Service-Key`. Startup fails without it. |
 | `TELEGRAM_BOT_ENABLED` | No | `false` (default) | Set `true` to run the Telegram bot in-process alongside the backend. |
 | `TELEGRAM_BOT_TOKEN` | Only if bot enabled | — | Must set if `TELEGRAM_BOT_ENABLED=true`. |
 | `TELEGRAM_BOT_USERNAME` | Only if bot enabled | — | Must set if `TELEGRAM_BOT_ENABLED=true`. |

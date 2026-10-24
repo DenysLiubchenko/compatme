@@ -4,6 +4,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +37,7 @@ public class ProfilePhotoController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@profileAccess.isOwner(#profileId, authentication)")
     public ResponseEntity<PhotoUploadResponse> upload(
             @PathVariable String profileId, @RequestParam("file") MultipartFile file) {
         byte[] bytes;
@@ -61,6 +63,7 @@ public class ProfilePhotoController {
     }
 
     @DeleteMapping("/{*urn}")
+    @PreAuthorize("@profileAccess.isOwner(#profileId, authentication)")
     public ResponseEntity<Void> delete(@PathVariable String profileId, @PathVariable String urn) {
         photoUseCase.removePhoto(ProfileId.of(profileId), stripLeadingSlash(urn));
         return ResponseEntity.noContent().build();

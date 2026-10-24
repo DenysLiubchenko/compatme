@@ -86,6 +86,18 @@ telegram:
   bot-username: ${TELEGRAM_BOT_USERNAME:}
   backend-base-url: ${TELEGRAM_BACKEND_BASE_URL:http://localhost:8082}
 
+# Authentication. No insecure defaults: the application refuses to start without these secrets.
+security:
+  # HMAC key (>= 32 chars) used to sign/verify the short-lived user JWTs issued by /api/v1/auth/telegram.
+  jwt-secret: ${SECURITY_JWT_SECRET:}
+  jwt-ttl: ${SECURITY_JWT_TTL:30m}
+  # Shared secret the Telegram bot sends in the X-Service-Key header (trusted service-to-service calls).
+  service-key: ${SECURITY_SERVICE_KEY:}
+  # Maximum age of Telegram Mini App initData (replay protection).
+  init-data-max-age: ${SECURITY_INIT_DATA_MAX_AGE:1h}
+  # Comma-separated browser origins allowed by CORS (the Mini App/web client). Empty = no CORS.
+  allowed-origins: ${SECURITY_ALLOWED_ORIGINS:}
+
 photo-storage:
   max-size-bytes: ${PHOTO_MAX_SIZE_BYTES:5242880}
   allowed-content-types: ${PHOTO_ALLOWED_CONTENT_TYPES:image/jpeg,image/png,image/webp}
