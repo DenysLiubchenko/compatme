@@ -1,0 +1,71 @@
+README.md
+  s_96dc373d9d7ed7::t_5e0f28153ff713 56-61
+src/main/java/ua/kpi/project/compatme/CompatmeApplication.java
+  s_96dc373d9d7ed7::t_33906a302c5954 6,10
+src/main/java/ua/kpi/project/compatme/adapter/in/web/EmbeddingController.java
+  s_96dc373d9d7ed7::t_cc848b70cdba9a 32
+src/main/java/ua/kpi/project/compatme/adapter/in/web/LikeController.java
+  s_96dc373d9d7ed7::t_50db2ff675b3c0 5,18,35,41,45,64-71
+src/main/java/ua/kpi/project/compatme/adapter/in/web/dto/EmbeddingGenerationResponse.java
+  s_96dc373d9d7ed7::t_3906801901b3a9 3-4
+src/main/java/ua/kpi/project/compatme/adapter/out/gemini/GeminiChatCompletionAdapter.java
+  s_96dc373d9d7ed7::t_30ec971c7be10a 72
+src/main/java/ua/kpi/project/compatme/adapter/out/gemini/GeminiProperties.java
+  s_96dc373d9d7ed7::t_4606ddbdeab9f6 26-40,48-61
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/MongoLikeRepositoryAdapter.java
+  s_96dc373d9d7ed7::t_aae965cb8c50dd 26-28,32,37-47,69-70
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/SpringDataLikeRepository.java
+  s_96dc373d9d7ed7::t_2648793fcb049e 14-17
+src/main/java/ua/kpi/project/compatme/adapter/out/persistence/document/LikeDocument.java
+  s_96dc373d9d7ed7::t_7a5e5ba25a319f 30-32,60-67
+src/main/java/ua/kpi/project/compatme/adapter/telegram/BackendApiClient.java
+  s_96dc373d9d7ed7::t_177ab2dfe04846 37-42,226-239,283
+src/main/java/ua/kpi/project/compatme/adapter/telegram/TelegramLikeNotificationAdapter.java
+  s_96dc373d9d7ed7::t_f8cad6ace5430a 41-44,55,69-72,75
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/BrowsingFlow.java
+  s_96dc373d9d7ed7::t_583029f2804dba 49,122-140
+src/main/java/ua/kpi/project/compatme/adapter/telegram/flow/OnboardingFlow.java
+  s_96dc373d9d7ed7::t_3a59b118484c5a 737-742
+src/main/java/ua/kpi/project/compatme/adapter/telegram/ui/Keyboards.java
+  s_96dc373d9d7ed7::t_f4e4aa7c671695 29-32
+src/main/java/ua/kpi/project/compatme/application/dto/EmbeddingGenerationResult.java
+  s_96dc373d9d7ed7::t_3973b5ce3f660f 6-8,10-11
+src/main/java/ua/kpi/project/compatme/application/port/out/LikeRepositoryPort.java
+  s_96dc373d9d7ed7::t_bf959a3b02a154 15,18-21
+src/main/java/ua/kpi/project/compatme/application/service/EmbeddingGenerationService.java
+  s_96dc373d9d7ed7::t_ef338ba343a5da 25-28,51-52,58-65,75-82,93
+src/main/java/ua/kpi/project/compatme/application/service/LikeService.java
+  s_96dc373d9d7ed7::t_67fe6a2a4230a4 3-4,10,29-31,44-49,56-66,68-79,84-91,95
+src/main/java/ua/kpi/project/compatme/application/service/PreferenceRefinementService.java
+  s_96dc373d9d7ed7::t_98941cafd41a61 71-81,86-96,98,118-127
+src/main/java/ua/kpi/project/compatme/application/service/RecommendationService.java
+  s_96dc373d9d7ed7::t_ef30e864c8f243 13,61-64,78-80,100-112
+src/main/java/ua/kpi/project/compatme/config/GeminiClientConfig.java
+  s_96dc373d9d7ed7::t_aeed06c398a3d9 4-5,36-44
+src/main/java/ua/kpi/project/compatme/domain/model/Like.java
+  s_96dc373d9d7ed7::t_e71b7f4df080eb 9-10,13-27
+src/main/resources/application.yml
+  s_96dc373d9d7ed7::t_b786012bfe30df 79-80
+src/test/java/ua/kpi/project/compatme/adapter/in/web/security/ApiSecurityIntegrationTest.java
+  s_96dc373d9d7ed7::t_f52449a2b0ca7e 74,232-244
+src/test/java/ua/kpi/project/compatme/adapter/telegram/BrowsingAndMenuFlowTest.java
+  s_96dc373d9d7ed7::t_493915b8be50e9 145-166
+src/test/java/ua/kpi/project/compatme/application/service/LikeServiceTest.java
+  s_96dc373d9d7ed7::t_510fc3ac2edf8a 3,11,14,20-21,27,29,34-36,47-57,59-61,65-74,78-79,81,85-86,90-132,136-153,156-157,159,161,166-169,176-214
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "3a71e1ddd3fcaf03ee8f86139949777aeaffe5d8",
+  "prompts": {},
+  "sessions": {
+    "s_96dc373d9d7ed7": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e92c1b43affeUMsEXCOhexHrlh",
+        "model": "claude-sonnet-5.5"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
