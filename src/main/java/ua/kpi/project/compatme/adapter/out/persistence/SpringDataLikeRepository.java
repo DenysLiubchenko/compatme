@@ -11,6 +11,10 @@ import java.util.List;
  */
 public interface SpringDataLikeRepository extends MongoRepository<LikeDocument, String> {
 
+    java.util.Optional<LikeDocument> findByLikerProfileIdAndLikedProfileId(String likerProfileId, String likedProfileId);
+
+    void deleteByLikerProfileIdAndLikedProfileId(String likerProfileId, String likedProfileId);
+
     boolean existsByLikerProfileIdAndLikedProfileId(String likerProfileId, String likedProfileId);
 
     List<LikeDocument> findByLikedProfileIdOrderByLikedAtDesc(String likedProfileId);

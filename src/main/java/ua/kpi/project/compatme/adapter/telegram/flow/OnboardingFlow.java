@@ -734,7 +734,12 @@ public class OnboardingFlow {
                 state.minPreferredAge(),
                 state.maxPreferredAge());
         String profileId = String.valueOf(saved.get("id"));
-        backendApiClient.generateEmbeddings(profileId);
+        try {
+            backendApiClient.generateEmbeddings(profileId);
+        } catch (RuntimeException e) {
+            // The profile is already saved; embeddings are completed in the background once Gemini is reachable.
+            log.warn("Embedding generation deferred for profile {}: {}", profileId, e.getMessage());
+        }
 
         // Replace the collected draft with an idle DONE state: no leftover personal data is kept,
         // and free text from now on is routed to preference refinement.

@@ -68,15 +68,34 @@ public class PreferenceRefinementService implements PreferenceRefinementUseCase 
 
         String previousPreferenceDescription = profile.preferenceDescription();
 
-        PreferenceRefinementResult interpretation = chatCompletionPort.interpretPreferenceRefinement(
-                previousPreferenceDescription, command.message());
+        PreferenceRefinementResult interpretation;
+        boolean providerUnavailable = false;
+        try {
+            interpretation = chatCompletionPort.interpretPreferenceRefinement(
+                    previousPreferenceDescription, command.message());
+        } catch (RuntimeException e) {
+            log.warn("Chat model unavailable, saving preference refinement for profile {} as-is: {}",
+                    requesterId, e.getMessage());
+            providerUnavailable = true;
+            interpretation = fallbackInterpretation(previousPreferenceDescription, command.message());
+        }
 
         Instant now = Instant.now();
         Profile withUpdatedText = profile.withPreferenceDescription(interpretation.updatedPreferenceDescription(), now);
 
-        EmbeddingVector newPreferenceEmbedding = embeddingProvider.embed(interpretation.updatedPreferenceDescription());
+        // If embedding is unavailable too, keep the previous (now stale) preference vector so
+        // recommendations keep working; the backfill scheduler refreshes it once the provider is back.
+        EmbeddingVector preferenceEmbedding = profile.embeddings().preferenceEmbedding();
+        try {
+            if (!providerUnavailable) { // the chat call just failed: don't make the user wait on a second doomed call
+                preferenceEmbedding = embeddingProvider.embed(interpretation.updatedPreferenceDescription());
+            }
+        } catch (RuntimeException e) {
+            log.warn("Embedding provider unavailable, keeping previous preference embedding for profile {}: {}",
+                    requesterId, e.getMessage());
+        }
         Profile withUpdatedEmbedding = withUpdatedText.withEmbeddings(
-                new ProfileEmbeddings(withUpdatedText.embeddings().selfEmbedding(), newPreferenceEmbedding), now);
+                new ProfileEmbeddings(profile.embeddings().selfEmbedding(), preferenceEmbedding), now);
 
         profileRepository.save(withUpdatedEmbedding);
 
@@ -95,5 +114,15 @@ public class PreferenceRefinementService implements PreferenceRefinementUseCase 
 
         return new RefinePreferenceResult(
                 interpretation.updatedPreferenceDescription(), interpretation.changeSummary(), recommendations);
+    }
+
+    /** Without the chat model the user's own words are appended to the description, so nothing is lost. */
+    private static PreferenceRefinementResult fallbackInterpretation(String current, String message) {
+        String base = current == null ? "" : current.strip();
+        String separator = base.isEmpty() ? "" : (base.endsWith(".") ? " " : ". ");
+        return new PreferenceRefinementResult(
+                base + separator + "Additionally: " + message.strip(),
+                "The AI assistant is unavailable right now, so I saved your request as written. "
+                        + "Your matches will be fully updated automatically once it is back.");
     }
 }

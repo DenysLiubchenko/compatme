@@ -69,7 +69,7 @@ public class GeminiChatCompletionAdapter implements ChatCompletionPort {
     @CircuitBreaker(name = "gemini")
     @Retryable(
             retryFor = RuntimeException.class,
-            maxAttemptsExpression = "#{@geminiProperties.maxRetryAttempts}",
+            maxAttemptsExpression = "#{@geminiProperties.chatMaxRetryAttempts}",
             backoff = @Backoff(
                     delayExpression = "#{@geminiProperties.retryInitialBackoffMillis}",
                     multiplierExpression = "#{@geminiProperties.retryBackoffMultiplier}"))

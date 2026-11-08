@@ -23,12 +23,26 @@ public class MongoLikeRepositoryAdapter implements LikeRepositoryPort {
 
     @Override
     public Like save(Like like) {
-        LikeDocument document = new LikeDocument();
+        LikeDocument document = springDataRepository
+                .findByLikerProfileIdAndLikedProfileId(like.likerProfileId().value(), like.likedProfileId().value())
+                .orElseGet(LikeDocument::new);
         document.setLikerProfileId(like.likerProfileId().value());
         document.setLikedProfileId(like.likedProfileId().value());
         document.setLikedAt(like.likedAt());
+        document.setAnswered(like.answered());
         springDataRepository.save(document);
         return like;
+    }
+
+    @Override
+    public void deleteByLikerAndLiked(ProfileId liker, ProfileId liked) {
+        springDataRepository.deleteByLikerProfileIdAndLikedProfileId(liker.value(), liked.value());
+    }
+
+    @Override
+    public java.util.Optional<Like> findByLikerAndLiked(ProfileId liker, ProfileId liked) {
+        return springDataRepository.findByLikerProfileIdAndLikedProfileId(liker.value(), liked.value())
+                .map(this::toDomain);
     }
 
     @Override
@@ -52,6 +66,7 @@ public class MongoLikeRepositoryAdapter implements LikeRepositoryPort {
         return new Like(
                 ProfileId.of(document.getLikerProfileId()),
                 ProfileId.of(document.getLikedProfileId()),
-                document.getLikedAt());
+                document.getLikedAt(),
+                Boolean.TRUE.equals(document.getAnswered()));
     }
 }

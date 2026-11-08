@@ -143,6 +143,28 @@ class BrowsingAndMenuFlowTest {
     }
 
     @Test
+    void dislikeInWhoLikedMe_rejectsLikeAndShowsNextLiker() {
+        when(backendApiClient.getProfilesWhoLikedMe("me")).thenReturn(new ArrayList<>(List.of(
+                new HashMap<>(Map.of("id", "l1", "displayName", "Zoe", "age", 25)),
+                new HashMap<>(Map.of("id", "l2", "displayName", "Mia", "age", 26)))));
+        handler.onCallbackQuery(CHAT_ID, USER, 100, "cb0", "menu:liked");
+
+        handler.onCallbackQuery(CHAT_ID, USER, 100, "cb1", "browse:dislike");
+
+        verify(backendApiClient).rejectLike("me", "l1");
+        assertThat(edits()).extracting(EditMessageText::getText).anyMatch(t -> t.contains("Mia"));
+    }
+
+    @Test
+    void dislikeWhileBrowsingMatches_doesNothingOnBackend() {
+        handler.onMenuAction(CHAT_ID, USER, MenuAction.BROWSE);
+
+        handler.onCallbackQuery(CHAT_ID, USER, 100, "cb1", "browse:dislike");
+
+        verify(backendApiClient, never()).rejectLike(anyString(), anyString());
+    }
+
+    @Test
     void browseAgain_resumesByEditingTrackedCardInsteadOfSendingAnother() {
         handler.onMenuAction(CHAT_ID, USER, MenuAction.BROWSE);
         handler.onCallbackQuery(CHAT_ID, USER, 100, "cb1", "browse:skip"); // now showing Olga

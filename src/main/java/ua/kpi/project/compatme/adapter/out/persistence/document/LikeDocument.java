@@ -27,6 +27,9 @@ public class LikeDocument {
 
     private Instant likedAt;
 
+    /** {@code null} on documents written before this field existed; treated as not answered. */
+    private Boolean answered;
+
     public LikeDocument() {
     }
 
@@ -52,6 +55,14 @@ public class LikeDocument {
 
     public void setLikedProfileId(String likedProfileId) {
         this.likedProfileId = likedProfileId;
+    }
+
+    public Boolean getAnswered() {
+        return answered;
+    }
+
+    public void setAnswered(Boolean answered) {
+        this.answered = answered;
     }
 
     public Instant getLikedAt() {

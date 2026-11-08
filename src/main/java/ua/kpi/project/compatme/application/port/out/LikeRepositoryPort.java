@@ -12,7 +12,12 @@ import java.util.List;
  */
 public interface LikeRepositoryPort {
 
+    /** Inserts the like, or overwrites the existing like for the same (liker, liked) pair. */
     Like save(Like like);
+
+    void deleteByLikerAndLiked(ProfileId liker, ProfileId liked);
+
+    java.util.Optional<Like> findByLikerAndLiked(ProfileId liker, ProfileId liked);
 
     /** Used both for idempotency (has {@code liker} already liked {@code liked}?) and reverse-like/mutual-match checks. */
     boolean existsByLikerAndLiked(ProfileId liker, ProfileId liked);

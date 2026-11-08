@@ -2,6 +2,7 @@ package ua.kpi.project.compatme.adapter.in.web;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import ua.kpi.project.compatme.adapter.in.web.dto.RecordLikeResponse;
 import ua.kpi.project.compatme.application.dto.RecordLikeResult;
 import ua.kpi.project.compatme.application.port.in.GetProfilesWhoLikedMeUseCase;
 import ua.kpi.project.compatme.application.port.in.RecordLikeUseCase;
+import ua.kpi.project.compatme.application.port.in.RejectLikeUseCase;
 import ua.kpi.project.compatme.domain.model.ProfileId;
 
 import java.util.List;
@@ -30,14 +32,17 @@ public class LikeController {
 
     private final RecordLikeUseCase recordLikeUseCase;
     private final GetProfilesWhoLikedMeUseCase getProfilesWhoLikedMeUseCase;
+    private final RejectLikeUseCase rejectLikeUseCase;
     private final ProfileWebMapper mapper;
 
     public LikeController(
             RecordLikeUseCase recordLikeUseCase,
             GetProfilesWhoLikedMeUseCase getProfilesWhoLikedMeUseCase,
+            RejectLikeUseCase rejectLikeUseCase,
             ProfileWebMapper mapper) {
         this.recordLikeUseCase = recordLikeUseCase;
         this.getProfilesWhoLikedMeUseCase = getProfilesWhoLikedMeUseCase;
+        this.rejectLikeUseCase = rejectLikeUseCase;
         this.mapper = mapper;
     }
 
@@ -55,5 +60,13 @@ public class LikeController {
         List<ProfileResponse> profiles = getProfilesWhoLikedMeUseCase.getProfilesWhoLikedMe(ProfileId.of(profileId))
                 .stream().map(mapper::toPublicResponse).toList();
         return ResponseEntity.ok(profiles);
+    }
+
+    /** Declines a received like: removes {@code likerId} from this profile's "Who Liked Me" list. */
+    @DeleteMapping("/{profileId}/liked-by/{likerId}")
+    @PreAuthorize("@profileAccess.isOwner(#profileId, authentication)")
+    public ResponseEntity<Void> rejectLike(@PathVariable String profileId, @PathVariable String likerId) {
+        rejectLikeUseCase.rejectLike(ProfileId.of(profileId), ProfileId.of(likerId));
+        return ResponseEntity.noContent().build();
     }
 }

@@ -26,7 +26,10 @@ public final class Keyboards {
 
     public static InlineKeyboardMarkup browseLikedMe() {
         return InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(button("👍 Like Back", "browse:likeback"), button("➡️ Next", "browse:next")))
+                .keyboardRow(List.of(
+                        button("👍 Like Back", "browse:likeback"),
+                        button("👎 Dislike", "browse:dislike"),
+                        button("➡️ Next", "browse:next")))
                 .build();
     }
 }

@@ -23,13 +23,41 @@ public class GeminiProperties {
     private String chatModel = "gemini-2.5-flash";
 
     /** Maximum number of attempts (including the first) for retryable Gemini API calls. */
-    private int maxRetryAttempts = 4;
+    private int maxRetryAttempts = 3;
+
+    /**
+     * Attempts for the interactive chat call. Kept at 1 by default: a user is waiting on the answer,
+     * and a failure is handled by a graceful fallback rather than by retrying.
+     */
+    private int chatMaxRetryAttempts = 1;
+
+    public int getChatMaxRetryAttempts() {
+        return chatMaxRetryAttempts;
+    }
+
+    public void setChatMaxRetryAttempts(int chatMaxRetryAttempts) {
+        this.chatMaxRetryAttempts = chatMaxRetryAttempts;
+    }
 
     /** Initial backoff delay in milliseconds before the first retry. */
     private long retryInitialBackoffMillis = 1000L;
 
     /** Multiplier applied to the backoff delay after each retry attempt. */
     private double retryBackoffMultiplier = 2.0;
+
+    /**
+     * Per-request HTTP timeout in milliseconds. Without it a stalled Gemini response blocks the
+     * calling request thread indefinitely (the bot then appears frozen).
+     */
+    private int requestTimeoutMillis = 60000;
+
+    public int getRequestTimeoutMillis() {
+        return requestTimeoutMillis;
+    }
+
+    public void setRequestTimeoutMillis(int requestTimeoutMillis) {
+        this.requestTimeoutMillis = requestTimeoutMillis;
+    }
 
     public String getApiKey() {
         return apiKey;

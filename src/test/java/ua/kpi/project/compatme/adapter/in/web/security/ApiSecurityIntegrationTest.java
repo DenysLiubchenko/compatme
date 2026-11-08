@@ -71,6 +71,7 @@ class ApiSecurityIntegrationTest {
 
     @MockBean private ProfileManagementUseCase profiles;
     @MockBean private RecordLikeUseCase recordLike;
+    @MockBean private ua.kpi.project.compatme.application.port.in.RejectLikeUseCase rejectLike;
     @MockBean private GetProfilesWhoLikedMeUseCase likedBy;
     @MockBean private PreferenceRefinementUseCase refinement;
     @MockBean private GenerateEmbeddingsUseCase embeddings;
@@ -226,6 +227,19 @@ class ApiSecurityIntegrationTest {
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/profiles/bob-profile/liked-by").header("Authorization", auth))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void user_canRejectLikeOnOwnList_butNotOnAnotherUsers() throws Exception {
+        mvc.perform(delete("/api/v1/profiles/alice-profile/liked-by/bob-profile")
+                        .header("Authorization", bearer("1001")))
+                .andExpect(status().isNoContent());
+        verify(rejectLike).rejectLike(ProfileId.of("alice-profile"), ProfileId.of("bob-profile"));
+
+        mvc.perform(delete("/api/v1/profiles/bob-profile/liked-by/alice-profile")
+                        .header("Authorization", bearer("1001")))
+                .andExpect(status().isForbidden());
+        verify(rejectLike, never()).rejectLike(ProfileId.of("bob-profile"), ProfileId.of("alice-profile"));
     }
 
     // ---- data exposure -----------------------------------------------------------------------

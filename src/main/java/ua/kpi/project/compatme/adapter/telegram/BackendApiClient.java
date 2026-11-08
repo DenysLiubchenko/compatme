@@ -34,6 +34,12 @@ public class BackendApiClient {
         }
     }
 
+    /**
+     * POSTs may wait on Gemini (up to its 60 s request timeout) before the backend falls back
+     * gracefully, so the client must outlast that to receive the fallback response.
+     */
+    private static final Duration POST_TIMEOUT = Duration.ofSeconds(75);
+
     private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String baseUrl;
@@ -217,6 +223,20 @@ public class BackendApiClient {
         return Boolean.TRUE.equals(response.get("mutualMatch"));
     }
 
+    /** Declines a received like via {@code DELETE /api/v1/profiles/{id}/liked-by/{likerId}}. */
+    public void rejectLike(String profileId, String likerId) {
+        try {
+            HttpRequest request = authorized(URI.create(
+                    baseUrl + "/api/v1/profiles/" + profileId + "/liked-by/" + likerId))
+                    .DELETE().timeout(Duration.ofSeconds(30)).build();
+            ensureSuccess(httpClient.send(request, HttpResponse.BodyHandlers.ofString()));
+        } catch (BackendApiException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to reject like", e);
+        }
+    }
+
     /** Reuses the existing {@code GET /api/v1/profiles/{id}/liked-by} endpoint for "Who Liked Me". */
     public List<Map<String, Object>> getProfilesWhoLikedMe(String profileId) {
         return getJsonList("/api/v1/profiles/%s/liked-by".formatted(profileId));
@@ -260,7 +280,7 @@ public class BackendApiClient {
             HttpRequest request = authorized(URI.create(baseUrl + path))
                     .header("Content-Type", "application/json; charset=utf-8")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .timeout(Duration.ofSeconds(30))
+                    .timeout(POST_TIMEOUT)
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             ensureSuccess(response);

@@ -53,6 +53,12 @@ on the port interfaces, never on the concrete adapters.
 
 ## Fault tolerance and availability
 
+**Gemini outage.** The app keeps working when Google is unreachable or slow (requests time out after
+`GEMINI_REQUEST_TIMEOUT_MILLIS`, default 8 s): profile creation succeeds with embeddings left pending,
+preference refinements are saved as the user wrote them, and recommendations keep using the cached
+vectors (or an unscored list for users who have none yet). A background job (every 2 minutes,
+`app.embedding-backfill.interval-millis`) completes pending embeddings automatically once Gemini is back.
+
 The application treats external dependencies as failure-prone and isolates each one so a partial
 outage remains bounded to the feature that needs it:
 

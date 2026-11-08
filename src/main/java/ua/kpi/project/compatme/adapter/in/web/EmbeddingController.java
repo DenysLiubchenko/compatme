@@ -29,6 +29,6 @@ public class EmbeddingController {
     public ResponseEntity<EmbeddingGenerationResponse> generateEmbeddings(@PathVariable String profileId) {
         EmbeddingGenerationResult result = generateEmbeddingsUseCase.generateEmbeddings(ProfileId.of(profileId));
         return ResponseEntity.ok(new EmbeddingGenerationResponse(
-                result.selfEmbeddingRecomputed(), result.preferenceEmbeddingRecomputed()));
+                result.selfEmbeddingRecomputed(), result.preferenceEmbeddingRecomputed(), result.pending()));
     }
 }

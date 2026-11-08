@@ -10,6 +10,7 @@ import ua.kpi.project.compatme.application.port.in.RecommendationUseCase;
 import ua.kpi.project.compatme.application.port.out.ProfileRepositoryPort;
 import ua.kpi.project.compatme.domain.model.CandidateMatch;
 import ua.kpi.project.compatme.domain.model.AgeRange;
+import ua.kpi.project.compatme.domain.model.DirectionalScores;
 import ua.kpi.project.compatme.domain.model.LocationScope;
 import ua.kpi.project.compatme.domain.model.Profile;
 import ua.kpi.project.compatme.domain.model.ProfileId;
@@ -57,10 +58,10 @@ public class RecommendationService implements RecommendationUseCase {
         Profile requester = profileRepository.findById(requesterId)
                 .orElseThrow(() -> new ProfileNotFoundException(requesterId.value()));
 
-        if (!requester.embeddings().isComplete()) {
-            throw new IllegalStateException(
-                    "Requester profile " + requesterId + " has no embeddings yet; "
-                            + "call the embedding generation endpoint first");
+        boolean semanticScoring = requester.embeddings().isComplete();
+        if (!semanticScoring) {
+            log.warn("Requester {} has no embeddings yet (embedding provider unavailable?); "
+                    + "falling back to unscored recommendations", requesterId);
         }
 
         ProfileRepositoryPort.CandidateFilter filter = ageFilterCenteredOn(requester);
@@ -74,6 +75,9 @@ public class RecommendationService implements RecommendationUseCase {
         LocationScope scope = query.locationScope() != null ? query.locationScope() : requester.searchScope();
         List<Profile> locationMatches = dealBreakerMatches.stream()
                 .filter(candidate -> LocationMatcher.matches(requester.location(), candidate.location(), scope)).toList();
+        if (!semanticScoring) {
+            return recommendWithoutScores(requester, locationMatches, query.topN());
+        }
         List<Profile> scorableCandidates = locationMatches.stream()
                 .filter(candidate -> hasScorableEmbeddings(requester, candidate)).toList();
 
@@ -91,6 +95,19 @@ public class RecommendationService implements RecommendationUseCase {
                 requesterId, candidates.size(), genderMatches.size(), mutuallyAgeMatched.size(), dealBreakerMatches.size(), locationMatches.size(),
                 scorableCandidates.size(), results.size(), Duration.between(startedAt, Instant.now()).toMillis());
         return results;
+    }
+
+    /**
+     * Degraded mode for a requester whose embeddings are not available yet: candidates that pass
+     * every hard filter, most recently active first, with a neutral score of 0.
+     */
+    private List<RecommendationResult> recommendWithoutScores(Profile requester, List<Profile> candidates, int topN) {
+        return candidates.stream()
+                .sorted(Comparator.comparing(Profile::updatedAt).reversed())
+                .limit(topN)
+                .map(candidate -> new RecommendationResult(candidate, new CandidateMatch(
+                        candidate.id(), new DirectionalScores(0.0, 0.0, 0.0), 0.0)))
+                .toList();
     }
 
     private boolean mutuallyMatchesGenderPreference(Profile requester, Profile candidate) {

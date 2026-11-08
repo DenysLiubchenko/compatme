@@ -22,6 +22,10 @@ import java.time.Instant;
  * hash stored alongside the cached {@link EmbeddingVector}, or if the cached vector was produced
  * by a different embedding model. This guarantees embeddings are computed once and cached in
  * MongoDB, never re-computed on every request.
+ *
+ * <p>If the embedding provider is unavailable the profile is kept as-is (missing or stale
+ * embeddings stay pending, reported via {@code pending}) instead of failing the caller; the
+ * {@link EmbeddingBackfillScheduler} completes them once the provider is back.
  */
 @Service
 public class EmbeddingGenerationService implements GenerateEmbeddingsUseCase {
@@ -44,13 +48,21 @@ public class EmbeddingGenerationService implements GenerateEmbeddingsUseCase {
         ProfileEmbeddings embeddings = profile.embeddings();
         String modelName = embeddingProvider.modelName();
 
+        boolean pending = false;
+
         boolean selfRecomputed = false;
         EmbeddingVector selfEmbedding = embeddings.selfEmbedding();
         String selfTextHash = TextHasher.sha256Hex(profile.selfDescription());
         if (selfEmbedding == null || !selfEmbedding.isFreshFor(selfTextHash, modelName)) {
             log.info("Recomputing selfDescription embedding for profile {}", profileId);
-            selfEmbedding = embeddingProvider.embed(profile.selfDescription());
-            selfRecomputed = true;
+            try {
+                selfEmbedding = embeddingProvider.embed(profile.selfDescription());
+                selfRecomputed = true;
+            } catch (RuntimeException e) {
+                pending = true;
+                log.warn("Embedding provider unavailable; selfDescription embedding for profile {} stays pending: {}",
+                        profileId, e.getMessage());
+            }
         } else {
             log.debug("selfDescription embedding for profile {} is up to date, skipping recomputation", profileId);
         }
@@ -60,8 +72,14 @@ public class EmbeddingGenerationService implements GenerateEmbeddingsUseCase {
         String preferenceTextHash = TextHasher.sha256Hex(profile.preferenceDescription());
         if (preferenceEmbedding == null || !preferenceEmbedding.isFreshFor(preferenceTextHash, modelName)) {
             log.info("Recomputing preferenceDescription embedding for profile {}", profileId);
-            preferenceEmbedding = embeddingProvider.embed(profile.preferenceDescription());
-            preferenceRecomputed = true;
+            try {
+                preferenceEmbedding = embeddingProvider.embed(profile.preferenceDescription());
+                preferenceRecomputed = true;
+            } catch (RuntimeException e) {
+                pending = true;
+                log.warn("Embedding provider unavailable; preferenceDescription embedding for profile {} stays pending: {}",
+                        profileId, e.getMessage());
+            }
         } else {
             log.debug("preferenceDescription embedding for profile {} is up to date, skipping recomputation", profileId);
         }
@@ -72,6 +90,6 @@ public class EmbeddingGenerationService implements GenerateEmbeddingsUseCase {
             profileRepository.save(updated);
         }
 
-        return new EmbeddingGenerationResult(selfRecomputed, preferenceRecomputed);
+        return new EmbeddingGenerationResult(selfRecomputed, preferenceRecomputed, pending);
     }
 }

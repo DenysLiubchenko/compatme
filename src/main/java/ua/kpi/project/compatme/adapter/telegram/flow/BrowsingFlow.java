@@ -46,6 +46,7 @@ public class BrowsingFlow {
             case "menu:matches" -> { telegram.ackSilently(callbackQueryId); startMatches(chatId, telegramUserId, messageId); }
             case "menu:liked" -> { telegram.ackSilently(callbackQueryId); startLikedMe(chatId, telegramUserId, messageId); }
             case "browse:like", "browse:likeback" -> { telegram.ackSilently(callbackQueryId); onLike(chatId, telegramUserId, messageId); }
+            case "browse:dislike" -> { telegram.ackSilently(callbackQueryId); onDislike(chatId, telegramUserId, messageId); }
             case "browse:skip", "browse:next" -> { telegram.ackSilently(callbackQueryId); onSkip(chatId, telegramUserId, messageId); }
             default -> { return false; }
         }
@@ -115,6 +116,25 @@ public class BrowsingFlow {
                 backendApiClient.recordLike(String.valueOf(ownProfile.get("id")), String.valueOf(candidate.get("id")));
             } catch (Exception e) {
                 log.warn("Failed to record like for chat {}: {}", chatId, e.getMessage());
+            }
+        }
+        showNext(chatId, telegramUserId, messageId);
+    }
+
+    /** Declines the current "Who Liked Me" candidate: they leave the list (unlike a skip) and the next card is shown. */
+    private void onDislike(long chatId, String telegramUserId, Integer messageId) {
+        BrowsingSession session = sessions.getOrCreate(telegramUserId);
+        if (isStale(session, messageId)) {
+            telegram.removeKeyboard(chatId, messageId);
+            return;
+        }
+        Map<String, Object> candidate = session.current();
+        if (candidate != null && BrowsingSession.MODE_LIKED_ME.equals(session.mode())) {
+            try {
+                Map<String, Object> ownProfile = backendApiClient.getProfileByTelegramUserId(telegramUserId);
+                backendApiClient.rejectLike(String.valueOf(ownProfile.get("id")), String.valueOf(candidate.get("id")));
+            } catch (Exception e) {
+                log.warn("Failed to reject like for chat {}: {}", chatId, e.getMessage());
             }
         }
         showNext(chatId, telegramUserId, messageId);

@@ -1,6 +1,8 @@
 package ua.kpi.project.compatme.config;
 
 import com.google.genai.Client;
+import com.google.genai.types.HttpOptions;
+import com.google.genai.types.HttpRetryOptions;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +33,14 @@ public class GeminiClientConfig {
 
     @Bean
     public Client geminiClient(GeminiProperties properties) {
-        return Client.builder().apiKey(properties.getApiKey()).build();
+        return Client.builder()
+                .apiKey(properties.getApiKey())
+                .httpOptions(HttpOptions.builder()
+                        .timeout(properties.getRequestTimeoutMillis())
+                        // Retries are handled once, by Spring Retry / the circuit breaker; the SDK's own
+                        // hidden retries would multiply every outage into minutes of blocking.
+                        .retryOptions(HttpRetryOptions.builder().attempts(1).build())
+                        .build())
+                .build();
     }
 }

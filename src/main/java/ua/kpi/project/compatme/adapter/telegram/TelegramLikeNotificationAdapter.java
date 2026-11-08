@@ -38,7 +38,10 @@ public class TelegramLikeNotificationAdapter implements LikeNotificationPort {
     }
 
     private void sendMatch(Profile recipient, Profile other) {
-        if (recipient.telegramUserId() == null || recipient.telegramUserId().isBlank()) return;
+        if (recipient.telegramUserId() == null || recipient.telegramUserId().isBlank()) {
+            log.info("Skipping match notification for profile {}: no Telegram account", recipient.id());
+            return;
+        }
         String text = "It's a mutual match with " + other.displayName() + "! Open their Telegram account to connect.";
         Optional<String> link = telegramUserLink(other.telegramUserId());
         try {
@@ -49,6 +52,7 @@ public class TelegramLikeNotificationAdapter implements LikeNotificationPort {
                         "It's a mutual match with " + other.displayName()
                                 + "! Their Telegram account link is unavailable.");
             }
+            log.info("Sent match notification to profile {}", recipient.id());
         } catch (TelegramApiException | RuntimeException e) {
             log.warn("Failed to send match notification for profile {}: {}", recipient.id(), e.getMessage());
         }
@@ -62,9 +66,13 @@ public class TelegramLikeNotificationAdapter implements LikeNotificationPort {
     }
 
     private void send(Profile recipient, String text) {
-        if (recipient.telegramUserId() == null || recipient.telegramUserId().isBlank()) return;
+        if (recipient.telegramUserId() == null || recipient.telegramUserId().isBlank()) {
+            log.info("Skipping like notification for profile {}: no Telegram account", recipient.id());
+            return;
+        }
         try {
             bot.sendNotification(recipient.telegramUserId(), text);
+            log.info("Sent like notification to profile {}", recipient.id());
         } catch (TelegramApiException | RuntimeException e) {
             log.warn("Failed to send like notification for profile {}: {}", recipient.id(), e.getMessage());
         }
