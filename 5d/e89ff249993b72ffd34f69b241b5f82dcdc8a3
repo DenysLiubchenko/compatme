@@ -1,0 +1,23 @@
+src/main/java/ua/kpi/project/compatme/application/port/in/RejectLikeUseCase.java
+  s_96dc373d9d7ed7::t_79b131b7f3c71d 1-13
+src/main/java/ua/kpi/project/compatme/application/service/EmbeddingBackfillScheduler.java
+  s_96dc373d9d7ed7::t_f448435fcdd216 1-54
+src/test/java/ua/kpi/project/compatme/application/service/GeminiOutageDegradationTest.java
+  s_96dc373d9d7ed7::t_bba69eae480e5b 1-166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "5de89ff249993b72ffd34f69b241b5f82dcdc8a3",
+  "prompts": {},
+  "sessions": {
+    "s_96dc373d9d7ed7": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_e92c1b43affeUMsEXCOhexHrlh",
+        "model": "claude-sonnet-5.5"
+      },
+      "human_author": "Denys Liubchenko <denysli@ext.inditex.com>"
+    }
+  }
+}
